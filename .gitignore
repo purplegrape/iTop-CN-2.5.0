@@ -1,0 +1,5 @@
+/data/*
+/conf/*
+/log/*
+/env-production/*
+/env-production-build/*

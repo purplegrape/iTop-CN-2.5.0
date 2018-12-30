@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+  <classes/>
+  <user_rights>
+    <groups>
+      <group id="General" _delta="define">
+        <classes>
+          <class id="Organization"/>
+          <class id="Location"/>
+          <class id="Contact"/>
+        </classes>
+      </group>
+      <group id="Documentation" _delta="define">
+        <classes>
+          <class id="Document"/>
+        </classes>
+      </group>
+      <group id="Configuration" _delta="define">
+        <classes>
+          <class id="Licence"/>
+          <class id="Subnet"/>
+          <class id="Patch"/>
+          <class id="Software"/>
+          <class id="FunctionalCI"/>
+          <class id="NetworkInterface"/>
+          <class id="Group"/>
+          <class id="Typology"/>
+          <class id="NASFileSystem"/>
+          <class id="LogicalVolume"/>
+          <class id="Tape"/>
+          <class id="VLAN"/>
+        </classes>
+      </group>
+      <group id="Incident" _delta="define">
+        <classes>
+          <class id="Incident"/>
+        </classes>
+      </group>
+      <group id="Problem" _delta="define">
+        <classes>
+          <class id="Problem"/>
+        </classes>
+      </group>
+      <group id="Change" _delta="define">
+        <classes>
+          <class id="Change"/>
+          <class id="RoutineChange"/>
+          <class id="NormalChange"/>
+          <class id="EmergencyChange"/>
+        </classes>
+      </group>
+      <group id="Service" _delta="define">
+        <classes>
+          <class id="Contract"/>
+          <class id="ProviderContract"/>
+          <class id="CustomerContract"/>
+          <class id="ServiceFamily"/>
+          <class id="Service"/>
+          <class id="ServiceSubcategory"/>
+          <class id="SLA"/>
+          <class id="SLT"/>
+          <class id="DeliveryModel"/>
+        </classes>
+      </group>
+      <group id="UserRequest" _delta="define">
+        <classes>
+          <class id="UserRequest"/>
+        </classes>
+      </group>
+      <group id="KnownError" _delta="define">
+        <classes>
+          <class id="KnownError"/>
+          <class id="FAQ"/>
+          <class id="FAQCategory"/>
+        </classes>
+      </group>
+      <group id="Ticketing" _delta="define">
+        <classes>
+          <class id="lnkFunctionalCIToTicket"/>
+          <class id="lnkContactToTicket"/>
+          <class id="WorkOrder"/>
+          <class id="Attachment"/>
+        </classes>
+      </group>
+      <group id="Portal" _delta="define">
+        <classes>
+          <class id="lnkFunctionalCIToTicket"/>
+          <class id="lnkContactToTicket"/>
+        </classes>
+      </group>
+      <group id="NormalChange" _delta="define">
+        <classes>
+          <class id="NormalChange"/>
+        </classes>
+      </group>
+      <group id="EmergencyChange" _delta="define">
+        <classes>
+          <class id="EmergencyChange"/>
+        </classes>
+      </group>
+      <group id="RoutineChange" _delta="define">
+        <classes>
+          <class id="RoutineChange"/>
+        </classes>
+      </group>
+      <group id="Notification" _delta="define">
+        <classes>
+          <!-- This class list is also present in AdminTools group -->
+          <class id="Trigger"/>
+          <class id="lnkTriggerAction"/>
+          <class id="Action"/>
+          <class id="ResourceRunQueriesMenu"/>
+        </classes>
+      </group>
+      <group id="User">
+        <classes>
+          <!-- This class list is also present in AdminTools group -->
+          <class id="User"/>
+          <class id="URP_UserOrg"/>
+          <class id="URP_UserProfile"/>
+          <class id="URP_Profiles"/>
+        </classes>
+      </group>
+      <group id="Audit">
+        <classes>
+          <!-- This class list is also present in AdminTools group -->
+          <class id="AuditCategory"/>
+          <class id="AuditRule"/>
+          <class id="ResourceRunQueriesMenu"/>
+        </classes>
+      </group>
+      <group id="Query">
+        <classes>
+          <!-- This class list is also present in AdminTools group -->
+          <class id="Query"/>
+          <class id="QueryOQL"/>
+          <class id="ResourceRunQueriesMenu"/>
+        </classes>
+      </group>
+      <group id="SynchroData">
+        <classes>
+          <!-- This class list is also present in AdminTools group -->
+          <class id="SynchroDataSource"/>
+          <class id="SynchroAttribute"/>
+        </classes>
+      </group>
+      <group id="AdminTools">
+        <classes>
+          <class id="ResourceAdminMenu"/>
+          <class id="ResourceRunQueriesMenu"/>
+          <!-- Notification group -->
+          <class id="Trigger"/>
+          <class id="lnkTriggerAction"/>
+          <class id="Action"/>
+          <!-- User group -->
+          <class id="User"/>
+          <class id="URP_UserOrg"/>
+          <class id="URP_UserProfile"/>
+          <class id="URP_Profiles"/>
+          <!-- Audit group -->
+          <class id="AuditCategory"/>
+          <class id="AuditRule"/>
+          <!-- Query group -->
+          <class id="Query"/>
+          <class id="QueryOQL"/>
+          <!-- SynchroData group -->
+          <class id="SynchroDataSource"/>
+        </classes>
+      </group>
+    </groups>
+    <profiles>
+      <profile id="3" _delta="define">
+        <name>Configuration Manager</name>
+        <description>Person in charge of the documentation of the managed CIs</description>
+        <groups>
+          <group id="General">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="Documentation">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="Configuration">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="4" _delta="define">
+        <name>Service Desk Agent</name>
+        <description>Person in charge of creating incident reports</description>
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="Incident">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+            </actions>
+          </group>
+          <group id="UserRequest">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="5" _delta="define">
+        <name>Support Agent</name>
+        <description>Person analyzing and solving the current incidents</description>
+        <groups>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="Incident">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reassign">allow</action>
+              <action id="stimulus:ev_resolve">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+              <action id="stimulus:ev_pending">allow</action>
+            </actions>
+          </group>
+          <group id="UserRequest">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reassign">allow</action>
+              <action id="stimulus:ev_resolve">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+              <action id="stimulus:ev_pending">allow</action>
+              <action id="stimulus:ev_wait_for_approval">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="6" _delta="define">
+        <name>Problem Manager</name>
+        <description>Person analyzing and solving the current problems</description>
+        <groups>
+          <group id="KnownError">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="Problem">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reassign">allow</action>
+              <action id="stimulus:ev_resolve">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="7" _delta="define">
+        <name>Change Implementor</name>
+        <description>Person executing the changes</description>
+        <groups>
+          <group id="Change">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_plan">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+              <action id="stimulus:ev_finish">allow</action>
+            </actions>
+          </group>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="NormalChange">
+            <actions>
+              <action id="stimulus:ev_plan">allow</action>
+              <action id="stimulus:ev_replan">allow</action>
+              <action id="stimulus:ev_implement">allow</action>
+              <action id="stimulus:ev_monitor">allow</action>
+            </actions>
+          </group>
+          <group id="EmergencyChange">
+            <actions>
+              <action id="stimulus:ev_plan">allow</action>
+              <action id="stimulus:ev_replan">allow</action>
+              <action id="stimulus:ev_implement">allow</action>
+              <action id="stimulus:ev_monitor">allow</action>
+            </actions>
+          </group>
+          <group id="RoutineChange">
+            <actions>
+              <action id="stimulus:ev_plan">allow</action>
+              <action id="stimulus:ev_replan">allow</action>
+              <action id="stimulus:ev_implement">allow</action>
+              <action id="stimulus:ev_monitor">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="8" _delta="define">
+        <name>Change Supervisor</name>
+        <description>Person responsible for the overall change execution</description>
+        <groups>
+          <group id="Change">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+              <action id="stimulus:ev_finish">allow</action>
+            </actions>
+          </group>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="NormalChange">
+            <actions>
+              <action id="stimulus:ev_validate">allow</action>
+              <action id="stimulus:ev_reject">allow</action>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+              <action id="stimulus:ev_finish">allow</action>
+            </actions>
+          </group>
+          <group id="EmergencyChange">
+            <actions>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+              <action id="stimulus:ev_finish">allow</action>
+            </actions>
+          </group>
+          <group id="RoutineChange">
+            <actions>
+              <action id="stimulus:ev_assign">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+              <action id="stimulus:ev_finish">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="9" _delta="define">
+        <name>Change Approver</name>
+        <description>Person who could be impacted by some changes</description>
+        <groups>
+          <group id="Change">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_approve">allow</action>
+              <action id="stimulus:ev_reject">allow</action>
+            </actions>
+          </group>
+          <group id="Ticketing">
+            <actions>
+              <action id="action:delete">allow</action>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+            </actions>
+          </group>
+          <group id="NormalChange">
+            <actions>
+              <action id="stimulus:ev_approve">allow</action>
+              <action id="stimulus:ev_notapprove">allow</action>
+            </actions>
+          </group>
+          <group id="EmergencyChange">
+            <actions>
+              <action id="stimulus:ev_approve">allow</action>
+              <action id="stimulus:ev_notapprove">allow</action>
+            </actions>
+          </group>
+          <group id="RoutineChange">
+            <actions/>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="10" _delta="define">
+        <name>Service Manager</name>
+        <description>Person responsible for the service delivered to the [internal] customer</description>
+        <groups>
+          <group id="Service">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="11" _delta="define">
+        <name>Document author</name>
+        <description>Any person who could contribute to documentation</description>
+        <groups>
+          <group id="Documentation">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:bulk write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="2" _delta="define">
+        <name>Portal user</name>
+        <description>Has the rights to access to the user portal. People having this profile will not be allowed to access the standard application, they will be automatically redirected to the user portal.</description>
+        <groups>
+          <group id="Portal">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="action:delete">allow</action>
+            </actions>
+          </group>
+          <group id="UserRequest">
+            <actions>
+              <action id="action:write">allow</action>
+              <action id="stimulus:ev_close">allow</action>
+              <action id="stimulus:ev_reopen">allow</action>
+            </actions>
+          </group>
+          <group id="*">
+            <actions>
+              <action id="action:read">allow</action>
+              <action id="action:bulk read">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="12" _delta="define">
+        <name>Portal power user</name>
+        <description>Users having this profile will have the rights to see all the tickets for a customer in the portal. Must be used in conjunction with other profiles (e.g. Portal User).</description>
+        <groups/>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>
