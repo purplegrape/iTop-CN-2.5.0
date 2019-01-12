@@ -1,7 +1,7 @@
 FROM debian:stretch
 
 RUN apt-get update
-RUN apt-get install git graphviz apache2 php7.0 php7.0-mysql php7.0-gd php7.0-ldap php7.0-mcrypt php7.0-opcache php7.0-soap php7.0-xml php7.0-zip mariadb-client -y
+RUN apt-get install git graphviz apache2 php7.0 php7.0-mysql php7.0-gd php7.0-ldap php7.0-mcrypt php7.0-opcache php7.0-soap php7.0-xml php7.0-zip php-apcu mariadb-client -y
 RUN rm -rf /var/www/html; git clone -b master --depth=1  https://github.com/purplegrape/iTop-CN /var/www/html
 RUN cd /var/www/html; mkdir -p conf data log env-production env-production-build
 RUN cd /var/www/html; chown -R www-data:www-data conf data log env-production env-production-build
