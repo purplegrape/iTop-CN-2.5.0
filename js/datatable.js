@@ -91,19 +91,9 @@ $(function()
 				}
 				// End of workaround
 
-				try {
-					me.element.find('.datacontents').html(data);
-					// restore the sort order on columns
-					me.element.find('table.listResults').trigger('fakesorton', [aCurrentSort]);
-				} catch (e) {
-					// ugly hacks for IE 8/9 first...
-					if (!window.console) console.error = {};
-					if (!window.console.error) {
-						console.error = function () {
-						};
-					}
-					console.error("Can not inject data : "+data);
-				}
+				me.element.find('.datacontents').html(data);
+				// restore the sort order on columns
+				me.element.find('table.listResults').trigger('fakesorton', [aCurrentSort]);
 				me.element.unblock();
 			}, 'html' );
 			
@@ -187,7 +177,7 @@ $(function()
 			// Check if we need to save the settings or not...
 			var oSaveCheck = $('#datatable_dlg_'+sListId).find('input[name=save_settings]');
 			var oSaveScope = $('#datatable_dlg_'+sListId).find('input[name=scope]:checked');
-			if (oSaveCheck.prop('checked'))
+			if (oSaveCheck.attr('checked'))
 			{
 				if (oSettings.val() == 'defaults')
 				{
@@ -209,14 +199,14 @@ $(function()
 		{
 			var sId = new String(this.element.attr('id'));
 			var sListId = sId.replace('datatable_', '');
-			$('#datatable_dlg_'+sListId).find('input.specific_settings').prop('checked', true);
+			$('#datatable_dlg_'+sListId).find('input.specific_settings').attr('checked', 'checked');
 		},
 		_updateSaveScope: function()
 		{
 			var sId = new String(this.element.attr('id'));
 			var sListId = sId.replace('datatable_', '');
 			var oSaveCheck = $('#datatable_dlg_'+sListId).find('input[name=save_settings]');
-			if (oSaveCheck.prop('checked'))
+			if (oSaveCheck.attr('checked'))
 			{
 				$('#datatable_dlg_'+sListId).find('input[name=scope]').each(function() {
 					if ($(this).attr('stay-disabled') != 'true')

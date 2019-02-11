@@ -3,7 +3,7 @@
 /*
  * This file is part of Twig.
  *
- * (c) Fabien Potencier
+ * (c) 2010 Fabien Potencier
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,11 +15,16 @@
  * <pre>
  *   {% from 'forms.html' import forms %}
  * </pre>
- *
- * @final
  */
 class Twig_TokenParser_From extends Twig_TokenParser
 {
+    /**
+     * Parses a token and returns a node.
+     *
+     * @param Twig_Token $token A Twig_Token instance
+     *
+     * @return Twig_NodeInterface A Twig_NodeInterface instance
+     */
     public function parse(Twig_Token $token)
     {
         $macro = $this->parser->getExpressionParser()->parseExpression();
@@ -48,7 +53,7 @@ class Twig_TokenParser_From extends Twig_TokenParser
 
         foreach ($targets as $name => $alias) {
             if ($this->parser->isReservedMacroName($name)) {
-                throw new Twig_Error_Syntax(sprintf('"%s" cannot be an imported macro as it is a reserved keyword.', $name), $token->getLine(), $stream->getSourceContext());
+                throw new Twig_Error_Syntax(sprintf('"%s" cannot be an imported macro as it is a reserved keyword', $name), $token->getLine(), $stream->getFilename());
             }
 
             $this->parser->addImportedSymbol('function', $alias, 'get'.$name, $node->getNode('var'));
@@ -57,10 +62,13 @@ class Twig_TokenParser_From extends Twig_TokenParser
         return $node;
     }
 
+    /**
+     * Gets the tag name associated with this token parser.
+     *
+     * @return string The tag name
+     */
     public function getTag()
     {
         return 'from';
     }
 }
-
-class_alias('Twig_TokenParser_From', 'Twig\TokenParser\FromTokenParser', false);

@@ -155,11 +155,6 @@ $(function()
 			oParams.att_code = this.options.att_code;
 			oParams.iInputId = this.id;
 			var me = this;
-			if (this.options.oWizardHelper)
-			{
-				this.options.oWizardHelper.UpdateWizard();
-				oParams.json = this.options.oWizardHelper.ToJSON();
-			}
 			$.post(this.options.submit_to, oParams, function(data){
 				me.oDlg = $('<div></div>');
 				$('body').append(me.oDlg);
@@ -190,15 +185,6 @@ $(function()
 			oParams.real_class = '';
 			oParams.att_code = this.options.att_code;
 			oParams.iInputId = this.id;
-
-			// Gather the already linked target objects
-			oParams.aAlreadyLinked = new Array();
-			$('#'+this.id+' .listResults td input:checkbox').each(function () {
-					iKey = parseInt(this.value, 10); // Numbers are in base 10
-					oParams.aAlreadyLinked.push(iKey);
-				}
-			);
-
 			if (this.options.oWizardHelper)
 			{
 				this.options.oWizardHelper.UpdateWizard();
@@ -232,10 +218,7 @@ $(function()
 				}
 				else
 				{
-					$('#count_'+me.id).change(function() {
-						var c = this.value;
-						me._onUpdateDlgButtons(c);
-					});
+					FixSearchFormsDisposition();
 				}
 				me._updateDlgPosition();
 				me._onSearchDlgUpdateSize();
@@ -286,6 +269,7 @@ $(function()
 					var c = this.value;
 					me._onUpdateDlgButtons(c);
 				});
+				FixSearchFormsDisposition();
 				$('#SearchResultsToAdd_'+me.id).unblock();
 				me._onSearchDlgUpdateSize();
 			});

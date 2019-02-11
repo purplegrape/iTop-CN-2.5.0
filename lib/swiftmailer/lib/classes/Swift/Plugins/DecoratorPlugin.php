@@ -11,8 +11,10 @@
 /**
  * Allows customization of Messages on-the-fly.
  *
- * @author Chris Corbyn
- * @author Fabien Potencier
+ * @package    Swift
+ * @subpackage Plugins
+ * @author     Chris Corbyn
+ * @author     Fabien Potencier
  */
 class Swift_Plugins_DecoratorPlugin implements Swift_Events_SendListener, Swift_Plugins_Decorator_Replacements
 {
@@ -123,7 +125,7 @@ class Swift_Plugins_DecoratorPlugin implements Swift_Events_SendListener, Swift_
 
             $children = (array) $message->getChildren();
             foreach ($children as $child) {
-                list($type) = sscanf($child->getContentType(), '%[^/]/%s');
+                list($type, ) = sscanf($child->getContentType(), '%[^/]/%s');
                 if ('text' == $type) {
                     $body = $child->getBody();
                     $bodyReplaced = str_replace(
@@ -157,9 +159,12 @@ class Swift_Plugins_DecoratorPlugin implements Swift_Events_SendListener, Swift_
     {
         if ($this->_replacements instanceof Swift_Plugins_Decorator_Replacements) {
             return $this->_replacements->getReplacementsFor($address);
+        } else {
+            return isset($this->_replacements[$address])
+                ? $this->_replacements[$address]
+                : null
+                ;
         }
-
-        return isset($this->_replacements[$address]) ? $this->_replacements[$address] : null;
     }
 
     /**
@@ -171,6 +176,8 @@ class Swift_Plugins_DecoratorPlugin implements Swift_Events_SendListener, Swift_
     {
         $this->_restoreMessage($evt->getMessage());
     }
+
+    // -- Private methods
 
     /** Restore a changed message back to its original state */
     private function _restoreMessage(Swift_Mime_Message $message)

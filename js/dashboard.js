@@ -84,14 +84,14 @@ $(function()
 						var oDashletParams = oDashlet.get_params();
 						var sId = oDashletParams.dashlet_id;
 						oState[sId] = oDashletParams;				
-						aList.push({dashlet_id: sId, dashlet_class: oDashletParams.dashlet_class, dashlet_type: oDashletParams.dashlet_type} );
+						aList.push({dashlet_id: sId, dashlet_class: oDashletParams.dashlet_class} );
 					}
 				});
 				
 				if (aList.length == 0)
 				{
-					oState[0] = {dashlet_id: 0, dashlet_class: 'DashletEmptyCell', dashlet_type: 'DashletEmptyCell'};
-					aList.push({dashlet_id: 0, dashlet_class: 'DashletEmptyCell', dashlet_type: 'DashletEmptyCell'});
+					oState[0] = {dashlet_id: 0, dashlet_class: 'DashletEmptyCell'};
+					aList.push({dashlet_id: 0, dashlet_class: 'DashletEmptyCell'});
 				}
 				oState.cells.push(aList);
 			});
@@ -171,7 +171,7 @@ $(function()
 		add_dashlet_finalize: function(options, sDashletId, sDashletClass)
 		{
 			$('#dashlet_'+sDashletId)
-			.dashlet({dashlet_id: sDashletId, dashlet_class: sDashletClass, dashlet_type: options.dashlet_type})
+			.dashlet({dashlet_id: sDashletId, dashlet_class: sDashletClass})
 			.dashlet('deselect_all')
 			.dashlet('select')
 			.draggable({
@@ -318,7 +318,6 @@ $(function()
 			var sDashletClass = options.dashlet_class;
 			oParams.dashlet_class = sDashletClass;
 			oParams.dashlet_id = sDashletId;
-			oParams.dashlet_type = options.dashlet_type;
 			var me = this;
 			$.post(this.options.render_to, oParams, function(data){
 				me.ajax_div.html(data);

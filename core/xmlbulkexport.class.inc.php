@@ -108,7 +108,7 @@ class XMLBulkExport extends BulkExport
 		$aClass2Attributes = array();
 		foreach($aClasses as $sAlias => $sClassName)
 		{
-			if (UserRights::IsActionAllowed($sClassName, UR_ACTION_BULK_READ, $oSet) != UR_ALLOWED_NO)
+			if (UserRights::IsActionAllowed($sClassName, UR_ACTION_BULK_READ, $oSet) && (UR_ALLOWED_YES || UR_ALLOWED_DEPENDS))
 			{
 				$aAuthorizedClasses[$sAlias] = $sClassName;
 				$aAttributes = array();

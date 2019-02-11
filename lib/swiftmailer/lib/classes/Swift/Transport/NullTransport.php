@@ -11,7 +11,8 @@
 /**
  * Pretends messages have been sent, but just ignores them.
  *
- * @author Fabien Potencier
+ * @package Swift
+ * @author  Fabien Potencier
  */
 class Swift_Transport_NullTransport implements Swift_Transport
 {
@@ -56,7 +57,7 @@ class Swift_Transport_NullTransport implements Swift_Transport
      * @param Swift_Mime_Message $message
      * @param string[]           $failedRecipients An array of failures by-reference
      *
-     * @return int The number of sent emails
+     * @return int     The number of sent emails
      */
     public function send(Swift_Mime_Message $message, &$failedRecipients = null)
     {

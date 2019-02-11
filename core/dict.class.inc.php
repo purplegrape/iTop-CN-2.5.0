@@ -20,7 +20,7 @@
  * Class Dict
  * Management of localizable strings 
  *
- * @copyright   Copyright (C) 2010-2018 Combodo SARL
+ * @copyright   Copyright (C) 2010-2012 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -65,11 +65,6 @@ class Dict
 	protected static $m_aData = array();
 	protected static $m_sApplicationPrefix = null;
 
-	/**
-	 * @param $sLanguageCode
-	 *
-	 * @throws \DictExceptionUnknownLanguage
-	 */
 	public static function SetDefaultLanguage($sLanguageCode)
 	{
 		if (!array_key_exists($sLanguageCode, self::$m_aLanguages))
@@ -79,11 +74,6 @@ class Dict
 		self::$m_sDefaultLanguage = $sLanguageCode;
 	}
 
-	/**
-	 * @param $sLanguageCode
-	 *
-	 * @throws \DictExceptionUnknownLanguage
-	 */
 	public static function SetUserLanguage($sLanguageCode)
 	{
 		if (!array_key_exists($sLanguageCode, self::$m_aLanguages))
@@ -118,12 +108,11 @@ class Dict
 
 	/**
 	 * Returns a localised string from the dictonary
-	 *
 	 * @param string $sStringCode The code identifying the dictionary entry
 	 * @param string $sDefault Default value if there is no match in the dictionary
 	 * @param bool $bUserLanguageOnly True to allow the use of the default language as a fallback, false otherwise
-	 *
-	 * @return string
+	 * @throws DictExceptionMissingString
+	 * @return unknown|Ambigous <>|string
 	 */
 	public static function S($sStringCode, $sDefault = null, $bUserLanguageOnly = false)
 	{
@@ -133,7 +122,7 @@ class Dict
 
 		if (!array_key_exists(self::GetUserLanguage(), self::$m_aData))
 		{
-			// It may happen, when something happens before the dictionaries get loaded
+			// It may happen, when something happens before the dictionnaries get loaded
 			return $sStringCode;
 		}
 		$aCurrentDictionary = self::$m_aData[self::GetUserLanguage()];
@@ -164,12 +153,25 @@ class Dict
 		}
 		// Could not find the string...
 		//
-		if (is_null($sDefault))
+		switch (self::$m_iErrorMode)
 		{
-			return $sStringCode;
-		}
+			case DICT_ERR_STRING:
+				if (is_null($sDefault))
+				{
+					return $sStringCode;
+				}
+				else
+				{
+					return $sDefault;
+				}
+				break;
 
-		return $sDefault;
+			case DICT_ERR_EXCEPTION:
+			default:
+				throw new DictExceptionMissingString(self::$m_sCurrentLanguage, $sStringCode);
+				break;
+		}
+		return 'bug!';
 	}
 
 
@@ -281,9 +283,6 @@ class Dict
 
 	/**
 	 * Clone a string in every language (if it exists in that language)
-	 *
-	 * @param $sSourceCode
-	 * @param $sDestCode
 	 */
 	public static function CloneString($sSourceCode, $sDestCode)
 	{
@@ -355,39 +354,6 @@ class Dict
 		}
 		// No need to actually load the strings since it's only used to know the list of languages
 		// at setup time !!
-	}
-	
-	/**
-	 * Export all the dictionary entries - of the given language - whose code matches the given prefix
-	 * missing entries in the current language will be replaced by entries in the default language
-	 * @param string $sStartingWith
-	 * @return string[]
-	 */
-	public static function ExportEntries($sStartingWith)
-	{
-		self::InitLangIfNeeded(self::GetUserLanguage());
-		self::InitLangIfNeeded(self::$m_sDefaultLanguage);
-		$aEntries = array();
-		$iLength = strlen($sStartingWith);
-		
-		// First prefill the array with entries from the default language
-		foreach(self::$m_aData[self::$m_sDefaultLanguage] as $sCode => $sEntry)
-		{
-			if (substr($sCode, 0, $iLength) == $sStartingWith)
-			{
-				$aEntries[$sCode] = $sEntry;
-			}
-		}
-		
-		// Now put (overwrite) the entries for the user language
-		foreach(self::$m_aData[self::GetUserLanguage()] as $sCode => $sEntry)
-		{
-			if (substr($sCode, 0, $iLength) == $sStartingWith)
-			{
-				$aEntries[$sCode] = $sEntry;
-			}
-		}
-		return $aEntries;
 	}
 }
 ?>

@@ -11,7 +11,9 @@
 /**
  * An attachment, in a multipart message.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_Mime_Attachment extends Swift_Mime_SimpleMimeEntity
 {
@@ -64,12 +66,14 @@ class Swift_Mime_Attachment extends Swift_Mime_SimpleMimeEntity
      *
      * @param string $disposition
      *
-     * @return $this
+     * @return Swift_Mime_Attachment
      */
     public function setDisposition($disposition)
     {
         if (!$this->_setHeaderFieldModel('Content-Disposition', $disposition)) {
-            $this->getHeaders()->addParameterizedHeader('Content-Disposition', $disposition);
+            $this->getHeaders()->addParameterizedHeader(
+                'Content-Disposition', $disposition
+                );
         }
 
         return $this;
@@ -90,7 +94,7 @@ class Swift_Mime_Attachment extends Swift_Mime_SimpleMimeEntity
      *
      * @param string $filename
      *
-     * @return $this
+     * @return Swift_Mime_Attachment
      */
     public function setFilename($filename)
     {
@@ -113,9 +117,9 @@ class Swift_Mime_Attachment extends Swift_Mime_SimpleMimeEntity
     /**
      * Set the file size of this attachment.
      *
-     * @param int $size
+     * @param int     $size
      *
-     * @return $this
+     * @return Swift_Mime_Attachment
      */
     public function setSize($size)
     {
@@ -130,14 +134,16 @@ class Swift_Mime_Attachment extends Swift_Mime_SimpleMimeEntity
      * @param Swift_FileStream $file
      * @param string           $contentType optional
      *
-     * @return $this
+     * @return Swift_Mime_Attachment
      */
     public function setFile(Swift_FileStream $file, $contentType = null)
     {
         $this->setFilename(basename($file->getPath()));
         $this->setBody($file, $contentType);
         if (!isset($contentType)) {
-            $extension = strtolower(substr($file->getPath(), strrpos($file->getPath(), '.') + 1));
+            $extension = strtolower(substr(
+                $file->getPath(), strrpos($file->getPath(), '.') + 1
+                ));
 
             if (array_key_exists($extension, $this->_mimeTypes)) {
                 $this->setContentType($this->_mimeTypes[$extension]);

@@ -32,8 +32,7 @@ require_once(APPROOT.'/application/applicationcontext.class.inc.php');
 require_once(APPROOT.'/application/startup.inc.php');
 
 require_once(APPROOT.'/application/loginwebpage.class.inc.php');
-LoginWebPage::DoLogin(); // Check user rights and prompt if needed
-ApplicationMenu::CheckMenuIdEnabled('UniversalSearchMenu');
+LoginWebPage::DoLogin(true); // Check user rights and prompt if needed (must be admin)
 
 $oAppContext = new ApplicationContext();
 
@@ -57,10 +56,9 @@ $sOperation = utils::ReadParam('operation', '');
 
 $oP->SetBreadCrumbEntry('ui-tool-universalsearch', Dict::S('Menu:UniversalSearchMenu'), Dict::S('Menu:UniversalSearchMenu+'), '', utils::GetAbsoluteUrlAppRoot().'images/wrench.png');
 
-
-
-//$sSearchHeaderForceDropdown
-$sSearchHeaderForceDropdown = '<select  id="select_class" name="baseClass" onChange="this.form.submit();">';
+// First part: select the class to search for
+$oP->add("<form>");
+$oP->add(Dict::S('UI:UniversalSearch:LabelSelectTheClass')."<select style=\"width: 150px;\" id=\"select_class\" name=\"baseClass\" onChange=\"this.form.submit();\">");
 $aClassLabels = array();
 foreach(MetaModel::GetClasses('bizmodel') as $sCurrentClass)
 {
@@ -71,11 +69,11 @@ foreach($aClassLabels as $sCurrentClass => $sLabel)
 {
 	$sDescription = MetaModel::GetClassDescription($sCurrentClass);
 	$sSelected = ($sCurrentClass == $sBaseClass) ? " SELECTED" : "";
-	$sSearchHeaderForceDropdown .= "<option value=\"$sCurrentClass\" title=\"$sDescription\"$sSelected>$sLabel</option>";
+	$oP->add("<option value=\"$sCurrentClass\" title=\"$sDescription\"$sSelected>$sLabel</option>");
 }
-$sSearchHeaderForceDropdown .= "</select>\n";
-//end of $sSearchHeaderForceDropdown
-
+$oP->add("</select>\n");
+$oP->add($oAppContext->GetForForm());
+$oP->add("</form>\n");
 
 try 
 {
@@ -111,8 +109,6 @@ if ($oFilter != null)
 	$aExtraParams['open'] = true;
 	$aExtraParams['baseClass'] = $sBaseClass;
 	$aExtraParams['action'] = utils::GetAbsoluteUrlAppRoot().'pages/UniversalSearch.php';
-	$aExtraParams['table_id'] = '1';
-	$aExtraParams['search_header_force_dropdown'] = $sSearchHeaderForceDropdown;
 	//$aExtraParams['class'] = $sClassName;
 	$oBlock->Display($oP, 0, $aExtraParams);
 

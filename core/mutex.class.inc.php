@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2018 Combodo SARL
+// Copyright (C) 2013-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -24,29 +24,17 @@
  * Relies on MySQL locks because the API sem_get is not always present in the
  * installed PHP.    
  *
- * @copyright   Copyright (C) 2013-2018 Combodo SARL
+ * @copyright   Copyright (C) 2013-2017 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 class iTopMutex
 {
 	protected $sName;
-	/** @var bool */
-	protected $bLocked; // Whether or not this instance of the Mutex is locked
-
-	/** @var \mysqli */
 	protected $hDBLink;
-	protected $sDBHost;
-	protected $sDBUser;
-	protected $sDBPwd;
-	protected $sDBName;
-	protected $sDBSubname;
-	protected $bDBTlsEnabled;
-	protected $sDBTlsCA;
+	protected $bLocked; // Whether or not this instance of the Mutex is locked
 	static protected $aAcquiredLocks = array(); // Number of instances of the Mutex, having the lock, in this page
 
-	public function __construct(
-		$sName, $sDBHost = null, $sDBUser = null, $sDBPwd = null, $bDBTlsEnabled = false, $sDBTlsCA = null
-	)
+	public function __construct($sName, $sDBHost = null, $sDBUser = null, $sDBPwd = null)
 	{
 		// Compute the name of a lock for mysql
 		// Note: names are server-wide!!! So let's make the name specific to this iTop instance
@@ -55,22 +43,15 @@ class iTopMutex
 		{
 			$oConfig = utils::GetConfig(); // Will return an empty config when called during the setup
 		}
-		$this->sDBHost = is_null($sDBHost) ? $oConfig->Get('db_host') : $sDBHost;
-		$this->sDBUser = is_null($sDBUser) ? $oConfig->Get('db_user') : $sDBUser;
-		$this->sDBPwd = is_null($sDBPwd) ? $oConfig->Get('db_pwd') : $sDBPwd;
-		$this->sDBName = $oConfig->Get('db_name');
-		$sDBSubname = $oConfig->Get('db_subname');
-
-		$this->bDBTlsEnabled = is_null($bDBTlsEnabled) ? $oConfig->Get('db_tls.enabled') : $bDBTlsEnabled;
-		$this->sDBTlsCA = is_null($sDBTlsCA) ? $oConfig->Get('db_tls.ca') : $sDBTlsCA;
-
+		$sDBName = $oConfig->GetDBName();
+		$sDBSubname = $oConfig->GetDBSubname();
 		$this->sName = $sName;
-		if (substr($sName, -strlen($this->sDBName.$sDBSubname)) != $this->sDBName.$sDBSubname)
+		if (substr($sName, -strlen($sDBName.$sDBSubname)) != $sDBName.$sDBSubname)
 		{
 			// If the name supplied already ends with the expected suffix
 			// don't add it twice, since the setup may try to detect an already
 			// running cron job by its mutex, without knowing if the config already exists or not
-			$this->sName .= $this->sDBName.$sDBSubname;
+			$this->sName .= $sDBName.$sDBSubname;
 		}
 
 		// Limit the length of the name for MySQL > 5.7.5
@@ -83,9 +64,12 @@ class iTopMutex
 			self::$aAcquiredLocks[$this->sName] = 0;
 		}
 
-		// It is MANDATORY to create a dedicated session each time a lock is required, because
+		// It is a MUST to create a dedicated session each time a lock is required, because
 		// using GET_LOCK anytime on the same session will RELEASE the current and unique session lock (known issue)
-		$this->InitMySQLSession();
+		$sDBHost = is_null($sDBHost) ? $oConfig->GetDBHost() : $sDBHost;
+		$sDBUser = is_null($sDBUser) ? $oConfig->GetDBUser() : $sDBUser;
+		$sDBPwd = is_null($sDBPwd) ? $oConfig->GetDBPwd() : $sDBPwd;
+		$this->InitMySQLSession($sDBHost, $sDBUser, $sDBPwd);
 	}
 
 	public function __destruct()
@@ -98,9 +82,7 @@ class iTopMutex
 	}
 
 	/**
-	 * Acquire the mutex. Uses a MySQL lock. <b>Warn</b> : can have an abnormal behavior on MySQL clusters (see R-016204)
-	 *
-	 * @see https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_get-lock
+	 *	Acquire the mutex
 	 */	
 	public function Lock()
 	{
@@ -218,26 +200,26 @@ class iTopMutex
 		self::$aAcquiredLocks[$this->sName]--;
 	}
 
-	/**
-	 * Initialize database connection. Mandatory attributes must be already set !
-	 *
-	 * @throws \Exception
-	 * @throws \MySQLException
-	 */
-	public function InitMySQLSession()
-	{
-		$sServer = $this->sDBHost;
-		$sUser = $this->sDBUser;
-		$sPwd = $this->sDBPwd;
-		$sSource = $this->sDBName;
-		$bTlsEnabled = $this->bDBTlsEnabled;
-		$sTlsCA = $this->sDBTlsCA;
 
-		$this->hDBLink = CMDBSource::GetMysqliInstance($sServer, $sUser, $sPwd, $sSource, $bTlsEnabled, $sTlsCA, false);
+
+	public function InitMySQLSession($sHost, $sUser, $sPwd)
+	{
+		$aConnectInfo = explode(':', $sHost);
+		if (count($aConnectInfo) > 1)
+		{
+			// Override the default port
+			$sServer = $aConnectInfo[0];
+			$iPort = $aConnectInfo[1];
+			$this->hDBLink = @mysqli_connect($sServer, $sUser, $sPwd, '', $iPort);
+		}
+		else
+		{
+			$this->hDBLink = @mysqli_connect($sHost, $sUser, $sPwd);
+		}
 
 		if (!$this->hDBLink)
 		{
-			throw new Exception("Could not connect to the DB server (host=$sServer, user=$sUser): ".mysqli_connect_error().' (mysql errno: '.mysqli_connect_errno().')');
+			throw new Exception("Could not connect to the DB server (host=$sHost, user=$sUser): ".mysqli_connect_error().' (mysql errno: '.mysqli_connect_errno().')');
 		}
 	}
 

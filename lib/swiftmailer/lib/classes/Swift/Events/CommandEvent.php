@@ -11,7 +11,9 @@
 /**
  * Generated when a command is sent over an SMTP connection.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Events
+ * @author     Chris Corbyn
  */
 class Swift_Events_CommandEvent extends Swift_Events_EventObject
 {
@@ -25,7 +27,7 @@ class Swift_Events_CommandEvent extends Swift_Events_EventObject
     /**
      * An array of codes which a successful response will contain.
      *
-     * @var int[]
+     * @var integer[]
      */
     private $_successCodes = array();
 
@@ -56,7 +58,7 @@ class Swift_Events_CommandEvent extends Swift_Events_EventObject
     /**
      * Get the numeric response codes which indicate success for this command.
      *
-     * @return int[]
+     * @return integer[]
      */
     public function getSuccessCodes()
     {

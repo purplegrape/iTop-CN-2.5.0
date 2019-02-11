@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
   <classes>
     <class id="Organization">
       <fields>
@@ -177,36 +177,7 @@
           <display_style>list</display_style>
         </field>
       </fields>
-      <methods>
-        <method id="PrefillSearchForm">
-        <code>
-              <![CDATA[
-public function PrefillSearchForm(&$aContextParam)
-{
-  if($aContextParam['dest_class'] == 'Service' || is_subclass_of($aContextParam['dest_class'], 'Service'))
-  {
-    if(MetaModel::IsValidAttCode($aContextParam['dest_class'],'org_id') && !empty($aContextParam['source_obj']->Get('provider_id')))
-    {
-        $aContextParam['filter']->ResetCondition();
-        $aContextParam['filter']->AddCondition('org_id', $aContextParam['source_obj']->Get('provider_id'));
-    }
-  }
-  elseif (($aContextParam['dest_class'] == 'Contact' || is_subclass_of($aContextParam['dest_class'], 'Contact'))
-          || ($aContextParam['dest_class'] == 'Document' || is_subclass_of($aContextParam['dest_class'], 'Document')))
-  {
-    if(MetaModel::IsValidAttCode($aContextParam['dest_class'],'org_id') && !empty($aContextParam['source_obj']->Get('provider_id')) && !empty($aContextParam['source_obj']->Get('org_id')))
-    {
-      $aContextParam['filter']->ResetCondition();
-      $aOrgIds = array( $aContextParam['source_obj']->Get('provider_id'),
-                        $aContextParam['source_obj']->Get('org_id'));
-      $aContextParam['filter']->AddCondition('org_id', $aOrgIds , 'IN');
-    }
-  }
-}
-]]>
-          </code>
-        </method>
-      </methods>
+      <methods/>
       <presentation>
         <details>
           <items>
@@ -254,19 +225,6 @@ public function PrefillSearchForm(&$aContextParam)
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="org_id">
-              <rank>20</rank>
-            </item>
-            <item id="provider_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -1009,13 +967,6 @@ public function PrefillSearchForm(&$aContextParam)
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -1197,19 +1148,6 @@ public function PrefillSearchForm(&$aContextParam)
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-            <item id="servicefamily_id">
-              <rank>40</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -1506,19 +1444,6 @@ public function PrefillSearchForm(&$aContextParam)
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="service_id">
-              <rank>20</rank>
-            </item>
-            <item id="service_org_id">
-              <rank>60</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">

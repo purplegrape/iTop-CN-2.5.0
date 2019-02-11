@@ -11,7 +11,9 @@
 /**
  * Creates MIME headers.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_Mime_SimpleHeaderFactory implements Swift_Mime_HeaderFactory
 {
@@ -64,9 +66,8 @@ class Swift_Mime_SimpleHeaderFactory implements Swift_Mime_HeaderFactory
 
     /**
      * Create a new Date header using $timestamp (UNIX time).
-     *
-     * @param string   $name
-     * @param int|null $timestamp
+     * @param string       $name
+     * @param int|null     $timestamp
      *
      * @return Swift_Mime_Header
      */
@@ -112,7 +113,12 @@ class Swift_Mime_SimpleHeaderFactory implements Swift_Mime_HeaderFactory
     public function createParameterizedHeader($name, $value = null,
         $params = array())
     {
-        $header = new Swift_Mime_Headers_ParameterizedHeader($name, $this->_encoder, strtolower($name) == 'content-disposition' ? $this->_paramEncoder : null, $this->_grammar);
+        $header = new Swift_Mime_Headers_ParameterizedHeader($name,
+            $this->_encoder, (strtolower($name) == 'content-disposition')
+                ? $this->_paramEncoder
+                : null,
+                $this->_grammar
+            );
         if (isset($value)) {
             $header->setFieldBodyModel($value);
         }
@@ -174,14 +180,7 @@ class Swift_Mime_SimpleHeaderFactory implements Swift_Mime_HeaderFactory
         $this->_paramEncoder->charsetChanged($charset);
     }
 
-    /**
-     * Make a deep copy of object.
-     */
-    public function __clone()
-    {
-        $this->_encoder = clone $this->_encoder;
-        $this->_paramEncoder = clone $this->_paramEncoder;
-    }
+    // -- Private methods
 
     /** Apply the charset to the Header */
     private function _setHeaderCharset(Swift_Mime_Header $header)

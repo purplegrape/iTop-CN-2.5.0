@@ -97,8 +97,8 @@ class URP_Profiles extends UserRightsBaseClassGUI
 		MetaModel::Init_SetZListItems('details', array('name', 'description', 'user_list')); // Attributes to be displayed for the complete details
 		MetaModel::Init_SetZListItems('list', array('description')); // Attributes to be displayed for a list
 		// Search criteria
-		MetaModel::Init_SetZListItems('standard_search', array('name', 'description')); // Criteria of the std search form
-		MetaModel::Init_SetZListItems('default_search', array ('name', 'description'));
+		MetaModel::Init_SetZListItems('standard_search', array('name')); // Criteria of the std search form
+		MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
 	}
 
 	protected $m_bCheckReservedNames = true;
@@ -613,15 +613,11 @@ class UserRightsProfile extends UserRightsAddOnAPI
 
 	/**
 	 * Read and cache organizations allowed to the given user
-	 *
-	 * @param $oUser
-	 * @param $sClass (not used here but can be used in overloads)
-	 *
-	 * @return array
-	 * @throws \CoreException
-	 * @throws \Exception
+	 * 
+	 * @param oUser
+	 * @param sClass -not used here but can be used in overloads
 	 */
-	public function GetUserOrgs($oUser, $sClass)
+	protected function GetUserOrgs($oUser, $sClass)
 	{
 		$iUser = $oUser->GetKey();
 		if (!array_key_exists($iUser, $this->m_aUserOrgs))
@@ -635,6 +631,7 @@ class UserRightsProfile extends UserRightsAddOnAPI
 				$oUserOrgSet = new DBObjectSet(DBObjectSearch::FromOQL_AllData($sUserOrgQuery), array(), array('userid' => $iUser));
 				while ($aRow = $oUserOrgSet->FetchAssoc())
 				{
+					$oUserOrg = $aRow['UserOrg'];
 					$oOrg = $aRow['Org'];
 					$this->m_aUserOrgs[$iUser][] = $oOrg->GetKey();
 				}

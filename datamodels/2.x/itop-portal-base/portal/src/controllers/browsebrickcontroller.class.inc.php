@@ -19,21 +19,24 @@
 
 namespace Combodo\iTop\Portal\Controller;
 
-use Silex\Application;
-use Symfony\Component\HttpFoundation\Request;
-use UserRights;
-use Dict;
-use MetaModel;
-use DBSearch;
-use DBObjectSet;
-use BinaryExpression;
-use FieldExpression;
-use VariableExpression;
-use Combodo\iTop\Portal\Helper\ApplicationHelper;
-use Combodo\iTop\Portal\Helper\SecurityHelper;
-use Combodo\iTop\Portal\Helper\ContextManipulatorHelper;
-use Combodo\iTop\Portal\Brick\AbstractBrick;
-use Combodo\iTop\Portal\Brick\BrowseBrick;
+use \Silex\Application;
+use \Symfony\Component\HttpFoundation\Request;
+use \Exception;
+use \UserRights;
+use \Dict;
+use \MetaModel;
+use \DBSearch;
+use \DBObjectSearch;
+use \DBObjectSet;
+use \DBObject;
+use \BinaryExpression;
+use \FieldExpression;
+use \VariableExpression;
+use \Combodo\iTop\Portal\Helper\ApplicationHelper;
+use \Combodo\iTop\Portal\Helper\SecurityHelper;
+use \Combodo\iTop\Portal\Helper\ContextManipulatorHelper;
+use \Combodo\iTop\Portal\Brick\AbstractBrick;
+use \Combodo\iTop\Portal\Brick\BrowseBrick;
 
 class BrowseBrickController extends BrickController
 {
@@ -51,10 +54,10 @@ class BrowseBrickController extends BrickController
 		// Getting current browse mode (First from router pamater, then default brick value)
 		$sBrowseMode = (!empty($sBrowseMode)) ? $sBrowseMode : $oBrick->GetDefaultBrowseMode();
 		// Getting current dataloading mode (First from router parameter, then query parameter, then default brick value)
-		$sDataLoading = ($sDataLoading !== null) ? $sDataLoading : ( ($oRequest->query->get('sDataLoading') !== null) ? $oRequest->query->get('sDataLoading') : $oBrick->GetDataLoading() );
+		$sDataLoading = ($sDataLoading !== null) ? $sDataLoading : $oApp['request_manipulator']->ReadParam('sDataLoading', $oBrick->GetDataLoading());
 		// Getting search value
-		$sSearchValue = $oRequest->get('sSearchValue', null);
-		if ($sSearchValue !== null)
+		$sSearchValue = $oApp['request_manipulator']->ReadParam('sSearchValue', '');
+		if (!empty($sSearchValue))
 		{
 			$sDataLoading = AbstractBrick::ENUM_DATA_LOADING_LAZY;
 		}
@@ -109,7 +112,7 @@ class BrowseBrickController extends BrickController
 
 				// Adding search clause
 				// Note : For know the search is naive and looks only for the exact match. It doesn't search for words separately
-				if ($sSearchValue !== null)
+				if (!empty($sSearchValue))
 				{
 					// - Cleaning the search value by exploding and trimming spaces
 					$aSearchValues = explode(' ', $sSearchValue);
@@ -182,7 +185,7 @@ class BrowseBrickController extends BrickController
 				{
 					$aLevelsProperties[$aLevelsPropertiesKeys[$i]]['search']->SetSelectedClasses($aLevelsClasses);
 
-					if ($sSearchValue !== null)
+					if (!empty($sSearchValue))
 					{
 						// Note : This could be way more simpler if we had a SetInternalParam($sParam, $value) verb
 						$aQueryParams = $aLevelsProperties[$aLevelsPropertiesKeys[$i]]['search']->GetInternalParams();
@@ -216,8 +219,8 @@ class BrowseBrickController extends BrickController
 			{
 				case BrowseBrick::ENUM_BROWSE_MODE_LIST:
 					// Retrieving parameters
-					$iPageNumber = (int) $oRequest->get('iPageNumber', 1);
-					$iListLength = (int) $oRequest->get('iListLength', BrowseBrick::DEFAULT_LIST_LENGTH);
+					$iPageNumber = (int) $oApp['request_manipulator']->ReadParam('iPageNumber', 1, FILTER_SANITIZE_NUMBER_INT);
+					$iListLength = (int) $oApp['request_manipulator']->ReadParam('iListLength', BrowseBrick::DEFAULT_LIST_LENGTH, FILTER_SANITIZE_NUMBER_INT);
 
 					// Getting total records number
 					$oCountSet = new DBObjectSet($oQuery);
@@ -232,8 +235,8 @@ class BrowseBrickController extends BrickController
 				case BrowseBrick::ENUM_BROWSE_MODE_TREE:
                 case BrowseBrick::ENUM_BROWSE_MODE_MOSAIC:
 					// Retrieving parameters
-					$sLevelAlias = $oRequest->get('sLevelAlias');
-					$sNodeId = $oRequest->get('sNodeId');
+					$sLevelAlias = $oApp['request_manipulator']->ReadParam('sLevelAlias', '');
+					$sNodeId = $oApp['request_manipulator']->ReadParam('sNodeId', '');
 
 					// If no values for those parameters, we might be loading page in lazy mode for the first time, therefore the URL doesn't have those informations.
 					if (empty($sLevelAlias))
@@ -631,8 +634,9 @@ class BrowseBrickController extends BrickController
                 if ($aLevelsProperties[$key][$sOptionalAttribute] !== null)
                 {
                     $sPropertyName = substr($sOptionalAttribute, 0, -4);
+                    $oAttDef = MetaModel::GetAttributeDef(get_class($value), $aLevelsProperties[$key][$sOptionalAttribute]);
 
-                    $tmpAttValue = $value->Get($aLevelsProperties[$key][$sOptionalAttribute]);
+                    $tmpAttValue = $value->GetAsHTML($aLevelsProperties[$key][$sOptionalAttribute]);
                     if($sOptionalAttribute === 'image_att')
                     {
                         if (is_object($tmpAttValue) && !$tmpAttValue->IsEmpty())
@@ -641,7 +645,7 @@ class BrowseBrickController extends BrickController
                         }
                         else
                         {
-                            $tmpAttValue = MetaModel::GetAttributeDef(get_class($value), $aLevelsProperties[$key][$sOptionalAttribute])->Get('default_image');
+                            $tmpAttValue = $oAttDef->Get('default_image');
                         }
                     }
 
@@ -655,7 +659,7 @@ class BrowseBrickController extends BrickController
 				foreach ($aLevelsProperties[$key]['fields'] as $aField)
 				{
 					$oAttDef = MetaModel::GetAttributeDef(get_class($value), $aField['code']);
-					$aRow[$key]['fields'][$aField['code']] = $oAttDef->GetValueLabel($value->Get($aField['code']));
+					$aRow[$key]['fields'][$aField['code']] = $oAttDef->GetAsHTML($value->Get($aField['code']));
 				}
 			}
 		}
@@ -723,8 +727,9 @@ class BrowseBrickController extends BrickController
                 if ($aLevelsProperties[$aCurrentRowKeys[0]][$sOptionalAttribute] !== null)
                 {
                     $sPropertyName = substr($sOptionalAttribute, 0, -4);
+                    $oAttDef = MetaModel::GetAttributeDef(get_class($aCurrentRowValues[0]), $aLevelsProperties[$aCurrentRowKeys[0]][$sOptionalAttribute]);
 
-                    $tmpAttValue = $aCurrentRowValues[0]->Get($aLevelsProperties[$aCurrentRowKeys[0]][$sOptionalAttribute]);
+                    $tmpAttValue = $aCurrentRowValues[0]->GetAsHTML($aLevelsProperties[$aCurrentRowKeys[0]][$sOptionalAttribute]);
                     if($sOptionalAttribute === 'image_att')
                     {
                         if (is_object($tmpAttValue) && !$tmpAttValue->IsEmpty())
@@ -733,7 +738,7 @@ class BrowseBrickController extends BrickController
                         }
                         else
                         {
-                            $tmpAttValue = MetaModel::GetAttributeDef(get_class($aCurrentRowValues[0]), $aLevelsProperties[$aCurrentRowKeys[0]][$sOptionalAttribute])->Get('default_image');
+                            $tmpAttValue = $oAttDef->Get('default_image');
                         }
                     }
 

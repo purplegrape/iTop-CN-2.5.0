@@ -39,7 +39,7 @@ abstract class Action extends cmdbAbstractObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb",
+			"category" => "core/cmdb",
 			"key_type" => "autoincrement",
 			"name_attcode" => "name",
 			"state_attcode" => "",
@@ -60,7 +60,7 @@ abstract class Action extends cmdbAbstractObject
 		MetaModel::Init_SetZListItems('details', array('name', 'description', 'status', 'trigger_list')); // Attributes to be displayed for the complete details
 		MetaModel::Init_SetZListItems('list', array('finalclass', 'name', 'description', 'status')); // Attributes to be displayed for a list
 		// Search criteria
-		MetaModel::Init_SetZListItems('default_search', array('name', 'description', 'status')); // Criteria of the std search form
+//		MetaModel::Init_SetZListItems('standard_search', array('name')); // Criteria of the std search form
 //		MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
 	}
 
@@ -103,7 +103,7 @@ abstract class ActionNotification extends Action
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb",
+			"category" => "core/cmdb",
 			"key_type" => "autoincrement",
 			"name_attcode" => "name",
 			"state_attcode" => "",
@@ -136,7 +136,7 @@ class ActionEmail extends ActionNotification
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "name",
 			"state_attcode" => "",
@@ -262,34 +262,22 @@ class ActionEmail extends ActionNotification
 			{
 				$sPrefix = '';
 			}
-
 			if ($oLog)
 			{
 				$oLog->Set('message', $sPrefix . $sRes);
-                $oLog->DBUpdate();
-            }
-
+			}
 		}
 		catch (Exception $e)
 		{
 			if ($oLog)
 			{
 				$oLog->Set('message', 'Error: '.$e->getMessage());
-
-				try
-				{
-                    $oLog->DBUpdate();
-				}
-				catch (Exception $eSecondTryUpdate)
-				{
-                    IssueLog::Error("Failed to process email ".$oLog->GetKey()." - reason: ".$e->getMessage()."\nTrace:\n".$e->getTraceAsString());
-
-                    $oLog->Set('message', 'Error: more details in the log for email "'.$oLog->GetKey().'"');
-                    $oLog->DBUpdate();
-                }
 			}
 		}
-
+		if ($oLog)
+		{
+			$oLog->DBUpdate();
+		}
 	}
 
 	protected function _DoExecute($oTrigger, $aContextArgs, &$oLog)
@@ -360,6 +348,7 @@ class ActionEmail extends ActionNotification
 			$sTestBody .= "</div>\n";
 			$oEmail->SetBody($sTestBody, 'text/html', $sStyles);
 			$oEmail->SetRecipientTO($this->Get('test_recipient'));
+			$oEmail->SetRecipientFrom($this->Get('test_recipient'));
 			$oEmail->SetReferences($sReference);
 			$oEmail->SetMessageId($sMessageId);
 		}

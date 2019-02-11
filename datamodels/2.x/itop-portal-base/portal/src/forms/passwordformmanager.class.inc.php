@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2016 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,13 +19,14 @@
 
 namespace Combodo\iTop\Portal\Form;
 
-use Exception;
-use Dict;
-use UserRights;
-use Combodo\iTop\Form\FormManager;
-use Combodo\iTop\Form\Form;
-use Combodo\iTop\Form\Field\HiddenField;
-use Combodo\iTop\Form\Field\PasswordField;
+use \Exception;
+use \CMDBSource;
+use \Dict;
+use \UserRights;
+use \Combodo\iTop\Form\FormManager;
+use \Combodo\iTop\Form\Form;
+use \Combodo\iTop\Form\Field\HiddenField;
+use \Combodo\iTop\Form\Field\PasswordField;
 
 /**
  * Description of passwordformmanager
@@ -112,7 +113,7 @@ class PasswordFormManager extends FormManager
 					if (!UserRights::CanChangePassword())
 					{
 						$aData['valid'] = false;
-						$aData['messages']['error'] += array('_main' => array(Dict::Format('Brick:Portal:UserProfile:Password:CantChangeContactAdministrator', ITOP_APPLICATION_SHORT)));
+						$aData['messages']['error'] += array('_main' => array(Dict::S('Brick:Portal:UserProfile:Password:CantChangeContactAdministrator')));
 					}
 					else if (!UserRights::CheckCredentials($sAuthUser, $sOldPassword))
 					{
@@ -127,7 +128,7 @@ class PasswordFormManager extends FormManager
 					else if (!UserRights::ChangePassword($sOldPassword, $sNewPassword))
 					{
 						$aData['valid'] = false;
-						$aData['messages']['error'] += array('confirm_password' => array(Dict::Format('Brick:Portal:UserProfile:Password:CantChangeForUnknownReason', ITOP_APPLICATION_SHORT)));
+						$aData['messages']['error'] += array('confirm_password' => array(Dict::S('Brick:Portal:UserProfile:Password:CantChangeForUnknownReason')));
 					}
 					else
 					{

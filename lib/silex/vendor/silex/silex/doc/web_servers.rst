@@ -14,7 +14,6 @@ following ``.htaccess`` file:
 
         RewriteEngine On
         #RewriteBase /path/to/app
-        RewriteCond %{REQUEST_FILENAME} !-d
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteRule ^ index.php [QSA,L]
     </IfModule>
@@ -26,78 +25,52 @@ following ``.htaccess`` file:
     relative from the webroot.
 
 Alternatively, if you use Apache 2.2.16 or higher, you can use the
-`FallbackResource directive`_ to make your .htaccess even easier:
+`FallbackResource directive`_ so make your .htaccess even easier:
 
 .. code-block:: apache
 
-    FallbackResource index.php
+    FallbackResource /index.php
 
 .. note::
 
     If your site is not at the webroot level you will have to adjust the path to
     point to your directory, relative from the webroot.
-    
-Or if you're using a VirtualHost, you can add the same directive to the VirtualHost's Directory entry:
-
-.. code-block:: apache
-
-    <VirtualHost *:80>
-        # other directives
-
-        Alias /app/ /path/to/app/
-        <Directory /path/to/app>
-            # other directives
-
-            FallbackResource /app/index.php
-        </Directory>
-    </VirtualHost>
-
-.. note::
-
-    Note that you need the leading forward slash there, unlike with the .htaccess version
 
 nginx
 -----
 
-The **minimum configuration** to get your application running under Nginx is:
+If you are using nginx, configure your vhost to forward non-existent
+resources to ``index.php``:
 
 .. code-block:: nginx
 
     server {
-        server_name domain.tld www.domain.tld;
-        root /var/www/project/web;
-    
-        location / {
-            # try to serve file directly, fallback to front controller
-            try_files $uri /index.php$is_args$args;
+        #site root is redirected to the app boot script
+        location = / {
+            try_files @site @site;
         }
-    
-        # If you have 2 front controllers for dev|prod use the following line instead
-        # location ~ ^/(index|index_dev)\.php(/|$) {
-        location ~ ^/index\.php(/|$) {
-            # the ubuntu default
-            fastcgi_pass   unix:/var/run/php/phpX.X-fpm.sock;
-            # for running on centos
-            #fastcgi_pass   unix:/var/run/php-fpm/www.sock;
-    
-            fastcgi_split_path_info ^(.+\.php)(/.*)$;
-            include fastcgi_params;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            fastcgi_param HTTPS off;
-        
-            # Prevents URIs that include the front controller. This will 404:
-            # http://domain.tld/index.php/some-path
-            # Enable the internal directive to disable URIs like this
-            # internal;
+
+        #all other locations try other files first and go to our front controller if none of them exists
+        location / {
+            try_files $uri $uri/ @site;
         }
 
         #return 404 for all php files as we do have a front controller
         location ~ \.php$ {
             return 404;
         }
-    
-        error_log /var/log/nginx/project_error.log;
-        access_log /var/log/nginx/project_access.log;
+
+        location @site {
+            # the ubuntu default
+            fastcgi_pass   unix:/var/run/php5-fpm.sock;
+            # for running on centos
+            #fastcgi_pass   unix:/var/run/php-fpm/www.sock;
+            
+            include fastcgi_params;
+            fastcgi_param  SCRIPT_FILENAME $document_root/index.php;
+            #uncomment when running via https
+            #fastcgi_param HTTPS on;
+        }
     }
 
 IIS
@@ -151,12 +124,13 @@ point:
 
 .. _FallbackResource directive: http://www.adayinthelifeof.nl/2012/01/21/apaches-fallbackresource-your-new-htaccess-command/
 
-PHP
----
+PHP 5.4
+-------
 
-PHP ships with a built-in webserver for development. This server allows you to
-run silex without any configuration. However, in order to serve static files,
-you'll have to make sure your front controller returns false in that case::
+PHP 5.4 ships with a built-in webserver for development. This server allows
+you to run silex without any configuration. However, in order to serve static
+files, you'll have to make sure your front controller returns false in that
+case::
 
     // web/index.php
 

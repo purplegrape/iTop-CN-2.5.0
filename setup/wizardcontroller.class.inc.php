@@ -119,7 +119,6 @@ class WizardController
 	{
 		$sCurrentStepClass = utils::ReadParam('_class', $this->sInitialStepClass);
 		$sCurrentState = utils::ReadParam('_state', $this->sInitialState);
-		/** @var \WizardStep $oStep */
 		$oStep = new $sCurrentStepClass($this, $sCurrentState);
 		if ($oStep->ValidateParams($sCurrentState))
 		{

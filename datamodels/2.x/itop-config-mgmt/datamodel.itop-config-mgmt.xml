@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
   <classes>
     <class id="Organization" _delta="define">
       <parent>cmdbAbstractObject</parent>
@@ -82,13 +82,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -241,19 +234,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="country">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -357,7 +337,7 @@
           <default_value/>
           <is_null_allowed>true</is_null_allowed>
         </field>
-        <field id="phone" xsi:type="AttributePhoneNumber">
+        <field id="phone" xsi:type="AttributeString">
           <sql>phone</sql>
           <default_value/>
           <is_null_allowed>true</is_null_allowed>
@@ -438,19 +418,6 @@
             </item>
           </items>
         </search>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="email">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <list>
           <items>
             <item id="status">
@@ -519,7 +486,7 @@
           <default_value/>
           <is_null_allowed>true</is_null_allowed>
         </field>
-        <field id="mobile_phone" xsi:type="AttributePhoneNumber">
+        <field id="mobile_phone" xsi:type="AttributeString">
           <sql>mobile_phone</sql>
           <default_value/>
           <is_null_allowed>true</is_null_allowed>
@@ -1038,19 +1005,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="description">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -1571,16 +1525,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -1659,7 +1603,6 @@
 						$aSearches[$sSubClass] = $oSearch;
 
 						$oSet = new DBObjectSet($oSearch);
-						$oSet->SetShowObsoleteData(utils::ShowObsoleteData());
 						$iTotal += $oSet->Count();
 					}
 				}
@@ -1853,19 +1796,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="location_id">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -2310,19 +2240,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="managementip">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -3415,19 +3332,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="system_id">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -4217,19 +4121,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="middleware_id">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -4350,19 +4241,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="dbserver_id">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -4492,19 +4370,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="webserver_id">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -4662,19 +4527,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="vendor">
-              <rank>20</rank>
-            </item>
-            <item id="type">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -4764,16 +4616,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="description">
-              <rank>20</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -5064,17 +4906,20 @@
             <item id="name">
               <rank>10</rank>
             </item>
-            <item id="org_id">
+            <item id="documents_list">
               <rank>20</rank>
             </item>
-            <item id="usage_limit">
+            <item id="org_id">
               <rank>30</rank>
             </item>
-            <item id="description">
+            <item id="usage_limit">
               <rank>40</rank>
             </item>
-            <item id="perpetual">
+            <item id="description">
               <rank>50</rank>
+            </item>
+            <item id="perpetual">
+              <rank>55</rank>
             </item>
             <item id="start_date">
               <rank>60</rank>
@@ -5085,24 +4930,8 @@
             <item id="licence_key">
               <rank>80</rank>
             </item>
-            <item id="documents_list">
-              <rank>90</rank>
-            </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="description">
-              <rank>20</rank>
-            </item>
-            <item id="licence_key">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -5537,13 +5366,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -6705,19 +6527,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="ip">
-              <rank>10</rank>
-            </item>
-            <item id="subnet_name">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="ip">
@@ -6842,16 +6651,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="vlan_tag">
-              <rank>10</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="vlan_tag">
@@ -7001,13 +6800,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -7108,19 +6900,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="friendlyname">
-              <rank>10</rank>
-            </item>
-            <item id="ipaddress">
-              <rank>20</rank>
-            </item>
-            <item id="macaddress">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">
@@ -8008,19 +7787,6 @@
             </item>
           </items>
         </details>
-        <default_search>
-          <items>
-            <item id="name">
-              <rank>10</rank>
-            </item>
-            <item id="type">
-              <rank>20</rank>
-            </item>
-            <item id="org_id">
-              <rank>30</rank>
-            </item>
-          </items>
-        </default_search>
         <search>
           <items>
             <item id="name">

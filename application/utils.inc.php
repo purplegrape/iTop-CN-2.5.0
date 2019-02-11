@@ -311,7 +311,7 @@ class utils
 				switch($sSanitizationFilter)
 				{
 					case 'parameter':
-					$retValue = filter_var($value, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>'/^([ A-Za-z0-9_=-]|%3D|%2B|%2F)*$/'))); // the '=', '%3D, '%2B', '%2F' characters are used in serialized filters (starting 2.5, only the url encoded versions are presents, but the "=" is kept for BC)
+					$retValue = filter_var($value, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>'/^[ A-Za-z0-9_=-]*$/'))); // the '=' equal character is used in serialized filters
 					break;
 					
 					case 'field_name':
@@ -413,10 +413,8 @@ class utils
 	
 	/**
 	 * Interprets the results posted by a normal or paginated list (in multiple selection mode)
-	 *
 	 * @param $oFullSetFilter DBSearch The criteria defining the whole sets of objects being selected
-	 *
-	 * @return Array An array of object IDs corresponding to the objects selected in the set
+	 * @return Array An arry of object IDs corresponding to the objects selected in the set
 	 */	
 	public static function ReadMultipleSelection($oFullSetFilter)
 	{
@@ -450,51 +448,6 @@ class utils
 		return $aSelectedObj;
 	}
 
-	/**
-	 * Interprets the results posted by a normal or paginated list (in multiple selection mode)
-	 *
-	 * @param DBSearch $oFullSetFilter The criteria defining the whole sets of objects being selected
-	 *
-	 * @return Array An array of object IDs:friendlyname corresponding to the objects selected in the set
-	 * @throws \CoreException
-	 */
-	public static function ReadMultipleSelectionWithFriendlyname($oFullSetFilter)
-	{
-		$sSelectionMode = utils::ReadParam('selectionMode', '');
-
-		if ($sSelectionMode === '')
-		{
-			throw new CoreException('selectionMode is mandatory');
-		}
-
-		// Paginated selection
-		$aSelectedIds = utils::ReadParam('storedSelection', array());
-		if (count($aSelectedIds) > 0 )
-		{
-			if ($sSelectionMode == 'positive')
-			{
-				// Only the explicitly listed items are selected
-				$oFullSetFilter->AddCondition('id', $aSelectedIds, 'IN');
-			}
-			else
-			{
-				// All items of the set are selected, except the one explicitly listed
-				$oFullSetFilter->AddCondition('id', $aSelectedIds, 'NOTIN');
-			}
-		}
-
-		$aSelectedObj = array();
-		$oFullSet = new DBObjectSet($oFullSetFilter);
-		$sClassAlias = $oFullSetFilter->GetClassAlias();
-		$oFullSet->OptimizeColumnLoad(array($sClassAlias => array('friendlyname'))); // We really need only the IDs but it does not work since id is not a real field
-		while ($oObj = $oFullSet->Fetch())
-		{
-			$aSelectedObj[$oObj->GetKey()] = $oObj->Get('friendlyname');
-		}
-
-		return $aSelectedObj;
-	}
-	
 	public static function GetNewTransactionId()
 	{
 		return privUITransaction::GetNewTransactionId();
@@ -658,49 +611,27 @@ class utils
 		return str_replace($aSearch, $aReplacement, $sOldDateTimeFormat);
 	}
 
-	/**
-	 * @return \Config from the current environement, or if not existing from the production env, else new Config made from scratch
-	 * @uses \MetaModel::GetConfig() don't forget to add the needed <code>require_once(APPROOT.'core/metamodel.class.php');</code>
-	 */
 	static public function GetConfig()
 	{
 		if (self::$oConfig == null)
 		{
 		    self::$oConfig = MetaModel::GetConfig();
-
 		    if (self::$oConfig == null)
 		    {
     			$sConfigFile = self::GetConfigFilePath();
-    			if (!file_exists($sConfigFile))
+    			if (file_exists($sConfigFile))
     			{
-				    $sConfigFile = self::GetConfigFilePath('production');
-				    if (!file_exists($sConfigFile))
-				    {
-				    	$sConfigFile = null;
-				    }
+    				self::$oConfig = new Config($sConfigFile);
     			}
-
-			    self::$oConfig = new Config($sConfigFile);
+    			else
+    			{
+    				// When executing the setup, the config file may be still missing
+    				self::$oConfig = new Config();
+    			}
 		    }
 		}
 		return self::$oConfig;
 	}
-
-	public static function InitTimeZone() {
-		$oConfig = self::GetConfig();
-		$sItopTimeZone = $oConfig->Get('timezone');
-
-		if (!empty($sItopTimeZone))
-		{
-			date_default_timezone_set($sItopTimeZone);
-		}
-		else
-		{
-			// Leave as is... up to the admin to set a value somewhere...
-			// see http://php.net/manual/en/datetime.configuration.php#ini.date.timezone
-		}
-	}
-
     /**
      * Returns the absolute URL to the application root path
      * @return string The absolute URL to the application root, without the first slash
@@ -1030,7 +961,7 @@ class utils
 				new URLPopupMenuItem('UI:Menu:EMail', Dict::S('UI:Menu:EMail'), "mailto:?body=".urlencode($sUrl).' '), // Add an extra space to make it work in Outlook
 			);
 			
-			if (UserRights::IsActionAllowed($param->GetFilter()->GetClass(), UR_ACTION_BULK_READ, $param) != UR_ALLOWED_NO)
+			if (UserRights::IsActionAllowed($param->GetFilter()->GetClass(), UR_ACTION_BULK_READ, $param) && (UR_ALLOWED_YES || UR_ALLOWED_DEPENDS))
 			{
 				// Bulk export actions
 				$aResult[] = new JSPopupMenuItem('UI:Menu:CSVExport', Dict::S('UI:Menu:CSVExport'), "ExportListDlg('$sOQL', '$sDataTableId', 'csv', ".json_encode(Dict::S('UI:Menu:CSVExport')).")");
@@ -1909,21 +1840,6 @@ class utils
 		}
 		return $aCleanHeaders;
 	}
-	
-	/**
-	 * Return a string based on compilation time or (if not available because the datamodel has not been loaded)
-	 * the version of iTop. This string is useful to prevent browser side caching of content that may vary at each
-	 * (re)installation of iTop (especially during development). 
-	 * @return string
-	 */
-	public static function GetCacheBusterTimestamp()
-	{
-		if(!defined('COMPILATION_TIMESTAMP'))
-		{
-			return ITOP_VERSION;
-		}
-		return COMPILATION_TIMESTAMP;
-	}
 
 	/**
 	 * Check if the given class if configured as a high cardinality class.
@@ -1934,10 +1850,6 @@ class utils
 	 */
 	public static function IsHighCardinality($sClass)
 	{
-		if (utils::GetConfig()->Get('search_manual_submit'))
-		{
-			return true;
-		}
 		$aHugeClasses = MetaModel::GetConfig()->Get('high_cardinality_classes');
 		return in_array($sClass, $aHugeClasses);
 	}

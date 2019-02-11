@@ -151,11 +151,6 @@ class HTMLPurifierSanitizer extends HTMLSanitizer
 class HTMLDOMSanitizer extends HTMLSanitizer
 {
 	protected $oDoc;
-
-	/**
-	 * @var array
-	 * @see https://www.itophub.io/wiki/page?id=2_5_0%3Aadmin%3Arich_text_limitations
-	 */
 	protected static $aTagsWhiteList = array(
 		'html' => array(),
 		'body' => array(),
@@ -184,15 +179,16 @@ class HTMLDOMSanitizer extends HTMLSanitizer
 		'table' => array('style', 'width', 'summary', 'align', 'border', 'cellpadding', 'cellspacing'),
 		'thead' => array('style'),
 		'tbody' => array('style'),
-		'tr' => array('style', 'colspan', 'rowspan'),
-		'td' => array('style', 'colspan', 'rowspan'),
-		'th' => array('style', 'colspan', 'rowspan'),
+		'tr' => array('style'),
+		'td' => array('style', 'colspan'),
+		'th' => array('style'),
 		'fieldset' => array('style'),
 		'legend' => array('style'),
 		'font' => array('face', 'color', 'style', 'size'),
 		'big' => array(),
 		'small' => array(),
 		'tt' => array(),
+		'code' => array(),
 		'kbd' => array(),
 		'samp' => array(),
 		'var' => array(),
@@ -203,34 +199,16 @@ class HTMLDOMSanitizer extends HTMLSanitizer
 		'q' => array(),
 		'hr' => array('style'),
 		'pre' => array(),
+		'center' => array(),
+		'caption' => array(),
 	);
-
+	
 	protected static $aAttrsWhiteList = array(
 		'src' => '/^(http:|https:|data:)/i',
 	);
-
-	/**
-	 * @var array
-	 * @see https://www.itophub.io/wiki/page?id=2_5_0%3Aadmin%3Arich_text_limitations
-	 */
+	
 	protected static $aStylesWhiteList = array(
-		'background-color',
-		'border',
-		'border-collapse',
-		'bordercolor',
-		'cellpadding',
-		'cellspacing',
-		'color',
-		'float',
-		'font',
-		'font-family',
-		'font-size',
-		'font-style',
-		'height',
-		'margin',
-		'padding',
-		'text-align',
-		'width',
+		'background-color', 'color', 'float', 'font', 'font-style', 'font-size', 'font-family', 'padding', 'margin', 'border', 'cellpadding', 'cellspacing', 'bordercolor', 'border-collapse', 'width', 'height', 'text-align',
 	);
 
 	public function __construct()

@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2018Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,27 +19,31 @@
 
 namespace Combodo\iTop\Portal\Form;
 
-use Exception;
-use Silex\Application;
-use utils;
-use Dict;
-use IssueLog;
-use UserRights;
-use MetaModel;
-use CMDBSource;
-use DBObject;
-use DBObjectSet;
-use DBSearch;
-use DBObjectSearch;
-use InlineImage;
-use AttributeDateTime;
-use AttachmentPlugIn;
-use Combodo\iTop\Form\FormManager;
-use Combodo\iTop\Form\Form;
-use Combodo\iTop\Form\Field\Field;
-use Combodo\iTop\Form\Field\FileUploadField;
-use Combodo\iTop\Form\Field\LabelField;
-use Combodo\iTop\Portal\Helper\ApplicationHelper;
+use \Exception;
+use \Silex\Application;
+use \utils;
+use \Dict;
+use \IssueLog;
+use \UserRights;
+use \MetaModel;
+use \CMDBSource;
+use \DBObject;
+use \DBObjectSet;
+use \DBSearch;
+use \DBObjectSearch;
+use \BinaryExpression;
+use \FieldExpression;
+use \ScalarExpression;
+use \DBObjectSetComparator;
+use \InlineImage;
+use \AttributeDateTime;
+use \AttachmentPlugIn;
+use \Combodo\iTop\Form\FormManager;
+use \Combodo\iTop\Form\Form;
+use \Combodo\iTop\Form\Field\Field;
+use \Combodo\iTop\Form\Field\FileUploadField;
+use \Combodo\iTop\Form\Field\LabelField;
+use \Combodo\iTop\Portal\Helper\ApplicationHelper;
 
 /**
  * Description of objectformmanager
@@ -377,9 +381,9 @@ class ObjectFormManager extends FormManager
 			if ($this->aFormProperties['layout']['type'] === 'twig')
 			{
 				// Creating sandbox twig env. to load and test the custom form template
-				$oTwig = new \Twig_Environment(new \Twig_Loader_Array( array($oForm->GetId() => $this->aFormProperties['layout']['content']) ));
+				$oTwig = new \Twig_Environment(new \Twig_Loader_String());
 				ApplicationHelper::RegisterTwigExtensions($oTwig);
-				$sRendered = $oTwig->render($oForm->GetId(), array('oRenderer' => $this->oRenderer, 'oObject' => $this->oObject));
+				$sRendered = $oTwig->render($this->aFormProperties['layout']['content'], array('oRenderer' => $this->oRenderer, 'oObject' => $this->oObject));
 			}
 			else
 			{
@@ -605,14 +609,14 @@ class ObjectFormManager extends FormManager
 					{
 						$oField->SetReadOnly(true);
 					}
-                    // - Else if it's must change (transition), we force it as mustchange, not readonly and not hidden
+                    // - Else if it's must change (transition), we force it as not readonly and not hidden
                     elseif (($iFieldFlags & OPT_ATT_MUSTCHANGE) === OPT_ATT_MUSTCHANGE && $this->IsTransitionForm())
                     {
 	                    $oField->SetMustChange(true);
 	                    $oField->SetReadOnly(false);
                         $oField->SetHidden(false);
                     }
-                    // - Else if it's must prompt (transition), we force it as not readonly and not hidden
+                    // - Else if it's must prompt (transition), we force it as mustchange, not readonly and not hidden
                     elseif (($iFieldFlags & OPT_ATT_MUSTPROMPT) === OPT_ATT_MUSTPROMPT && $this->IsTransitionForm())
                     {
                     	$oField->SetReadOnly(false);

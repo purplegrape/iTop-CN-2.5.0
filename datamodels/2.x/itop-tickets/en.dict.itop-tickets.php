@@ -244,7 +244,7 @@ Dict::Add('EN US', 'English', 'English', array(
 	'Class:ResponseTicketTTR/Interface:iMetricComputer+' => 'Goal based on a SLT of type TTR',
 
 	'portal:itop-portal' => 'Standard portal', // This is the portal name that will be displayed in portal dispatcher (eg. URL in menus)
-	'Page:DefaultTitle' => '%1$s - User portal',
+	'Page:DefaultTitle' => 'iTop - User portal',
 	'Brick:Portal:UserProfile:Title' => 'My profile',
 	'Brick:Portal:NewRequest:Title' => 'New request',
 	'Brick:Portal:NewRequest:Title+' => '<p>Need help?</p><p>Pick from the services catalog and submit your request to our support teams.</p>',

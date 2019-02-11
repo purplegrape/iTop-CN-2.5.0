@@ -69,12 +69,12 @@
 			
 			if (!settings.prerendered) {
 				// handle closed ones first
-				this.filter("."+CLASSES.closed)
+				this.filter(":has(>ul:hidden)")
 						.addClass(CLASSES.expandable)
 						.replaceClass(CLASSES.last, CLASSES.lastExpandable);
 						
 				// handle open ones
-				this.not("."+CLASSES.closed)
+				this.not(":has(>ul:hidden)")
 						.addClass(CLASSES.collapsable)
 						.replaceClass(CLASSES.last, CLASSES.lastCollapsable);
 						

@@ -2,12 +2,12 @@
 <licenses>
 	<license>
 		<product>iTop</product>
-		<author>2010-2018 Combodo SARL</author>
+		<author>2010-2014 Combodo SARL</author>
 		<license_type>AGPL v3</license_type>
 		<text><![CDATA[
 <h3 style="text-align: center;">iTop - IT Operational Portal</h3>
 <pre>
-   Copyright (C) 2010-2018  Combodo SARL
+   Copyright (C) 2010-2014  Combodo SARL
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as
@@ -750,22 +750,6 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</pre>]]></text>
 	</license>
-    <license>
-        <product>jQuery Hotkeys Plugin</product>
-        <author>John Resig</author>
-        <license_type>MIT or GPL Version 2 licenses</license_type>
-        <text><![CDATA[<pre>
- jQuery Hotkeys Plugin
- Copyright 2010, John Resig
- Dual licensed under the MIT or GPL Version 2 licenses.
-
- Based upon the plugin by Tzury Bar Yochay:
- https://github.com/tzuryby/jquery.hotkeys
-
- Original idea by:
- Binny V A, http://www.openjs.com/scripts/events/keyboard_shortcuts/
-        </pre>]]></text>
-    </license>
 	<license>
 		<product>Swift Mailer</product>
 		<author>Fabien Potencier</author>

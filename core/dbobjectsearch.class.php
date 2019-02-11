@@ -100,13 +100,8 @@ class DBObjectSearch extends DBSearch
 
 	/**
 	 * Change the class (only subclasses are supported as of now, because the conditions must fit the new class)
-	 * Defaults to the first selected class (most of the time it is also the first joined class
-	 *
-	 * @param $sNewClass
-	 * @param null $sAlias
-	 *
-	 * @throws \CoreException
-	 */
+	 * Defaults to the first selected class (most of the time it is also the first joined class	 
+	 */	 	
 	public function ChangeClass($sNewClass, $sAlias = null)
 	{
 		if (is_null($sAlias))
@@ -191,9 +186,7 @@ class DBObjectSearch extends DBSearch
 	 *
 	 * @param $sOldName
 	 * @param $sNewName
-	 *
 	 * @return bool True if the alias has been found and changed
-	 * @throws \Exception
 	 */
 	public function RenameAlias($sOldName, $sNewName)
 	{
@@ -388,7 +381,7 @@ class DBObjectSearch extends DBSearch
 			else
 			{
 				$oAttDef = MetaModel::GetAttributeDef($this->GetClass(), $sFilterCode);
-				$oNewCondition = $oAttDef->GetSmartConditionExpression($value, $oField, $this->m_aParams);
+				$oNewCondition = $oAttDef->GetSmartConditionExpression($value, $oField, $this->m_aParams, $bParseSearchString);
 				$this->AddConditionExpression($oNewCondition);
 				return;
 			}
@@ -531,12 +524,10 @@ class DBObjectSearch extends DBSearch
 
 	/**
 	 * Specify a condition on external keys or link sets
-	 * @param string $sAttSpec Can be either an attribute code or extkey->[sAttSpec] or linkset->[sAttSpec] and so on, recursively
-	 *                 Example: infra_list->ci_id->location_id->country
-	 * @param $value
+	 * @param sAttSpec Can be either an attribute code or extkey->[sAttSpec] or linkset->[sAttSpec] and so on, recursively
+	 *                 Example: infra_list->ci_id->location_id->country	 
+	 * @param value The value to match (can be an array => IN(val1, val2...)
 	 * @return void
-	 * @throws \CoreException
-	 * @throws \CoreWarning
 	 */
 	public function AddConditionAdvanced($sAttSpec, $value)
 	{
@@ -733,9 +724,9 @@ class DBObjectSearch extends DBSearch
 	 * - convert a translation table (format optimized for the translation in an expression tree) into simple hash
 	 * - compile over an eventually existing map
 	 *
-	 * @param array $aRealiasingMap Map to update
-	 * @param array $aAliasTranslation Translation table resulting from calls to MergeWith_InNamespace
-	 * @return void of <old-alias> => <new-alias>
+	 * @param $aRealiasingMap  Map to update
+	 * @param $aAliasTranslation Translation table resulting from calls to MergeWith_InNamespace
+	 * @return array of <old-alias> => <new-alias>
 	 */
 	protected function UpdateRealiasingMap(&$aRealiasingMap, $aAliasTranslation)
 	{
@@ -765,7 +756,7 @@ class DBObjectSearch extends DBSearch
 	 * This a workaround to handle some cases in which the list of classes is not correctly updated.
 	 * This code should disappear as soon as DBObjectSearch get split between a container search class and a Node class
 	 *
-	 * @param array $aClasses List to be completed
+	 * @param $aClasses List to be completed
 	 */
 	protected function RecomputeClassList(&$aClasses)
 	{
@@ -885,8 +876,6 @@ class DBObjectSearch extends DBSearch
 	 * @param $sForeignExtKeyAttCode
 	 * @param int $iOperatorCode
 	 * @param null $aRealiasingMap array of <old-alias> => <new-alias>, for each alias that has changed
-	 * @return void
-	 * @throws \CoreException
 	 */
 	public function AddCondition_ReferencedBy(DBObjectSearch $oFilter, $sForeignExtKeyAttCode, $iOperatorCode = TREE_OPERATOR_EQUALS, &$aRealiasingMap = null)
 	{
@@ -909,7 +898,7 @@ class DBObjectSearch extends DBSearch
 		// NO: $oFilter = $oFilter->DeepClone();
 		// See also: Trac #639, and self::AddCondition_PointingTo()
 		$aAliasTranslation = array();
-		$this->AddCondition_ReferencedBy_InNameSpace($oFilter, $sForeignExtKeyAttCode, $this->m_aClasses, $aAliasTranslation, $iOperatorCode);
+		$res = $this->AddCondition_ReferencedBy_InNameSpace($oFilter, $sForeignExtKeyAttCode, $this->m_aClasses, $aAliasTranslation, $iOperatorCode);
 		$this->TransferConditionExpression($oFilter, $aAliasTranslation);
 		$this->UpdateRealiasingMap($aRealiasingMap, $aAliasTranslation);
 
@@ -933,6 +922,7 @@ class DBObjectSearch extends DBSearch
 			}
 		}
 		$this->RecomputeClassList($this->m_aClasses);
+		return $res;
 	}
 
 	protected function AddCondition_ReferencedBy_InNameSpace(DBSearch $oFilter, $sForeignExtKeyAttCode, &$aClassAliases, &$aAliasTranslation, $iOperatorCode)
@@ -991,10 +981,7 @@ class DBObjectSearch extends DBSearch
 			$oRightFilter = $oRightFilter->DeepClone();
 
 			$bAllowAllData = ($oLeftFilter->IsAllDataAllowed() && $oRightFilter->IsAllDataAllowed());
-			if ($bAllowAllData)
-			{
-				$oLeftFilter->AllowAllData();
-			}
+			$oLeftFilter->AllowAllData($bAllowAllData);
 
 			if ($oLeftFilter->GetClass() != $oRightFilter->GetClass())
 			{
@@ -1067,7 +1054,7 @@ class DBObjectSearch extends DBSearch
 
 	public function GetCriteria() {return $this->m_oSearchCondition;}
 	public function GetCriteria_FullText() {throw new Exception("Removed GetCriteria_FullText");}
-	public function GetCriteria_PointingTo($sKeyAttCode = "")
+	protected function GetCriteria_PointingTo($sKeyAttCode = "")
 	{
 		if (empty($sKeyAttCode))
 		{
@@ -1139,15 +1126,14 @@ class DBObjectSearch extends DBSearch
 	{
 		return $this->m_oSearchCondition->ListConstantFields();
 	}
-
+	
 	/**
 	 * Turn the parameters (:xxx) into scalar values in order to easily
 	 * serialize a search
-	 * @param $aArgs
-*/
+	 */
 	public function ApplyParameters($aArgs)
 	{
-		$this->m_oSearchCondition->ApplyParameters(array_merge($this->m_aParams, $aArgs));
+		return $this->m_oSearchCondition->ApplyParameters(array_merge($this->m_aParams, $aArgs));
 	}
 	
 	public function ToOQL($bDevelopParams = false, $aContextParams = null, $bWithAllowAllFlag = false)
@@ -1497,7 +1483,7 @@ class DBObjectSearch extends DBSearch
 		return $sRet;
 	}
 
-	public function GetSQLQueryStructure($aAttToLoad, $bGetCount, $aGroupByExpr = null, $aSelectedClasses = null, $aSelectExpr = null)
+	public function GetSQLQueryStructure($aAttToLoad, $bGetCount, $aGroupByExpr = null, $aSelectedClasses = null)
 	{
 		// Hide objects that are not visible to the current user
 		//
@@ -1515,6 +1501,11 @@ class DBObjectSearch extends DBSearch
 				$oVisibleObjects->AllowAllData();
 				$oSearch = $this->Intersect($oVisibleObjects);
 				$oSearch->SetDataFiltered();
+			}
+			else
+			{
+				// should be true at this point, meaning that no additional filtering
+				// is required
 			}
 		}
 
@@ -1575,15 +1566,7 @@ class DBObjectSearch extends DBSearch
 					$sRawId .= 'g:'.$sAlias.'!'.$oExpr->Render();
 				}
 			}
-			if (!is_null($aSelectExpr))
-			{
-				foreach($aSelectExpr as $sAlias => $oExpr)
-				{
-					$sRawId .= 'se:'.$sAlias.'!'.$oExpr->Render();
-				}
-			}
 			$aContextData['aGroupByExpr'] = $aGroupByExpr;
-			$aContextData['aSelectExpr'] = $aSelectExpr;
 			$sRawId .= $bGetCount;
 			$aContextData['bGetCount'] = $bGetCount;
 			if (is_array($aSelectedClasses))
@@ -1608,7 +1591,6 @@ class DBObjectSearch extends DBSearch
 
 		// Query caching
 		//
-		$sOqlAPCCacheId = null;
 		if (self::$m_bQueryCacheEnabled)
 		{
 			// Warning: using directly the query string as the key to the hash array can FAIL if the string
@@ -1648,7 +1630,7 @@ class DBObjectSearch extends DBSearch
 		if (!isset($oSQLQuery))
 		{
 			$oKPI = new ExecutionKPI();
-			$oSQLQuery = $oSearch->BuildSQLQueryStruct($aAttToLoad, $bGetCount, $aModifierProperties, $aGroupByExpr, $aSelectedClasses, $aSelectExpr);
+			$oSQLQuery = $oSearch->BuildSQLQueryStruct($aAttToLoad, $bGetCount, $aModifierProperties, $aGroupByExpr, $aSelectedClasses);
 			$oKPI->ComputeStats('BuildSQLQueryStruct', $sOqlQuery);
 
 			if (self::$m_bQueryCacheEnabled)
@@ -1668,23 +1650,20 @@ class DBObjectSearch extends DBSearch
 	}
 
 	/**
-	 * @param array $aAttToLoad
-	 * @param bool $bGetCount
-	 * @param array $aModifierProperties
-	 * @param array $aGroupByExpr
-	 * @param array $aSelectedClasses
-	 * @param array $aSelectExpr
-	 *
+	 * @param $aAttToLoad
+	 * @param $bGetCount
+	 * @param $aModifierProperties
+	 * @param null $aGroupByExpr
+	 * @param null $aSelectedClasses
 	 * @return null|SQLObjectQuery
-	 * @throws \CoreException
 	 */
-	protected function BuildSQLQueryStruct($aAttToLoad, $bGetCount, $aModifierProperties, $aGroupByExpr = null, $aSelectedClasses = null, $aSelectExpr = null)
+	protected function BuildSQLQueryStruct($aAttToLoad, $bGetCount, $aModifierProperties, $aGroupByExpr = null, $aSelectedClasses = null)
 	{
-		$oBuild = new QueryBuilderContext($this, $aModifierProperties, $aGroupByExpr, $aSelectedClasses, $aSelectExpr);
+		$oBuild = new QueryBuilderContext($this, $aModifierProperties, $aGroupByExpr, $aSelectedClasses);
 
 		$oSQLQuery = $this->MakeSQLObjectQuery($oBuild, $aAttToLoad, array());
 		$oSQLQuery->SetCondition($oBuild->m_oQBExpressions->GetCondition());
-		if (is_array($aGroupByExpr))
+		if ($aGroupByExpr)
 		{
 			$aCols = $oBuild->m_oQBExpressions->GetGroupBy();
 			$oSQLQuery->SetGroupBy($aCols);
@@ -1693,17 +1672,6 @@ class DBObjectSearch extends DBSearch
 		else
 		{
 			$oSQLQuery->SetSelect($oBuild->m_oQBExpressions->GetSelect());
-		}
-		if ($aSelectExpr)
-		{
-			// Get the fields corresponding to the select expressions
-			foreach($oBuild->m_oQBExpressions->GetSelect() as $sAlias => $oExpr)
-			{
-				if (key_exists($sAlias, $aSelectExpr))
-				{
-					$oSQLQuery->AddSelect($sAlias, $oExpr);
-				}
-			}
 		}
 
 		$aMandatoryTables = null;
@@ -1738,7 +1706,6 @@ class DBObjectSearch extends DBSearch
 	 * @param null $aAttToLoad
 	 * @param array $aValues
 	 * @return null|SQLObjectQuery
-	 * @throws \CoreException
 	 */
 	protected function MakeSQLObjectQuery(&$oBuild, $aAttToLoad = null, $aValues = array())
 	{
@@ -1904,46 +1871,86 @@ class DBObjectSearch extends DBSearch
 			}
 		}
 
-		// First query built from the root, adding all tables including the leaf
-		//   Before N.1065 we were joining from the leaf first, but this wasn't a good choice :
-		//   most of the time (obsolescence, friendlyname, ...) we want to get a root attribute !
-		//
-		$oSelectBase = null;
-		$aClassHierarchy = MetaModel::EnumParentClasses($sClass, ENUM_PARENT_CLASSES_ALL, true);
-		$bIsClassStandaloneClass = (count($aClassHierarchy) == 1);
-		foreach($aClassHierarchy as $sSomeClass)
+		$bRootFirst = MetaModel::GetConfig()->Get('optimize_requests_for_join_count');
+		if ($bRootFirst)
 		{
-			if (!MetaModel::HasTable($sSomeClass))
+			// First query built from the root, adding all tables including the leaf
+			//   Before N.1065 we were joining from the leaf first, but this wasn't a good choice :
+			//   most of the time (obsolescence, friendlyname, ...) we want to get a root attribute !
+			//
+			$oSelectBase = null;
+			$aClassHierarchy = MetaModel::EnumParentClasses($sClass, ENUM_PARENT_CLASSES_ALL, true);
+			$bIsClassStandaloneClass = (count($aClassHierarchy) == 1);
+			foreach($aClassHierarchy as $sSomeClass)
 			{
-				continue;
-			}
-
-			self::DbgTrace("Adding join from root to leaf: $sSomeClass... let's call MakeSQLObjectQuerySingleTable()");
-			$oSelectParentTable = $this->MakeSQLObjectQuerySingleTable($oBuild, $aAttToLoad, $sSomeClass, $aExtKeys, $aValues);
-			if (is_null($oSelectBase))
-			{
-				$oSelectBase = $oSelectParentTable;
-				if (!$bIsClassStandaloneClass && (MetaModel::IsRootClass($sSomeClass)))
+				if (!MetaModel::HasTable($sSomeClass))
 				{
-					// As we're linking to root class first, we're adding a where clause on the finalClass attribute :
-					//      COALESCE($sRootClassFinalClass IN ('$sExpectedClasses'), 1)
-					// If we don't, the child classes can be removed in the query optimisation phase, including the leaf that was queried
-					// So we still need to filter records to only those corresponding to the child classes !
-					// The coalesce is mandatory if we have a polymorphic query (left join)
-					$oClassListExpr = ListExpression::FromScalars(MetaModel::EnumChildClasses($sClass, ENUM_CHILD_CLASSES_ALL));
-					$sFinalClassSqlColumnName = MetaModel::DBGetClassField($sSomeClass);
-					$oClassExpr = new FieldExpression($sFinalClassSqlColumnName, $oSelectBase->GetTableAlias());
-					$oInExpression = new BinaryExpression($oClassExpr, 'IN', $oClassListExpr);
-					$oTrueExpression = new TrueExpression();
-					$aCoalesceAttr = array($oInExpression, $oTrueExpression);
-					$oFinalClassRestriction = new FunctionExpression("COALESCE", $aCoalesceAttr);
-
-					$oBuild->m_oQBExpressions->AddCondition($oFinalClassRestriction);
+					continue;
 				}
+
+				self::DbgTrace("Adding join from root to leaf: $sSomeClass... let's call MakeSQLObjectQuerySingleTable()");
+				$oSelectParentTable = $this->MakeSQLObjectQuerySingleTable($oBuild, $aAttToLoad, $sSomeClass, $aExtKeys, $aValues);
+				if (is_null($oSelectBase))
+				{
+					$oSelectBase = $oSelectParentTable;
+					if (!$bIsClassStandaloneClass && (MetaModel::IsRootClass($sSomeClass)))
+					{
+						// As we're linking to root class first, we're adding a where clause on the finalClass attribute :
+						//      COALESCE($sRootClassFinalClass IN ('$sExpectedClasses'), 1)
+						// If we don't, the child classes can be removed in the query optimisation phase, including the leaf that was queried
+						// So we still need to filter records to only those corresponding to the child classes !
+						// The coalesce is mandatory if we have a polymorphic query (left join)
+						$oClassListExpr = ListExpression::FromScalars(MetaModel::EnumChildClasses($sClass, ENUM_CHILD_CLASSES_ALL));
+						$sFinalClassSqlColumnName = MetaModel::DBGetClassField($sSomeClass);
+						$oClassExpr = new FieldExpression($sFinalClassSqlColumnName, $oSelectBase->GetTableAlias());
+						$oInExpression = new BinaryExpression($oClassExpr, 'IN', $oClassListExpr);
+						$oTrueExpression = new TrueExpression();
+						$aCoalesceAttr = array($oInExpression, $oTrueExpression);
+						$oFinalClassRestriction = new FunctionExpression("COALESCE", $aCoalesceAttr);
+
+						$oBuild->m_oQBExpressions->AddCondition($oFinalClassRestriction);
+					}
+				}
+				else
+				{
+					$oSelectBase->AddInnerJoin($oSelectParentTable, $sKeyField, MetaModel::DBGetKey($sSomeClass));
+				}
+			}
+		}
+		else
+		{
+			// First query built upon on the leaf (ie current) class
+			//
+			self::DbgTrace("Main (=leaf) class, call MakeSQLObjectQuerySingleTable()");
+			if (MetaModel::HasTable($sClass))
+			{
+				$oSelectBase = $this->MakeSQLObjectQuerySingleTable($oBuild, $aAttToLoad, $sClass, $aExtKeys, $aValues);
 			}
 			else
 			{
-				$oSelectBase->AddInnerJoin($oSelectParentTable, $sKeyField, MetaModel::DBGetKey($sSomeClass));
+				$oSelectBase = null;
+
+				// As the join will not filter on the expected classes, we have to specify it explicitely
+				$sExpectedClasses = implode("', '", MetaModel::EnumChildClasses($sClass, ENUM_CHILD_CLASSES_ALL));
+				$oFinalClassRestriction = Expression::FromOQL("`$sClassAlias`.finalclass IN ('$sExpectedClasses')");
+				$oBuild->m_oQBExpressions->AddCondition($oFinalClassRestriction);
+			}
+
+			// Then we join the queries of the eventual parent classes (compound model)
+			foreach(MetaModel::EnumParentClasses($sClass) as $sParentClass)
+			{
+				if (!MetaModel::HasTable($sParentClass)) continue;
+
+				self::DbgTrace("Parent class: $sParentClass... let's call MakeSQLObjectQuerySingleTable()");
+				$oSelectParentTable = $this->MakeSQLObjectQuerySingleTable($oBuild, $aAttToLoad, $sParentClass, $aExtKeys, $aValues);
+				if (is_null($oSelectBase))
+				{
+					$oSelectBase = $oSelectParentTable;
+				}
+				else
+				{
+					$oSelectBase->AddInnerJoin($oSelectParentTable, $sKeyField, MetaModel::DBGetKey($sParentClass));
+				}
 			}
 		}
 
@@ -2219,7 +2226,7 @@ class DBObjectSearch extends DBSearch
 							self::DbgTrace("External key $sKeyAttCode, Join on $sLocalKeyField = $sExternalKeyField");
 							if ($oKeyAttDef->IsNullAllowed())
 							{
-								$oSelectBase->AddLeftJoin($oSelectExtKey, $sLocalKeyField, $sExternalKeyField);
+								$oSelectBase->AddLeftJoin($oSelectExtKey, $sLocalKeyField, $sExternalKeyField, $sExternalKeyTable);
 							}
 							else
 							{
@@ -2271,13 +2278,9 @@ class DBObjectSearch extends DBSearch
 	}
 
 	/**
-	 *    Get the expression for the class and its subclasses (if finalclass = 'subclass' ...)
-	 *    Simplifies the final expression by grouping classes having the same expression
-	 * @param $sClass
-	 * @param $sAttCode
-	 * @return \FunctionExpression|mixed|null
-	 * @throws \CoreException
-*/
+	 *	Get the expression for the class and its subclasses (if finalclass = 'subclass' ...)
+	 *	Simplifies the final expression by grouping classes having the same expression
+	 */
 	static public function GetPolymorphicExpression($sClass, $sAttCode)
 	{
 		$oExpression = ExpressionCache::GetCachedExpression($sClass, $sAttCode);

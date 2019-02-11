@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -22,14 +22,12 @@ interface BackupArchive
 {
 	/**
 	 * @param string $sFile
-	 *
 	 * @return bool <b>TRUE</b> if the file is present, <b>FALSE</b> otherwise.
 	 */
 	public function hasFile($sFile);
 
 	/**
 	 * @param string $sDirectory
-	 *
 	 * @return bool <b>TRUE</b> if the directory is present, <b>FALSE</b> otherwise.
 	 */
 	public function hasDir($sDirectory);
@@ -37,7 +35,6 @@ interface BackupArchive
 	/**
 	 * @param string $sDestinationDir
 	 * @param string $sArchiveFile
-	 *
 	 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 	 */
 	public function extractFileTo($sDestinationDir, $sArchiveFile);
@@ -45,22 +42,17 @@ interface BackupArchive
 	/**
 	 * Extract a whole directory from the archive.
 	 * Usage: $oArchive->extractDirTo('/var/www/html/itop/data', '/production-modules/')
-	 *
 	 * @param string $sDestinationDir
 	 * @param string $sArchiveDir Note: must start and end with a slash !!
-	 *
 	 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 	 */
 	public function extractDirTo($sDestinationDir, $sArchiveDir);
 
 	/**
 	 * Returns the entry contents using its name
-	 *
 	 * @param string $name Name of the entry
 	 * @param int $length [optional] The length to be read from the entry. If 0, then the entire entry is read.
-	 * @param int $flags [optional] The flags to use to open the archive. the following values may be ORed to it.
-	 *     <b>ZipArchive::FL_UNCHANGED</b>
-	 *
+	 * @param int $flags [optional] The flags to use to open the archive. the following values may be ORed to it. <b>ZipArchive::FL_UNCHANGED</b>
 	 * @return string the contents of the entry on success or <b>FALSE</b> on failure.
 	 */
 	public function getFromName($name, $length = 0, $flags = null);
@@ -110,7 +102,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * @param string $sFile
-		 *
 		 * @return bool <b>TRUE</b> if the file is present, <b>FALSE</b> otherwise.
 		 */
 		public function hasFile($sFile)
@@ -120,7 +111,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * @param string $sDirectory
-		 *
 		 * @return bool <b>TRUE</b> if the directory is present, <b>FALSE</b> otherwise.
 		 */
 		public function hasDir($sDirectory)
@@ -131,7 +121,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 		/**
 		 * @param string $sDestinationDir
 		 * @param string $sArchiveFile
-		 *
 		 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 		 */
 		public function extractFileTo($sDestinationDir, $sArchiveFile)
@@ -142,16 +131,14 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 		/**
 		 * Extract a whole directory from the archive.
 		 * Usage: $oZip->extractDirTo('/var/www/html/itop/data', '/production-modules/')
-		 *
 		 * @param string $sDestinationDir
 		 * @param string $sZipDir Must start and end with a slash !!
-		 *
 		 * @return boolean
 		 */
 		public function extractDirTo($sDestinationDir, $sZipDir)
 		{
 			$aFiles = array();
-			for ($i = 0; $i < $this->numFiles; $i++)
+			for($i = 0; $i < $this->numFiles; $i++)
 			{
 				$sEntry = $this->getNameIndex($i);
 				//Use strpos() to check if the entry name contains the directory we want to extract
@@ -166,7 +153,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 			{
 				return true;
 			}
-
 			return false;
 		}
 	} // class ZipArchiveEx
@@ -177,13 +163,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 	class DBBackup
 	{
-		/**
-		 * utf8mb4 was added in MySQL 5.5.3 but works with programs like mysqldump only since MySQL 5.5.33
-		 *
-		 * @since 2.5 see #1001
-		 */
-		const MYSQL_VERSION_WITH_UTF8MB4_IN_PROGRAMS = '5.5.33';
-
 		// To be overriden depending on the expected usages
 		protected function LogInfo($sMsg)
 		{
@@ -193,48 +172,59 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 		{
 		}
 
-		/** @var Config */
-		protected $oConfig;
-
-		// shortcuts used for log purposes
-		/** @var string */
 		protected $sDBHost;
-		/** @var int */
 		protected $iDBPort;
-		/** @var string */
+		protected $sDBUser;
+		protected $sDBPwd;
 		protected $sDBName;
-		/** @var string */
 		protected $sDBSubName;
 
 		/**
 		 * Connects to the database to backup
+		 * By default, connects to the current MetaModel (must be loaded)
 		 *
-		 * @param Config $oConfig object containing the database configuration.<br>
-		 * If null then uses the default configuration ({@see MetaModel::GetConfig})
-		 *
-		 * @since 2.5 uses a Config object instead of passing each attribute (there were far too many with the addition of MySQL TLS parameters !)
+		 * @param string sDBHost Database host server
+		 * @param string $sDBUser User login
+		 * @param string $sDBPwd User password
+		 * @param string $sDBName Database name
+		 * @param string $sDBSubName Prefix to the tables of itop in the database
 		 */
-		public function __construct($oConfig = null)
+		public function __construct($sDBHost = null, $sDBUser = null, $sDBPwd = null, $sDBName = null, $sDBSubName = null)
 		{
-			if (is_null($oConfig))
+			if (is_null($sDBHost))
 			{
 				// Defaulting to the current config
-				$oConfig = MetaModel::GetConfig();
+				$sDBHost = MetaModel::GetConfig()->GetDBHost();
+				$sDBUser = MetaModel::GetConfig()->GetDBUser();
+				$sDBPwd = MetaModel::GetConfig()->GetDBPwd();
+				$sDBName = MetaModel::GetConfig()->GetDBName();
+				$sDBSubName = MetaModel::GetConfig()->GetDBSubName();
 			}
 
-			$this->oConfig = $oConfig;
+			// Compute the port (if present in the host name)
+			$aConnectInfo = explode(':', $sDBHost);
+			$sDBHostName = $aConnectInfo[0];
+			if (count($aConnectInfo) > 1)
+			{
+				$iDBPort = $aConnectInfo[1];
+			}
+			else
+			{
+				$iDBPort = null;
+			}
 
-			// init log variables
-			CMDBSource::InitServerAndPort($oConfig->Get('db_host'), $this->sDBHost, $this->iDBPort);
-			$this->sDBName = $oConfig->get('db_name');
-			$this->sDBSubName = $oConfig->get('db_subname');
+			$this->sDBHost = $sDBHostName;
+			$this->iDBPort = $iDBPort;
+			$this->sDBUser = $sDBUser;
+			$this->sDBPwd = $sDBPwd;
+			$this->sDBName = $sDBName;
+			$this->sDBSubName = $sDBSubName;
 		}
 
 		protected $sMySQLBinDir = '';
 
 		/**
 		 * Create a normalized backup name, depending on the current date/time and Database
-		 *
 		 * @param sNameSpec string Name and path, eventually containing itop placeholders + time formatting specs
 		 */
 		public function SetMySQLBinDir($sMySQLBinDir)
@@ -244,7 +234,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Create a normalized backup name, depending on the current date/time and Database
-		 *
 		 * @param string sNameSpec Name and path, eventually containing itop placeholders + time formatting specs
 		 */
 		public function MakeName($sNameSpec = "__DB__-%Y-%m-%d")
@@ -255,17 +244,13 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 			$sFileName = str_replace('__SUBNAME__', $this->sDBSubName, $sFileName);
 			// Transform %Y, etc.
 			$sFileName = strftime($sFileName);
-
 			return $sFileName;
 		}
 
 		/**
 		 * @deprecated 2.4.0 Zip files are limited to 4 Gb, use CreateCompressedBackup to create tar.gz files
-		 *
 		 * @param string $sZipFile
 		 * @param string|null $sSourceConfigFile
-		 *
-		 * @throws \BackupException
 		 */
 		public function CreateZip($sZipFile, $sSourceConfigFile = null)
 		{
@@ -281,7 +266,7 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 				'dest' => 'itop-dump.sql',
 			);
 
-			foreach ($this->GetAdditionalFiles($sSourceConfigFile) as $sArchiveFile => $sSourceFile)
+			foreach($this->GetAdditionalFiles($sSourceConfigFile) as $sArchiveFile => $sSourceFile)
 			{
 				$aContents[] = array(
 					'source' => $sSourceFile,
@@ -299,8 +284,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 		/**
 		 * @param string $sTargetFile Path and name, without the extension
 		 * @param string|null $sSourceConfigFile Configuration file to embed into the backup, if not the current one
-		 *
-		 * @throws \Exception
 		 */
 		public function CreateCompressedBackup($sTargetFile, $sSourceConfigFile = null)
 		{
@@ -318,12 +301,9 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Copy files to store into the temporary folder, in addition to the SQL dump
-		 *
 		 * @param string $sSourceConfigFile
 		 * @param string $sTmpFolder
-		 *
 		 * @return array list of files to archive
-		 * @throws \Exception
 		 */
 		protected function PrepareFilesToBackup($sSourceConfigFile, $sTmpFolder)
 		{
@@ -362,7 +342,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 			$sDataFile = $sTmpFolder.'/itop-dump.sql';
 			$this->DoBackup($sDataFile);
 			$aRet[] = $sDataFile;
-
 			return $aRet;
 		}
 
@@ -375,16 +354,12 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Create a backup file
-		 *
-		 * @param string $sBackupFileName
-		 *
-		 * @throws \BackupException
 		 */
 		public function DoBackup($sBackupFileName)
 		{
 			$sHost = self::EscapeShellArg($this->sDBHost);
-			$sUser = self::EscapeShellArg($this->oConfig->Get('db_user'));
-			$sPwd = self::EscapeShellArg($this->oConfig->Get('db_pwd'));
+			$sUser = self::EscapeShellArg($this->sDBUser);
+			$sPwd = self::EscapeShellArg($this->sDBPwd);
 			$sDBName = self::EscapeShellArg($this->sDBName);
 
 			// Just to check the connection to the DB (better than getting the retcode of mysqldump = 1)
@@ -402,7 +377,7 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 					throw new BackupException("No table has been found with the given prefix");
 				}
 				$aEscapedTables = array();
-				foreach ($aTables as $sTable)
+				foreach($aTables as $sTable)
 				{
 					$aEscapedTables[] = self::EscapeShellArg($sTable);
 				}
@@ -411,32 +386,39 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 			$this->LogInfo("Starting backup of $this->sDBHost/$this->sDBName(suffix:'$this->sDBSubName')");
 
-			$sMySQLDump = $this->GetMysqldumpCommand();
+			$sMySQLBinDir = utils::ReadParam('mysql_bindir', $this->sMySQLBinDir, true);
+			if (empty($sMySQLBinDir))
+			{
+				$sMySQLDump = 'mysqldump';
+			}
+			else
+			{
+				$sMySQLDump = '"'.$sMySQLBinDir.'/mysqldump"';
+			}
 
 			// Store the results in a temporary file
 			$sTmpFileName = self::EscapeShellArg($sBackupFileName);
-
-			$sPortOption = self::GetMysqliCliSingleOption('port', $this->iDBPort);
-			$sTlsOptions = self::GetMysqlCliTlsOptions($this->oConfig);
-
-			$sMysqldumpVersion = self::GetMysqldumpVersion($sMySQLDump);
-			$bIsMysqldumpSupportUtf8mb4 = (version_compare($sMysqldumpVersion,
-					self::MYSQL_VERSION_WITH_UTF8MB4_IN_PROGRAMS) == -1);
-			$sMysqldumpCharset = $bIsMysqldumpSupportUtf8mb4 ? 'utf8' : DEFAULT_CHARACTER_SET;
-
+			if (is_null($this->iDBPort))
+			{
+				$sPortOption = '';
+			}
+			else
+			{
+				$sPortOption = '--port='.$this->iDBPort.' ';
+			}
 			// Delete the file created by tempnam() so that the spawned process can write into it (Windows/IIS)
 			@unlink($sBackupFileName);
 			// Note: opt implicitely sets lock-tables... which cancels the benefit of single-transaction!
 			//       skip-lock-tables compensates and allows for writes during a backup
-			$sCommand = "$sMySQLDump --opt --skip-lock-tables --default-character-set=".$sMysqldumpCharset." --add-drop-database --single-transaction --host=$sHost $sPortOption --user=$sUser --password=$sPwd $sTlsOptions --result-file=$sTmpFileName $sDBName $sTables 2>&1";
-			$sCommandDisplay = "$sMySQLDump --opt --skip-lock-tables --default-character-set=".$sMysqldumpCharset." --add-drop-database --single-transaction --host=$sHost $sPortOption --user=xxxxx --password=xxxxx $sTlsOptions --result-file=$sTmpFileName $sDBName $sTables";
+			$sCommand = "$sMySQLDump --opt --skip-lock-tables --default-character-set=utf8 --add-drop-database --single-transaction --host=$sHost $sPortOption --user=$sUser --password=$sPwd --result-file=$sTmpFileName $sDBName $sTables 2>&1";
+			$sCommandDisplay = "$sMySQLDump --opt --skip-lock-tables --default-character-set=utf8 --add-drop-database --single-transaction --host=$sHost $sPortOption --user=xxxxx --password=xxxxx --result-file=$sTmpFileName $sDBName $sTables";
 
 			// Now run the command for real
 			$this->LogInfo("Executing command: $sCommandDisplay");
 			$aOutput = array();
 			$iRetCode = 0;
 			exec($sCommand, $aOutput, $iRetCode);
-			foreach ($aOutput as $sLine)
+			foreach($aOutput as $sLine)
 			{
 				$this->LogInfo("mysqldump said: $sLine");
 			}
@@ -449,7 +431,7 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 				}
 
 				$this->LogError("Failed to execute: $sCommandDisplay. The command returned:$iRetCode");
-				foreach ($aOutput as $sLine)
+				foreach($aOutput as $sLine)
 				{
 					$this->LogError("mysqldump said: $sLine");
 				}
@@ -467,15 +449,10 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Helper to create a ZIP out of several files
-		 *
-		 * @param array $aFiles
-		 * @param string $sZipArchiveFile
-		 *
-		 * @throws \BackupException
 		 */
 		protected function DoZip($aFiles, $sZipArchiveFile)
 		{
-			foreach ($aFiles as $aFile)
+			foreach($aFiles as $aFile)
 			{
 				$sFile = $aFile['source'];
 				if (!is_file($sFile) && !is_dir($sFile))
@@ -489,9 +466,9 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 			$oZip = new ZipArchiveEx();
 			$res = $oZip->open($sZipArchiveFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-			if ($res === true)
+			if ($res === TRUE)
 			{
-				foreach ($aFiles as $aFile)
+				foreach($aFiles as $aFile)
 				{
 					if (is_dir($aFile['source']))
 					{
@@ -521,8 +498,6 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Helper to download the file directly from the browser
-		 *
-		 * @param string $sFile
 		 */
 		public function DownloadBackup($sFile)
 		{
@@ -538,48 +513,31 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 
 		/**
 		 * Helper to open a Database connection
-		 *
-		 * @return \mysqli
-		 * @throws \BackupException
-		 * @uses CMDBSource
 		 */
 		protected function DBConnect()
 		{
-			$oConfig = $this->oConfig;
-			$sServer = $oConfig->Get('db_host');
-			$sUser = $oConfig->Get('db_user');
-			$sPwd = $oConfig->Get('db_pwd');
-			$sSource = $oConfig->Get('db_name');
-			$sTlsEnabled = $oConfig->Get('db_tls.enabled');
-			$sTlsCA = $oConfig->Get('db_tls.ca');
-
-			try
+			if (is_null($this->iDBPort))
 			{
-				$oMysqli = CMDBSource::GetMysqliInstance($sServer, $sUser, $sPwd, $sSource, $sTlsEnabled, $sTlsCA,
-					false);
-
-				if ($oMysqli->connect_errno)
-				{
-					$sHost = is_null($this->iDBPort) ? $this->sDBHost : $this->sDBHost.' on port '.$this->iDBPort;
-					throw new BackupException("Cannot connect to the MySQL server '$sHost' (".$oMysqli->connect_errno.") ".$oMysqli->connect_error);
-				}
-				if (!$oMysqli->select_db($this->sDBName))
-				{
-					throw new BackupException("The database '$this->sDBName' does not seem to exist");
-				}
-
-				return $oMysqli;
+				$oMysqli = new mysqli($this->sDBHost, $this->sDBUser, $this->sDBPwd);
 			}
-			catch (MySQLException $e)
+			else
 			{
-				throw new BackupException($e->getMessage());
+				$oMysqli = new mysqli($this->sDBHost, $this->sDBUser, $this->sDBPwd, '', $this->iDBPort);
 			}
+			if ($oMysqli->connect_errno)
+			{
+				$sHost = is_null($this->iDBPort) ? $this->sDBHost : $this->sDBHost.' on port '.$this->iDBPort;
+				throw new BackupException("Cannot connect to the MySQL server '$sHost' (".$oMysqli->connect_errno.") ".$oMysqli->connect_error);
+			}
+			if (!$oMysqli->select_db($this->sDBName))
+			{
+				throw new BackupException("The database '$this->sDBName' does not seem to exist");
+			}
+			return $oMysqli;
 		}
 
 		/**
 		 * Helper to enumerate the tables of the database
-		 *
-		 * @throws \BackupException
 		 */
 		protected function EnumerateTables()
 		{
@@ -601,100 +559,7 @@ if (class_exists('ZipArchive')) // The setup must be able to start even if the "
 			{
 				$aTables[] = $aRow[0];
 			}
-
 			return $aTables;
-		}
-
-
-		/**
-		 * @param Config $oConfig
-		 *
-		 * @return string TLS arguments for CLI programs such as mysqldump. Empty string if the config does not use TLS.
-		 *
-		 * @see https://dev.mysql.com/doc/refman/5.6/en/encrypted-connection-options.html
-		 * @since 2.5
-		 */
-		public static function GetMysqlCliTlsOptions($oConfig)
-		{
-			$bDbTlsEnabled = $oConfig->Get('db_tls.enabled');
-			if (!$bDbTlsEnabled)
-			{
-				return '';
-			}
-
-			$sTlsOptions = '';
-			$sTlsOptions .= ' --ssl';
-
-			// ssl-key parameter : not implemented
-			// ssl-cert parameter : not implemented
-
-			$sTlsOptions .= self::GetMysqliCliSingleOption('ssl-ca', $oConfig->Get('db_tls.ca'));
-
-			// ssl-cipher parameter : not implemented
-			// ssl-capath parameter : not implemented
-
-			return $sTlsOptions;
-		}
-
-		/**
-		 * @param string $sCliArgName
-		 * @param string $sData
-		 *
-		 * @return string empty if data is empty, else argument in form of ' --cliargname=data'
-		 */
-		private static function GetMysqliCliSingleOption($sCliArgName, $sData)
-		{
-			if (empty($sData))
-			{
-				return;
-			}
-
-			return ' --'.$sCliArgName.'='.self::EscapeShellArg($sData);
-		}
-
-		/**
-		 * @return string the command to launch mysqldump (without its params)
-		 */
-		private function GetMysqldumpCommand()
-		{
-			$sMySQLBinDir = utils::ReadParam('mysql_bindir', $this->sMySQLBinDir, true);
-			if (empty($sMySQLBinDir))
-			{
-				$sMysqldumpCommand = 'mysqldump';
-			}
-			else
-			{
-				$sMysqldumpCommand = '"'.$sMySQLBinDir.'/mysqldump"';
-			}
-
-			return $sMysqldumpCommand;
-		}
-
-		/**
-		 * @param string $sMysqldumpCommand
-		 *
-		 * @return string version of the mysqldump program, as parsed from program return
-		 *
-		 * @uses mysqldump -V Sample return value : mysqldump  Ver 10.13 Distrib 5.7.19, for Win64 (x86_64)
-		 * @since 2.5 needed to check compatibility with utf8mb4 (N°1001)
-		 * @throws \BackupException
-		 */
-		private static function GetMysqldumpVersion($sMysqldumpCommand)
-		{
-			$sCommand = $sMysqldumpCommand.' -V';
-			$aOutput = array();
-			exec($sCommand, $aOutput, $iRetCode);
-
-			if ($iRetCode != 0)
-			{
-				throw new BackupException("mysqldump could not be executed (retcode=$iRetCode): Please make sure it is installed and located at : $sMysqldumpCommand");
-			}
-
-			$sMysqldumpOutput = $aOutput[0];
-			$aDumpVersionMatchResults = array();
-			preg_match('/Distrib (\d+\.\d+\.\d+)/', $sMysqldumpOutput, $aDumpVersionMatchResults);
-
-			return $aDumpVersionMatchResults[1];
 		}
 	}
 }
@@ -717,7 +582,6 @@ class TarGzArchive implements BackupArchive
 
 	/**
 	 * @param string $sFile
-	 *
 	 * @return bool <b>TRUE</b> if the file is present, <b>FALSE</b> otherwise.
 	 */
 	public function hasFile($sFile)
@@ -729,20 +593,18 @@ class TarGzArchive implements BackupArchive
 			// Initial load
 			$this->buildFileList();
 		}
-		foreach ($this->aFiles as $aArchFile)
+		foreach($this->aFiles as $aArchFile)
 		{
 			if ($aArchFile['filename'] == $sFile)
 			{
 				return true;
 			}
 		}
-
 		return false;
 	}
 
 	/**
 	 * @param string $sDirectory
-	 *
 	 * @return bool <b>TRUE</b> if the directory is present, <b>FALSE</b> otherwise.
 	 */
 	public function hasDir($sDirectory)
@@ -754,14 +616,13 @@ class TarGzArchive implements BackupArchive
 			// Initial load
 			$this->buildFileList();
 		}
-		foreach ($this->aFiles as $aArchFile)
+		foreach($this->aFiles as $aArchFile)
 		{
 			if (($aArchFile['typeflag'] == 5) && ($aArchFile['filename'] == $sDirectory))
 			{
 				return true;
 			}
 		}
-
 		return false;
 	}
 
@@ -779,7 +640,6 @@ class TarGzArchive implements BackupArchive
 	/**
 	 * @param string $sDestinationDir
 	 * @param string $sArchiveFile
-	 *
 	 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 	 */
 	public function extractFileTo($sDestinationDir, $sArchiveFile)
@@ -790,10 +650,8 @@ class TarGzArchive implements BackupArchive
 	/**
 	 * Extract a whole directory from the archive.
 	 * Usage: $oArchive->extractDirTo('/var/www/html/itop/data', '/production-modules/')
-	 *
 	 * @param string $sDestinationDir
 	 * @param string $sArchiveDir
-	 *
 	 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 	 */
 	public function extractDirTo($sDestinationDir, $sArchiveDir)
@@ -803,11 +661,9 @@ class TarGzArchive implements BackupArchive
 
 	/**
 	 * Returns the entry contents using its name
-	 *
 	 * @param string $name Name of the entry
 	 * @param int $length unused.
 	 * @param int $flags unused.
-	 *
 	 * @return string the contents of the entry on success or <b>FALSE</b> on failure.
 	 */
 	public function getFromName($name, $length = 0, $flags = null)

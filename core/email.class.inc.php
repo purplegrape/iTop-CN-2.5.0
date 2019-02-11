@@ -57,7 +57,6 @@ class EMail
 	{
 		$this->m_aData = array();
 		$this->m_oMessage = Swift_Message::newInstance();
-		$this->SetRecipientFrom(MetaModel::GetConfig()->Get('email_default_sender_address'), MetaModel::GetConfig()->Get('email_default_sender_label'));
 	}
 
 	/**
@@ -196,29 +195,18 @@ class EMail
 
 		$aFailedRecipients = array();
 		$this->m_oMessage->setMaxLineLength(0);
-		$oKPI = new ExecutionKPI();
-		try
+		$iSent = $oMailer->send($this->m_oMessage, $aFailedRecipients);
+		if ($iSent === 0)
 		{
-			$iSent = $oMailer->send($this->m_oMessage, $aFailedRecipients);
-			if ($iSent === 0)
-			{
-				// Beware: it seems that $aFailedRecipients sometimes contains the recipients that actually received the message !!!
-				IssueLog::Warning('Email sending failed: Some recipients were invalid, aFailedRecipients contains: '.implode(', ', $aFailedRecipients));
-				$aIssues = array('Some recipients were invalid.');
-				$oKPI->ComputeStats('Email Sent', 'Error received');
-				return EMAIL_SEND_ERROR;
-			}
-			else
-			{
-				$aIssues = array();
-				$oKPI->ComputeStats('Email Sent', 'Succeded');
-				return EMAIL_SEND_OK;
-			}
+			// Beware: it seems that $aFailedRecipients sometimes contains the recipients that actually received the message !!!
+			IssueLog::Warning('Email sending failed: Some recipients were invalid, aFailedRecipients contains: '.implode(', ', $aFailedRecipients));
+			$aIssues = array('Some recipients were invalid.');
+			return EMAIL_SEND_ERROR;
 		}
-		catch (Exception $e)
+		else
 		{
-			$oKPI->ComputeStats('Email Sent', 'Error received');
-			throw $e;
+			$aIssues = array();
+			return EMAIL_SEND_OK;
 		}
 	}
 	
@@ -261,11 +249,6 @@ class EMail
 
 	public function Send(&$aIssues, $bForceSynchronous = false, $oLog = null)
 	{
-		//select a default sender if none is provided.
-		if(empty($this->m_aData['from']['address']) && !empty($this->m_aData['to'])){
-			$this->SetRecipientFrom($this->m_aData['to']);
-		}
-
 		if ($bForceSynchronous)
 		{
 			return $this->SendSynchronous($aIssues, $oLog);

@@ -448,11 +448,6 @@ class iTopExtensionsMap
 				SetupPage::log_warning("Eval of $sModuleFile did  not return the expected information...");
 			}
 		}
-		catch(ParseError $e)
-		{
-		    // Continue...
-		    SetupPage::log_warning("Eval of $sModuleFile caused a parse error: ".$e->getMessage()." at line ".$e->getLine());
-		}
 		catch(Exception $e)
 		{
 			// Continue...
@@ -547,19 +542,21 @@ class iTopExtensionsMap
 	 */
 	public function LoadChoicesFromDatabase(Config $oConfig)
 	{
+		$aInstalledExtensions = array();
 		try
 		{
-			$aInstalledExtensions = array();
 			if (CMDBSource::DBName() === null)
 			{
-				CMDBSource::InitFromConfig($oConfig);
+				CMDBSource::Init($oConfig->GetDBHost(), $oConfig->GetDBUser(), $oConfig->GetDBPwd(), $oConfig->GetDBName());
+				CMDBSource::SetCharacterSet($oConfig->GetDBCharacterSet(), $oConfig->GetDBCollation());
 			}
-			$sLatestInstallationDate = CMDBSource::QueryToScalar("SELECT max(installed) FROM ".$oConfig->Get('db_subname')."priv_extension_install");
-			$aInstalledExtensions = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->Get('db_subname')."priv_extension_install WHERE installed = '".$sLatestInstallationDate."'");
+			$sLatestInstallationDate = CMDBSource::QueryToScalar("SELECT max(installed) FROM ".$oConfig->GetDBSubname()."priv_extension_install");
+			$aInstalledExtensions = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->GetDBSubname()."priv_extension_install WHERE installed = '".$sLatestInstallationDate."'");
 		}
 		catch (MySQLException $e)
 		{
 			// No database or erroneous information
+			$aInstalledExtensions = array();
 			return false;
 		}
 		

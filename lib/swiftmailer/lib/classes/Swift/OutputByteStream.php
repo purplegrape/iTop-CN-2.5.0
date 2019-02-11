@@ -14,7 +14,9 @@
  * Classes implementing this interface may use a subsystem which requires less
  * memory than working with large strings of data.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage ByteStream
+ * @author     Chris Corbyn
  */
 interface Swift_OutputByteStream
 {
@@ -25,22 +27,22 @@ interface Swift_OutputByteStream
      * If less bytes exist than are requested the remaining bytes are given instead.
      * If no bytes are remaining at all, boolean false is returned.
      *
-     * @param int $length
-     *
-     * @throws Swift_IoException
+     * @param int     $length
      *
      * @return string|bool
+     *
+     * @throws Swift_IoException
      */
     public function read($length);
 
     /**
      * Move the internal read pointer to $byteOffset in the stream.
      *
-     * @param int $byteOffset
-     *
-     * @throws Swift_IoException
+     * @param int     $byteOffset
      *
      * @return bool
+     *
+     * @throws Swift_IoException
      */
     public function setReadPointer($byteOffset);
 }

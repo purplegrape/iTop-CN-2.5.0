@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -23,14 +23,7 @@
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 /**
- * Adds the context parameters to the audit rule query
- *
- * @param DBSearch $oFilter
- * @param ApplicationContext $oAppContext
- *
- * @throws \CoreException
- * @throws \CoreWarning
- * @throws \Exception
+ * Adds the context parameters to the audit query
  */
 function FilterByContext(DBSearch &$oFilter, ApplicationContext $oAppContext)
 {
@@ -48,7 +41,6 @@ function FilterByContext(DBSearch &$oFilter, ApplicationContext $oAppContext)
 				if ( ($sAttCode != null) && MetaModel::IsValidAttCode($sObjClass, $sAttCode))
 				{
 					// Check if the condition points to a hierarchical key
-                    $bConditionAdded = false;
 					if ($sAttCode == 'id')
 					{
 						// Filtering on the objects themselves
@@ -91,16 +83,6 @@ function FilterByContext(DBSearch &$oFilter, ApplicationContext $oAppContext)
 	}
 }
 
-/**
- * @param int $iRuleId Audit rule ID
- * @param DBObjectSearch $oDefinitionFilter Created from the audit category's OQL
- * @param ApplicationContext $oAppContext
- *
- * @return mixed
- * @throws \ArchivedObjectException
- * @throws \CoreException
- * @throws \OQLException
- */
 function GetRuleResultFilter($iRuleId, $oDefinitionFilter, $oAppContext)
 {
 	$oRule = MetaModel::GetObject('AuditRule', $iRuleId);
@@ -117,7 +99,6 @@ function GetRuleResultFilter($iRuleId, $oDefinitionFilter, $oAppContext)
 	else
 	{
 		// The query returns only the valid elements, all the others are invalid
-		// Warning : we're generating a `WHERE ID IN`... query, and this could be very slow if there are lots of id !
 		$aValidRows = $oRuleFilter->ToDataArray(array('id'));
 		$aValidIds = array();
 		foreach($aValidRows as $aRow)
@@ -432,3 +413,4 @@ catch(Exception $e)
 		IssueLog::Error($e->getMessage());
 	}
 }
+?>

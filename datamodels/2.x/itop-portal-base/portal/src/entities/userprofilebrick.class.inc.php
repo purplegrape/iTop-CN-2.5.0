@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -18,8 +18,9 @@
 
 namespace Combodo\iTop\Portal\Brick;
 
-use DOMFormatException;
-use Combodo\iTop\DesignElement;
+use \DOMFormatException;
+use \Combodo\iTop\DesignElement;
+use \Combodo\iTop\Portal\Brick\PortalBrick;
 
 /**
  * Description of UserProfileBrick
@@ -33,8 +34,8 @@ class UserProfileBrick extends PortalBrick
 	const DEFAULT_VISIBLE_NAVIGATION_MENU = false;
 	const DEFAULT_VISIBLE_HOME = false;
 	const DEFAUT_TITLE = 'Brick:Portal:UserProfile:Title';
-	const DEFAULT_DECORATION_CLASS_HOME = 'glyphicon glyphicon-user';
-	const DEFAULT_DECORATION_CLASS_NAVIGATION_MENU = 'glyphicon glyphicon-user';
+	const DEFAULT_HOME_ICON_CLASS = 'glyphicon glyphicon-user';
+	const DEFAULT_NAVIGATION_MENU_ICON_CLASS = 'glyphicon glyphicon-user';
     const DEFAULT_SHOW_PICTURE_FORM = true;
     const DEFAULT_SHOW_PREFERENCES_FORM = true;
     const DEFAULT_SHOW_PASSWORD_FORM = true;

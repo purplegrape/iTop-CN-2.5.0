@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -20,7 +20,7 @@
 /**
  * Manage a runtime environment
  *
- * @copyright   Copyright (C) 2010-2018 Combodo SARL
+ * @copyright   Copyright (C) 2010-2017 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -99,7 +99,6 @@ class RunTimeEnvironment
 	public function LogQueryCallback($sQuery, $fDuration)
 	{
 		$this->log_info(sprintf('%.3fs - query: %s ', $fDuration, $sQuery));
-		$this->log_db_query($sQuery);
 	}
 	
 	/**
@@ -244,8 +243,9 @@ class RunTimeEnvironment
 		try
 		{
 			require_once(APPROOT.'/core/cmdbsource.class.inc.php');
-			CMDBSource::InitFromConfig($oConfig);
-			$aSelectInstall = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->Get('db_subname')."priv_module_install");
+			CMDBSource::Init($oConfig->GetDBHost(), $oConfig->GetDBUser(), $oConfig->GetDBPwd(), $oConfig->GetDBName());
+			CMDBSource::SetCharacterSet($oConfig->GetDBCharacterSet(), $oConfig->GetDBCollation());
+			$aSelectInstall = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->GetDBSubname()."priv_module_install");
 		}
 		catch (MySQLException $e)
 		{
@@ -526,32 +526,48 @@ class RunTimeEnvironment
 				$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$this->sTargetEnv.'.xml');
 			}
 			$oFactory->LoadModule($oModule);
+			if ($oFactory->HasLoadErrors())
+			{
+				break;
+			}
 		}
 		
-
-		if ($oModule instanceof MFDeltaModule)
+		if ($oFactory->HasLoadErrors())
 		{
-			// A delta was loaded, let's save a second copy of the datamodel
-			$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$this->sTargetEnv.'-with-delta.xml');
+			foreach($oFactory->GetLoadErrors() as $sModuleId => $aErrors)
+			{
+				echo "<h3>Module: ".$sModuleId."</h3>\n";
+				foreach($aErrors as $oXmlError)
+				{
+					echo "<p>File: ".$oXmlError->file." Line:".$oXmlError->line." Message:".$oXmlError->message."</p>\n";
+				}
+			}
 		}
 		else
 		{
-			// No delta was loaded, let's save the datamodel now
-			$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$this->sTargetEnv.'.xml');
+			if ($oModule instanceof MFDeltaModule)
+			{
+				// A delta was loaded, let's save a second copy of the datamodel
+				$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$this->sTargetEnv.'-with-delta.xml');
+			}
+			else
+			{
+				// No delta was loaded, let's save the datamodel now
+				$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$this->sTargetEnv.'.xml');
+			}
+
+			$sTargetDir = APPROOT.'env-'.$this->sTargetEnv;
+			self::MakeDirSafe($sTargetDir);
+			$bSkipTempDir = ($this->sFinalEnv != $this->sTargetEnv); // No need for a temporary directory if sTargetEnv is already a temporary directory
+			$oMFCompiler = new MFCompiler($oFactory);
+			$oMFCompiler->Compile($sTargetDir, null, $bUseSymLinks, $bSkipTempDir);
+
+			$sCacheDir = APPROOT.'data/cache-'.$this->sTargetEnv;
+			SetupUtils::builddir($sCacheDir);
+			SetupUtils::tidydir($sCacheDir);
+
+			MetaModel::ResetCache(md5(APPROOT).'-'.$this->sTargetEnv);
 		}
-
-		$sTargetDir = APPROOT.'env-'.$this->sTargetEnv;
-		self::MakeDirSafe($sTargetDir);
-		$bSkipTempDir = ($this->sFinalEnv != $this->sTargetEnv); // No need for a temporary directory if sTargetEnv is already a temporary directory
-		$oMFCompiler = new MFCompiler($oFactory);
-		$oMFCompiler->Compile($sTargetDir, null, $bUseSymLinks, $bSkipTempDir);
-
-		$sCacheDir = APPROOT.'data/cache-'.$this->sTargetEnv;
-		SetupUtils::builddir($sCacheDir);
-		SetupUtils::tidydir($sCacheDir);
-
-		MetaModel::ResetCache(md5(APPROOT).'-'.$this->sTargetEnv);
-
 		return array_keys($aModulesToCompile);
 	}
 
@@ -561,13 +577,13 @@ class RunTimeEnvironment
 	 */
 	public function CreateDatabaseStructure(Config $oConfig, $sMode)
 	{
-		if (strlen($oConfig->Get('db_subname')) > 0)
+		if (strlen($oConfig->GetDBSubname()) > 0)
 		{
-			$this->log_info("Creating the structure in '".$oConfig->Get('db_name')."' (table names prefixed by '".$oConfig->Get('db_subname')."').");
+			$this->log_info("Creating the structure in '".$oConfig->GetDBName()."' (table names prefixed by '".$oConfig->GetDBSubname()."').");
 		}
 		else
 		{
-			$this->log_info("Creating the structure in '".$oConfig->Get('db_subname')."'.");
+			$this->log_info("Creating the structure in '".$oConfig->GetDBSubname()."'.");
 		}
 	
 		//MetaModel::CheckDefinitions();
@@ -580,13 +596,13 @@ class RunTimeEnvironment
 			}
 			else
 			{
-				if (strlen($oConfig->Get('db_subname')) > 0)
+				if (strlen($oConfig->GetDBSubname()) > 0)
 				{
-					throw new Exception("Error: found iTop tables into the database '".$oConfig->Get('db_name')."' (prefix: '".$oConfig->Get('db_subname')."'). Please, try selecting another database instance or specify another prefix to prevent conflicting table names.");
+					throw new Exception("Error: found iTop tables into the database '".$oConfig->GetDBName()."' (prefix: '".$oConfig->GetDBSubname()."'). Please, try selecting another database instance or specify another prefix to prevent conflicting table names.");
 				}
 				else
 				{
-					throw new Exception("Error: found iTop tables into the database '".$oConfig->Get('db_name')."'. Please, try selecting another database instance or specify a prefix to prevent conflicting table names.");
+					throw new Exception("Error: found iTop tables into the database '".$oConfig->GetDBName()."'. Please, try selecting another database instance or specify a prefix to prevent conflicting table names.");
 				}
 			}
 		}
@@ -625,13 +641,13 @@ class RunTimeEnvironment
 			}
 			else
 			{
-				if (strlen($oConfig->Get('db_subname')) > 0)
+				if (strlen($oConfig->GetDBSubname()) > 0)
 				{
-					throw new Exception("Error: No previous instance of iTop found into the database '".$oConfig->Get('db_name')."' (prefix: '".$oConfig->Get('db_subname')."'). Please, try selecting another database instance.");
+					throw new Exception("Error: No previous instance of iTop found into the database '".$oConfig->GetDBName()."' (prefix: '".$oConfig->GetDBSubname()."'). Please, try selecting another database instance.");
 				}
 				else
 				{
-					throw new Exception("Error: No previous instance of iTop found into the database '".$oConfig->Get('db_name')."'. Please, try selecting another database instance.");
+					throw new Exception("Error: No previous instance of iTop found into the database '".$oConfig->GetDBName()."'. Please, try selecting another database instance.");
 				}
 			}
 		}
@@ -708,7 +724,8 @@ class RunTimeEnvironment
 		if (CMDBSource::DBName() == '')
 		{		
 			// In case this has not yet been done
-			CMDBSource::InitFromConfig($oConfig);
+			CMDBSource::Init($oConfig->GetDBHost(), $oConfig->GetDBUser(), $oConfig->GetDBPwd(), $oConfig->GetDBName());
+			CMDBSource::SetCharacterSet($oConfig->GetDBCharacterSet(), $oConfig->GetDBCollation());
 		}
 
 		if ($sShortComment === null)
@@ -819,14 +836,15 @@ class RunTimeEnvironment
 		try
 		{
 			require_once(APPROOT.'/core/cmdbsource.class.inc.php');
-			CMDBSource::InitFromConfig($oConfig);
-			$sSQLQuery = "SELECT * FROM ".$oConfig->Get('db_subname')."priv_module_install";
+			CMDBSource::Init($oConfig->GetDBHost(), $oConfig->GetDBUser(), $oConfig->GetDBPwd(), $oConfig->GetDBName());
+			CMDBSource::SetCharacterSet($oConfig->GetDBCharacterSet(), $oConfig->GetDBCollation());
+			$sSQLQuery = "SELECT * FROM ".$oConfig->GetDBSubname()."priv_module_install";
 			$aSelectInstall = CMDBSource::QueryToArray($sSQLQuery);
 		}
 		catch (MySQLException $e)
 		{
 			// No database or erroneous information
-			$this->log_error('Can not connect to the database: host: '.$oConfig->Get('db_host').', user:'.$oConfig->Get('db_user').', pwd:'.$oConfig->Get('db_pwd').', db name:'.$oConfig->Get('db_name'));
+			$this->log_error('Can not connect to the database: host: '.$oConfig->GetDBHost().', user:'.$oConfig->GetDBUser().', pwd:'.$oConfig->GetDBPwd().', db name:'.$oConfig->GetDBName());
 			$this->log_error('Exception '.$e->getMessage());
 			return false;
 		}
@@ -901,25 +919,6 @@ class RunTimeEnvironment
 	protected function log_ok($sText)
 	{
 		SetupPage::log_ok($sText);
-	}
-
-	/**
-	 * Writes queries run by the setup in a SQL file
-	 *
-	 * @param string $sQuery
-	 *
-	 * @since 2.5 #1001 utf8mb4 switch
-	 * @uses \SetupUtils::GetSetupQueriesFilePath()
-	 */
-	protected function log_db_query($sQuery)
-	{
-		$sSetupQueriesFilePath = SetupUtils::GetSetupQueriesFilePath();
-		$hSetupQueriesFile = @fopen($sSetupQueriesFilePath, 'a');
-		if ($hSetupQueriesFile !== false)
-		{
-			fwrite($hSetupQueriesFile, "$sQuery\n");
-			fclose($hSetupQueriesFile);
-		}
 	}
 	
 	public function GetCurrentDataModelVersion()
@@ -1215,12 +1214,6 @@ class RunTimeEnvironment
         $fStart = microtime(true);
         foreach(MetaModel::GetClasses() as $sClass)
         {
-            if (false == MetaModel::HasTable($sClass) && MetaModel::IsAbstract($sClass))
-            {
-                //if a class is not persisted and is abstract, the code below would crash. Needed by the class AbstractRessource. This is tolerable to skip this because we check the setup process integrity, not the datamodel integrity.
-                continue;
-            }
-
             $oSearch = new DBObjectSearch($sClass);
             $oSearch->SetShowObsoleteData(false);
             $oSQLQuery = $oSearch->GetSQLQueryStructure(null, false);

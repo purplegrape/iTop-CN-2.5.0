@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2016-2018 Combodo SARL
+// Copyright (C) 2016 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -20,7 +20,7 @@
 /**
  * Monitor the backup
  *
- * @copyright   Copyright (C) 2016-2018 Combodo SARL
+ * @copyright   Copyright (C) 2016 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -37,19 +37,17 @@ require_once(APPROOT.'application/loginwebpage.class.inc.php');
 /////////////////////////////////////////////////////////////////////
 // Main program
 //
-LoginWebPage::DoLogin(); // Check user rights and prompt if needed
-ApplicationMenu::CheckMenuIdEnabled('BackupStatus');
+LoginWebPage::DoLogin(true); // Check user rights and prompt if needed (must be admin)
 
 //$sOperation = utils::ReadParam('operation', 'menu');
 //$oAppContext = new ApplicationContext();
 
+$oP = new iTopWebPage(Dict::S('bkp-status-title'));
+$oP->set_base(utils::GetAbsoluteUrlAppRoot().'pages/');
 
 
 try
 {
-	$oP = new iTopWebPage(Dict::S('bkp-status-title'));
-	$oP->set_base(utils::GetAbsoluteUrlAppRoot().'pages/');
-
 	$oP->add("<h1>".Dict::S('bkp-status-title')."</h1>");
 
 	if (MetaModel::GetConfig()->Get('demo_mode'))
@@ -95,7 +93,7 @@ try
 	}
 	foreach($aOutput as $sLine)
 	{
-		IssueLog::Info("$sCommand said: $sLine");
+		//echo 'Info - mysqldump -V said: '.$sLine;
 	}
 	$oP->p($sMySqlDump);
 
@@ -298,11 +296,11 @@ try
 	$sRestoreDone = addslashes(Dict::S('bkp-success-restore'));
 
 	$sMySQLBinDir = addslashes(MetaModel::GetConfig()->GetModuleSetting('itop-backup', 'mysql_bindir', ''));
-	$sDBHost = addslashes(MetaModel::GetConfig()->Get('db_host'));
-	$sDBUser = addslashes(MetaModel::GetConfig()->Get('db_user'));
-	$sDBPwd = addslashes(MetaModel::GetConfig()->Get('db_pwd'));
-	$sDBName = addslashes(MetaModel::GetConfig()->Get('db_name'));
-	$sDBSubName = addslashes(MetaModel::GetConfig()->Get('db_subname'));
+	$sDBHost = addslashes(MetaModel::GetConfig()->GetDBHost());
+	$sDBUser = addslashes(MetaModel::GetConfig()->GetDBUser());
+	$sDBPwd = addslashes(MetaModel::GetConfig()->GetDBPwd());
+	$sDBName = addslashes(MetaModel::GetConfig()->GetDBName());
+	$sDBSubName = addslashes(MetaModel::GetConfig()->GetDBSubName());
 
 	$sEnvironment = addslashes(utils::GetCurrentEnvironment());
 	
@@ -352,8 +350,14 @@ function LaunchRestoreNow(sBackupFile, sConfirmationMessage)
 
 			var oParams = {};
 			oParams.operation = 'restore_exec';
-			oParams.token = $("#restore_token").val(); // token to check auth + rights without loading MetaModel
-			oParams.environment = '$sEnvironment'; // needed to load the config
+			oParams.token = $("#restore_token").val();
+			oParams.mysql_bindir = '$sMySQLBinDir';
+			oParams.db_host = '$sDBHost';
+			oParams.db_user = '$sDBUser';
+			oParams.db_pwd = '$sDBPwd';
+			oParams.db_name = '$sDBName';
+			oParams.db_subname = '$sDBSubName';
+			oParams.environment = '$sEnvironment';
 			if (oParams.token.length > 0)
 			{
 				$.post(GetAbsoluteUrlModulePage('itop-backup', 'ajax.backup.php'), oParams, function(data){
@@ -390,7 +394,6 @@ EOF
 }
 catch(Exception $e)
 {
-	$oP = new iTopWebPage(Dict::S('bkp-status-title'));
 	$oP->p('<b>'.$e->getMessage().'</b>');
 }
 

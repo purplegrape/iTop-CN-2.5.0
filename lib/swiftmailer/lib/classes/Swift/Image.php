@@ -11,7 +11,9 @@
 /**
  * An image, embedded in a multipart message.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_Image extends Swift_EmbeddedFile
 {
@@ -36,7 +38,7 @@ class Swift_Image extends Swift_EmbeddedFile
      * @param string                        $filename
      * @param string                        $contentType
      *
-     * @return self
+     * @return Swift_Image
      */
     public static function newInstance($data = null, $filename = null, $contentType = null)
     {
@@ -48,10 +50,14 @@ class Swift_Image extends Swift_EmbeddedFile
      *
      * @param string $path
      *
-     * @return self
+     * @return Swift_Image
      */
     public static function fromPath($path)
     {
-        return self::newInstance()->setFile(new Swift_ByteStream_FileByteStream($path));
+        $image = self::newInstance()->setFile(
+            new Swift_ByteStream_FileByteStream($path)
+            );
+
+        return $image;
     }
 }

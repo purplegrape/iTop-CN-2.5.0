@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2015 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -20,7 +20,7 @@
 /**
  * DB Server abstraction
  *
- * @copyright   Copyright (C) 2010-2018 Combodo SARL
+ * @copyright   Copyright (C) 2010-2015 Combodo SARL
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -29,27 +29,13 @@ require_once(APPROOT.'core/kpi.class.inc.php');
 
 class MySQLException extends CoreException
 {
-	/**
-	 * MySQLException constructor.
-	 *
-	 * @param string $sIssue
-	 * @param array $aContext
-	 * @param \Exception $oException
-	 * @param \mysqli $oMysqli to use when working with a custom mysqli instance
-	 */
-	public function __construct($sIssue, $aContext, $oException = null, $oMysqli = null)
+	public function __construct($sIssue, $aContext, $oException = null)
 	{
 		if ($oException != null)
 		{
 			$aContext['mysql_errno'] = $oException->getCode();
 			$this->code = $oException->getCode();
 			$aContext['mysql_error'] = $oException->getMessage();
-		}
-		else if ($oMysqli != null)
-		{
-			$aContext['mysql_errno'] = $oMysqli->errno;
-			$this->code = $oMysqli->errno;
-			$aContext['mysql_error'] = $oMysqli->error;
 		}
 		else
 		{
@@ -58,44 +44,6 @@ class MySQLException extends CoreException
 			$aContext['mysql_error'] = CMDBSource::GetError();
 		}
 		parent::__construct($sIssue, $aContext);
-	}
-}
-
-/**
- * Class MySQLQueryHasNoResultException
- *
- * @since 2.5
- */
-class MySQLQueryHasNoResultException extends MySQLException
-{
-
-}
-
-/**
- * Class MySQLHasGoneAwayException
- *
- * @since 2.5
- * @see itop bug 1195
- * @see https://dev.mysql.com/doc/refman/5.7/en/gone-away.html
- */
-class MySQLHasGoneAwayException extends MySQLException
-{
-	/**
-	 * can not be a constant before PHP 5.6 (http://php.net/manual/fr/language.oop5.constants.php)
-	 *
-	 * @return int[]
-	 */
-	public static function getErrorCodes()
-	{
-		return array(
-			2006,
-			2013
-		);
-	}
-
-	public function __construct($sIssue, $aContext)
-	{
-		parent::__construct($sIssue, $aContext, null);
 	}
 }
 
@@ -112,136 +60,37 @@ class CMDBSource
 	protected static $m_sDBUser;
 	protected static $m_sDBPwd;
 	protected static $m_sDBName;
-	/**
-	 * @var boolean
-	 * @since 2.5 #1260 MySQL TLS first implementation
-	 */
-	protected static $m_bDBTlsEnabled;
-	/**
-	 * @var string
-	 * @since 2.5 #1260 MySQL TLS first implementation
-	 */
-	protected static $m_sDBTlsCA;
-
-	/** @var mysqli $m_oMysqli */
 	protected static $m_oMysqli;
 
-	/**
-	 * SQL charset & collation declaration for text columns
-	 *
-	 * Using a function instead of a constant or attribute to avoid crash in the setup for older PHP versions (cannot
-	 * use expression as value)
-	 *
-	 * @see https://dev.mysql.com/doc/refman/5.7/en/charset-column.html
-	 * @since 2.5 #1001 switch to utf8mb4
-	 */
-	public static function GetSqlStringColumnDefinition()
-	{
-		return ' CHARACTER SET '.DEFAULT_CHARACTER_SET.' COLLATE '.DEFAULT_COLLATION;
-	}
-
-	/**
-	 * @param Config $oConfig
-	 *
-	 * @throws \MySQLException
-	 * @uses \CMDBSource::Init()
-	 * @uses \CMDBSource::SetCharacterSet()
-	 */
-	public static function InitFromConfig($oConfig)
-	{
-		$sServer = $oConfig->Get('db_host');
-		$sUser = $oConfig->Get('db_user');
-		$sPwd = $oConfig->Get('db_pwd');
-		$sSource = $oConfig->Get('db_name');
-		$bTlsEnabled = $oConfig->Get('db_tls.enabled');
-		$sTlsCA = $oConfig->Get('db_tls.ca');
-
-		self::Init($sServer, $sUser, $sPwd, $sSource, $bTlsEnabled, $sTlsCA);
-
-		$sCharacterSet = DEFAULT_CHARACTER_SET;
-		$sCollation = DEFAULT_COLLATION;
-		self::SetCharacterSet($sCharacterSet, $sCollation);
-	}
-
-	/**
-	 * @param string $sServer
-	 * @param string $sUser
-	 * @param string $sPwd
-	 * @param string $sSource database to use
-	 * @param bool $bTlsEnabled
-	 * @param string $sTlsCA
-	 *
-	 * @throws \MySQLException
-	 */
-	public static function Init(
-		$sServer, $sUser, $sPwd, $sSource = '', $bTlsEnabled = false, $sTlsCA = null
-	)
+	public static function Init($sServer, $sUser, $sPwd, $sSource = '')
 	{
 		self::$m_sDBHost = $sServer;
 		self::$m_sDBUser = $sUser;
 		self::$m_sDBPwd = $sPwd;
 		self::$m_sDBName = $sSource;
-		self::$m_bDBTlsEnabled = empty($bTlsEnabled) ? false : $bTlsEnabled;
-		self::$m_sDBTlsCA = empty($sTlsCA) ? null : $sTlsCA;
+		self::$m_oMysqli = null;
 
-		self::$m_oMysqli = self::GetMysqliInstance($sServer, $sUser, $sPwd, $sSource, $bTlsEnabled, $sTlsCA, true);
-	}
-
-	/**
-	 * @param string $sDbHost
-	 * @param string $sUser
-	 * @param string $sPwd
-	 * @param string $sSource database to use
-	 * @param bool $bTlsEnabled
-	 * @param string $sTlsCa
-	 * @param bool $bCheckTlsAfterConnection If true then verify after connection if it is encrypted
-	 *
-	 * @return \mysqli
-	 * @throws \MySQLException
-	 */
-	public static function GetMysqliInstance(
-		$sDbHost, $sUser, $sPwd, $sSource = '', $bTlsEnabled = false, $sTlsCa = null, $bCheckTlsAfterConnection = false
-	) {
-		$oMysqli = null;
-
-		$sServer = null;
-		$iPort = null;
-		self::InitServerAndPort($sDbHost, $sServer, $iPort);
-
-		$iFlags = null;
-
-		// *some* errors (like connection errors) will throw mysqli_sql_exception instead of generating warnings printed to the output
-		// but some other errors will still cause the query() method to return false !!!
-		mysqli_report(MYSQLI_REPORT_STRICT);
-
+		mysqli_report(MYSQLI_REPORT_STRICT); // *some* errors (like connection errors) will throw mysqli_sql_exception instead
+											 // of generating warnings printed to the output but some other errors will still
+											 // cause the query() method to return false !!!
 		try
 		{
-			$oMysqli = new mysqli();
-			$oMysqli->init();
-
-			if ($bTlsEnabled)
+			$aConnectInfo = explode(':', self::$m_sDBHost);
+			if (count($aConnectInfo) > 1)
 			{
-				$iFlags = (empty($sTlsCa))
-					? MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT
-					: MYSQLI_CLIENT_SSL;
-				$sTlsCert = null; // not implemented
-				$sTlsCaPath = null; // not implemented
-				$sTlsCipher = null; // not implemented
-				$oMysqli->ssl_set($bTlsEnabled, $sTlsCert, $sTlsCa, $sTlsCaPath, $sTlsCipher);
+				// Override the default port
+				$sServer = $aConnectInfo[0];
+				$iPort = (int)$aConnectInfo[1];
+				self::$m_oMysqli = new mysqli($sServer, self::$m_sDBUser, self::$m_sDBPwd, '', $iPort);
 			}
-			$oMysqli->real_connect($sServer, $sUser, $sPwd, '', $iPort, ini_get("mysqli.default_socket"), $iFlags);
+			else
+			{
+				self::$m_oMysqli = new mysqli(self::$m_sDBHost, self::$m_sDBUser, self::$m_sDBPwd);
+			}
 		}
 		catch(mysqli_sql_exception $e)
 		{
-			throw new MySQLException('Could not connect to the DB server', array('host' => $sServer, 'user' => $sUser), $e);
-		}
-
-		if ($bTlsEnabled
-			&& $bCheckTlsAfterConnection
-			&& !self::IsOpenedDbConnectionUsingTls($oMysqli))
-		{
-			throw new MySQLException("Connection to the database is not encrypted whereas it was opened using TLS parameters",
-				null, null, $oMysqli);
+			throw new MySQLException('Could not connect to the DB server', array('host'=>self::$m_sDBHost, 'user'=>self::$m_sDBUser), $e);	
 		}
 
 		if (!empty($sSource))
@@ -249,104 +98,16 @@ class CMDBSource
 			try
 			{
 				mysqli_report(MYSQLI_REPORT_STRICT); // Errors, in the next query, will throw mysqli_sql_exception
-				$oMysqli->query("USE `$sSource`");
+				self::$m_oMysqli->query("USE `$sSource`");
 			}
 			catch(mysqli_sql_exception $e)
 			{
-				throw new MySQLException('Could not select DB',
-					array('host' => $sServer, 'user' => $sUser, 'db_name' => $sSource), $e);
+				throw new MySQLException('Could not select DB', array('host'=>self::$m_sDBHost, 'user'=>self::$m_sDBUser, 'db_name'=>self::$m_sDBName), $e);
 			}
 		}
-
-		return $oMysqli;
 	}
 
-	/**
-	 * @param string $sDbHost initial value ("p:domain:port" syntax)
-	 * @param string $sServer server variable to update
-	 * @param int $iPort port variable to update
-	 */
-	public static function InitServerAndPort($sDbHost, &$sServer, &$iPort)
-	{
-		$aConnectInfo = explode(':', $sDbHost);
-
-		$bUsePersistentConnection = false;
-		if (strcasecmp($aConnectInfo[0], 'p') == 0)
-		{
-			// we might have "p:" prefix to use persistent connections (see http://php.net/manual/en/mysqli.persistconns.php)
-			$bUsePersistentConnection = true;
-			$sServer = $aConnectInfo[0].':'.$aConnectInfo[1];
-		}
-		else
-		{
-			$sServer = $aConnectInfo[0];
-		}
-
-		$iConnectInfoCount = count($aConnectInfo);
-		if ($bUsePersistentConnection && ($iConnectInfoCount == 3))
-		{
-			$iPort = $aConnectInfo[2];
-		}
-		else if (!$bUsePersistentConnection && ($iConnectInfoCount == 2))
-		{
-			$iPort = $aConnectInfo[1];
-		}
-		else
-		{
-			$iPort = 3306;
-		}
-	}
-
-	/**
-	 * <p>A DB connection can be opened transparently (no errors thrown) without being encrypted, whereas the TLS
-	 * parameters were used.<br>
-	 * This method can be called to ensure that the DB connection really uses TLS.
-	 *
-	 * <p>We're using this object connection : {@link self::$m_oMysqli}
-	 *
-	 * @param \mysqli $oMysqli
-	 *
-	 * @return boolean true if the connection was really established using TLS
-	 * @throws \MySQLException
-	 *
-	 * @uses IsMySqlVarNonEmpty
-	 */
-	private static function IsOpenedDbConnectionUsingTls($oMysqli)
-	{
-		if (self::$m_oMysqli == null)
-		{
-			self::$m_oMysqli = $oMysqli;
-		}
-
-		$bNonEmptySslVersionVar = self::IsMySqlVarNonEmpty('ssl_version');
-		$bNonEmptySslCipherVar = self::IsMySqlVarNonEmpty('ssl_cipher');
-
-		return ($bNonEmptySslVersionVar && $bNonEmptySslCipherVar);
-	}
-
-	/**
-	 * @param string $sVarName
-	 *
-	 * @return bool
-	 * @throws \MySQLException
-	 *
-	 * @uses SHOW STATUS queries
-	 */
-	private static function IsMySqlVarNonEmpty($sVarName)
-	{
-		try
-		{
-			$sResult = self::QueryToScalar("SHOW SESSION STATUS LIKE '$sVarName'", 1);
-		}
-		catch (MySQLQueryHasNoResultException $e)
-		{
-			$sResult = null;
-		}
-
-		return (!empty($sResult));
-	}
-
-	public static function SetCharacterSet($sCharset = DEFAULT_CHARACTER_SET, $sCollation = DEFAULT_COLLATION)
+	public static function SetCharacterSet($sCharset = 'utf8', $sCollation = 'utf8_general_ci')
 	{
 		if (strlen($sCharset) > 0)
 		{
@@ -405,12 +166,7 @@ class CMDBSource
 		$aVersions = self::QueryToCol('SELECT Version() as version', 'version');
 		return $aVersions[0];
 	}
-
-	/**
-	 * @param string $sSource
-	 *
-	 * @throws \MySQLException
-	 */
+	
 	public static function SelectDB($sSource)
 	{
 		if (!((bool)self::$m_oMysqli->query("USE `$sSource`")))
@@ -420,15 +176,9 @@ class CMDBSource
 		self::$m_sDBName = $sSource;
 	}
 
-	/**
-	 * @param string $sSource
-	 *
-	 * @throws \MySQLException
-	 * @throws \MySQLHasGoneAwayException
-	 */
 	public static function CreateDB($sSource)
 	{
-		self::Query("CREATE DATABASE `$sSource` CHARACTER SET ".DEFAULT_CHARACTER_SET." COLLATE ".DEFAULT_COLLATION);
+		self::Query("CREATE DATABASE `$sSource` CHARACTER SET utf8 COLLATE utf8_unicode_ci");
 		self::SelectDB($sSource);
 	}
 
@@ -457,14 +207,6 @@ class CMDBSource
 		$res = self::Query("DROP TABLE `$sTable`");
 		self::_TablesInfoCacheReset(true); // reset the table info cache!
 		return $res;
-	}
-
-	/**
-	 * @return \mysqli
-	 */
-	public static function GetMysqli()
-	{
-		return self::$m_oMysqli;
 	}
 
 	public static function GetErrNo()
@@ -496,19 +238,15 @@ class CMDBSource
 	public static function DBPwd() {return self::$m_sDBPwd;}
 	public static function DBName() {return self::$m_sDBName;}
 
-	/**
-	 * Quote variable and protect against SQL injection attacks
-	 * Code found in the PHP documentation: quote_smart($value)
-	 *
-	 * @param mixed $value
-	 * @param bool $bAlways should be set to true when the purpose is to create a IN clause,
-	 *                      otherwise and if there is a mix of strings and numbers, the clause would always be false
-	 * @param string $cQuoteStyle
-	 *
-	 * @return array|string
-	 */
 	public static function Quote($value, $bAlways = false, $cQuoteStyle = "'")
 	{
+		// Quote variable and protect against SQL injection attacks
+		// Code found in the PHP documentation: quote_smart($value)
+
+		// bAlways should be set to true when the purpose is to create a IN clause,
+		// otherwise and if there is a mix of strings and numbers, the clause
+		// would always be false
+
 		if (is_null($value))
 		{
 			return 'NULL';
@@ -537,13 +275,6 @@ class CMDBSource
 		return $value;
 	}
 
-	/**
-	 * @param string $sSQLQuery
-	 *
-	 * @return \mysqli_result
-	 * @throws \MySQLException
-	 * @throws \MySQLHasGoneAwayException
-	 */
 	public static function Query($sSQLQuery)
 	{
 		$oKPI = new ExecutionKPI();
@@ -558,35 +289,19 @@ class CMDBSource
 		$oKPI->ComputeStats('Query exec (mySQL)', $sSQLQuery);
 		if ($oResult === false)
 		{
-			$aContext = array('query' => $sSQLQuery);
-
-			$iMySqlErrorNo = self::$m_oMysqli->errno;
-			$aMySqlHasGoneAwayErrorCodes = MySQLHasGoneAwayException::getErrorCodes();
-			if (in_array($iMySqlErrorNo, $aMySqlHasGoneAwayErrorCodes))
-			{
-				throw new MySQLHasGoneAwayException(self::GetError(), $aContext);
-			}
-
-			throw new MySQLException('Failed to issue SQL query', $aContext);
+			throw new MySQLException('Failed to issue SQL query', array('query' => $sSQLQuery));
 		}
 	
 		return $oResult;
 	}
 
-	/**
-	 * @param string $sTable
-	 *
-	 * @return int
-	 * @throws \MySQLException
-	 * @throws \MySQLHasGoneAwayException
-	 */
 	public static function GetNextInsertId($sTable)
 	{
 		$sSQL = "SHOW TABLE STATUS LIKE '$sTable'";
 		$oResult = self::Query($sSQL);
 		$aRow = $oResult->fetch_assoc();
-
-		return $aRow['Auto_increment'];
+		$iNextInsertId = $aRow['Auto_increment'];
+		return $iNextInsertId;
 	}
 
 	public static function GetInsertId()
@@ -613,15 +328,7 @@ class CMDBSource
 		self::Query($sSQLQuery);
 	}
 
-	/**
-	 * @param string $sSql
-	 * @param int $iCol beginning at 0
-	 *
-	 * @return string corresponding cell content on the first line
-	 * @throws \MySQLException
-	 * @throws \MySQLQueryHasNoResultException
-	 */
-	public static function QueryToScalar($sSql, $iCol = 0)
+	public static function QueryToScalar($sSql)
 	{
 		$oKPI = new ExecutionKPI();
 		try
@@ -638,28 +345,20 @@ class CMDBSource
 		{
 			throw new MySQLException('Failed to issue SQL query', array('query' => $sSql));
 		}
-
+		
 		if ($aRow = $oResult->fetch_array(MYSQLI_BOTH))
 		{
-			$res = $aRow[$iCol];
+			$res = $aRow[0];
 		}
 		else
 		{
 			$oResult->free();
-			throw new MySQLQueryHasNoResultException('Found no result for query', array('query' => $sSql));
+			throw new MySQLException('Found no result for query', array('query' => $sSql));
 		}
 		$oResult->free();
-
 		return $res;
 	}
 
-
-	/**
-	 * @param string $sSql
-	 *
-	 * @return array
-	 * @throws \MySQLException if query cannot be processed
-	 */
 	public static function QueryToArray($sSql)
 	{
 		$aData = array();
@@ -687,13 +386,6 @@ class CMDBSource
 		return $aData;
 	}
 
-	/**
-	 * @param string $sSql
-	 * @param int $col
-	 *
-	 * @return array
-	 * @throws \MySQLException
-	 */
 	public static function QueryToCol($sSql, $col)
 	{
 		$aColumn = array();
@@ -705,12 +397,6 @@ class CMDBSource
 		return $aColumn;
 	}
 
-	/**
-	 * @param string $sSql
-	 *
-	 * @return array
-	 * @throws \MySQLException if query cannot be processed
-	 */
 	public static function ExplainQuery($sSql)
 	{
 		$aData = array();
@@ -726,8 +412,8 @@ class CMDBSource
 		{
 			throw new MySQLException('Failed to issue SQL query', array('query' => $sSql));
 		}
-
-		$aNames = self::GetColumns($oResult, $sSql);
+		
+		$aNames = self::GetColumns($oResult);
 
 		$aData[] = $aNames;
 		while ($aRow = $oResult->fetch_array(MYSQLI_ASSOC))
@@ -738,12 +424,6 @@ class CMDBSource
 		return $aData;
 	}
 
-	/**
-	 * @param string $sSql
-	 *
-	 * @return string
-	 * @throws \MySQLException if query cannot be processed
-	 */
 	public static function TestQuery($sSql)
 	{
 		try
@@ -781,14 +461,7 @@ class CMDBSource
 		return $oResult->fetch_array(MYSQLI_ASSOC);
 	}
 
-	/**
-	 * @param mysqli_result $oResult
-	 * @param string $sSql
-	 *
-	 * @return string[]
-	 * @throws \MySQLException
-	 */
-	public static function GetColumns($oResult, $sSql)
+	public static function GetColumns($oResult)
 	{
 		$aNames = array();
 		for ($i = 0; $i < (($___mysqli_tmp = $oResult->field_count) ? $___mysqli_tmp : 0) ; $i++)
@@ -870,35 +543,17 @@ class CMDBSource
 		return ($aFieldData["Type"]);
 	}
 
-	/**
-	 * @param string $sTable
-	 * @param string $sField
-	 *
-	 * @return bool|string
-	 * @see \AttributeDefinition::GetSQLColumns()
-	 */
 	public static function GetFieldSpec($sTable, $sField)
 	{
 		$aTableInfo = self::GetTableInfo($sTable);
 		if (empty($aTableInfo)) return false;
 		if (!array_key_exists($sField, $aTableInfo["Fields"])) return false;
 		$aFieldData = $aTableInfo["Fields"][$sField];
-
 		$sRet = $aFieldData["Type"];
-
-		$sColumnCharset = $aFieldData["Charset"];
-		$sColumnCollation = $aFieldData["Collation"];
-		if (!empty($sColumnCharset))
-		{
-			$sRet .= ' CHARACTER SET '.$sColumnCharset;
-			$sRet .= ' COLLATE '.$sColumnCollation;
-		}
-
 		if ($aFieldData["Null"] == 'NO')
 		{
 			$sRet .= ' NOT NULL';
 		}
-
 		if (is_numeric($aFieldData["Default"]))
 		{
 			if (strtolower(substr($aFieldData["Type"], 0, 5)) == 'enum(')
@@ -916,11 +571,10 @@ class CMDBSource
 		{
 			$sRet .= ' DEFAULT '.self::Quote($aFieldData["Default"]);
 		}
-
 		return $sRet;
 	}
 
-	public static function HasIndex($sTable, $sIndexId, $aFields = null, $aLength = null)
+	public static function HasIndex($sTable, $sIndexId, $aFields = null)
 	{
 		$aTableInfo = self::GetTableInfo($sTable);
 		if (empty($aTableInfo)) return false;
@@ -934,24 +588,9 @@ class CMDBSource
 
 		// Compare the columns
 		$sSearchedIndex = implode(',', $aFields);
-		$aColumnNames = array();
-		$aSubParts = array();
-		foreach($aTableInfo['Indexes'][$sIndexId] as $aIndexDef)
-		{
-			$aColumnNames[] = $aIndexDef['Column_name'];
-			$aSubParts[] = $aIndexDef['Sub_part'];
-		}
-		$sExistingIndex = implode(',', $aColumnNames);
+		$sExistingIndex = implode(',', $aTableInfo['Indexes'][$sIndexId]);
 
-		if (is_null($aLength))
-		{
-			return ($sSearchedIndex == $sExistingIndex);
-		}
-
-		$sSearchedLength = implode(',', $aLength);
-		$sExistingLength = implode(',', $aSubParts);
-
-		return ($sSearchedIndex == $sExistingIndex) && ($sSearchedLength == $sExistingLength);
+		return ($sSearchedIndex == $sExistingIndex);
 	}
 
 	// Returns an array of (fieldname => array of field info)
@@ -971,49 +610,35 @@ class CMDBSource
 	{
 		self::$m_aTablesInfo = array();
 	}
-
-	/**
-	 * @param $sTableName
-	 *
-	 * @throws \MySQLException
-	 */
 	private static function _TableInfoCacheInit($sTableName)
 	{
 		if (isset(self::$m_aTablesInfo[strtolower($sTableName)])
-			&& (self::$m_aTablesInfo[strtolower($sTableName)] != null))
-		{
-			return;
-		}
+			&& (self::$m_aTablesInfo[strtolower($sTableName)] != null)) return;
 
-		// Create array entry, if table does not exist / has no columns
-		self::$m_aTablesInfo[strtolower($sTableName)] = null;
-
-		// Get table informations
-		//   We were using SHOW COLUMNS FROM... but this don't return charset and collation info !
-		//   so since 2.5 and #1001 (switch to utf8mb4) we're using INFORMATION_SCHEMA !
-		$aMapping = array(
-			"Name" => "COLUMN_NAME",
-			"Type" => "COLUMN_TYPE",
-			"Null" => "IS_NULLABLE",
-			"Key" => "COLUMN_KEY",
-			"Default" => "COLUMN_DEFAULT",
-			"Extra" => "EXTRA",
-			"Charset" => "CHARACTER_SET_NAME",
-			"Collation" => "COLLATION_NAME",
-			"CharMaxLength" => "CHARACTER_MAXIMUM_LENGTH",
-		);
-		$sColumns = implode(', ', $aMapping);
-		$sDBName = self::$m_sDBName;
-		$aFields = self::QueryToArray("SELECT $sColumns FROM information_schema.`COLUMNS` WHERE table_schema = '$sDBName' AND table_name = '$sTableName';");
-		foreach ($aFields as $aFieldData)
+		try
 		{
-			$aFields = array();
-			foreach($aMapping as $sKey => $sColumn)
+			// Check if the table exists
+			$aFields = self::QueryToArray("SHOW COLUMNS FROM `$sTableName`");
+			// Note: without backticks, you get an error with some table names (e.g. "group")
+			foreach ($aFields as $aFieldData)
 			{
-				$aFields[$sKey] = $aFieldData[$sColumn];
+				$sFieldName = $aFieldData["Field"];
+				self::$m_aTablesInfo[strtolower($sTableName)]["Fields"][$sFieldName] =
+					array
+					(
+						"Name"=>$aFieldData["Field"],
+						"Type"=>$aFieldData["Type"],
+						"Null"=>$aFieldData["Null"],
+						"Key"=>$aFieldData["Key"],
+						"Default"=>$aFieldData["Default"],
+						"Extra"=>$aFieldData["Extra"]
+					);
 			}
-			$sFieldName = $aFieldData["COLUMN_NAME"];
-			self::$m_aTablesInfo[strtolower($sTableName)]["Fields"][$sFieldName] = $aFields;
+		}
+		catch(MySQLException $e)
+		{
+			// Table does not exist
+			self::$m_aTablesInfo[strtolower($sTableName)] = null;
 		}
 
 		if (!is_null(self::$m_aTablesInfo[strtolower($sTableName)]))
@@ -1022,57 +647,32 @@ class CMDBSource
 			$aMyIndexes = array();
 			foreach ($aIndexes as $aIndexColumn)
 			{
-				$aMyIndexes[$aIndexColumn['Key_name']][$aIndexColumn['Seq_in_index']-1] = $aIndexColumn;
+				$aMyIndexes[$aIndexColumn['Key_name']][$aIndexColumn['Seq_in_index']-1] = $aIndexColumn['Column_name'];
 			}
 			self::$m_aTablesInfo[strtolower($sTableName)]["Indexes"] = $aMyIndexes;
 		}
 	}
-
+	//public static function EnumTables()
+	//{
+	//	self::_TablesInfoCacheInit();
+	//	return array_keys(self::$m_aTablesInfo);
+	//}
 	public static function GetTableInfo($sTable)
 	{
 		self::_TableInfoCacheInit($sTable);
 
 		// perform a case insensitive match because on Windows the table names become lowercase :-(
+		//foreach(self::$m_aTablesInfo as $sTableName => $aInfo)
+		//{
+		//	if (strtolower($sTableName) == strtolower($sTable))
+		//	{
+		//		return $aInfo;
+		//	}
+		//}
 		return self::$m_aTablesInfo[strtolower($sTable)];
+		//return null;
 	}
 
-	/**
-	 * @param string $sTableName
-	 *
-	 * @return string query to upgrade table charset and collation if needed, null if not
-	 * @throws \MySQLException
-	 *
-	 * @since 2.5 #1001 switch to utf8mb4
-	 * @see https://dev.mysql.com/doc/refman/5.7/en/charset-table.html
-	 */
-	public static function DBCheckTableCharsetAndCollation($sTableName)
-	{
-		$sDBName = self::DBName();
-		$sTableInfoQuery = "SELECT C.character_set_name, T.table_collation
-			FROM information_schema.`TABLES` T inner join information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` C
-				ON T.table_collation = C.collation_name
-			WHERE T.table_schema = '$sDBName'
-  			AND T.table_name = '$sTableName';";
-		$aTableInfo = self::QueryToArray($sTableInfoQuery);
-		$sTableCharset = $aTableInfo[0]['character_set_name'];
-		$sTableCollation = $aTableInfo[0]['table_collation'];
-
-		if ((DEFAULT_CHARACTER_SET == $sTableCharset) && (DEFAULT_COLLATION == $sTableCollation))
-		{
-			return null;
-		}
-
-
-		return 'ALTER TABLE `'.$sTableName.'` '.self::GetSqlStringColumnDefinition().';';
-
-	}
-
-	/**
-	 * @param string $sTable
-	 *
-	 * @return array
-	 * @throws \MySQLException if query cannot be processed
-	 */
 	public static function DumpTable($sTable)
 	{
 		$sSql = "SELECT * FROM `$sTable`";
@@ -1128,7 +728,6 @@ class CMDBSource
 		}
 		catch(MySQLException $e)
 		{
-			$iCode = self::GetErrNo();
 			return "Current user not allowed to see his own privileges (could not access to the database 'mysql' - $iCode)";
 		}
 
@@ -1186,29 +785,5 @@ class CMDBSource
 			return true;
 		}
 		return false;
-	}
-
-	/**
-	 * @return string query to upgrade database charset and collation if needed, null if not
-	 * @throws \MySQLException
-	 *
-	 * @since 2.5 #1001 switch to utf8mb4
-	 * @see https://dev.mysql.com/doc/refman/5.7/en/charset-database.html
-	 */
-	public static function DBCheckCharsetAndCollation()
-	{
-		$sDBName = CMDBSource::DBName();
-		$sDBInfoQuery = "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME
-			FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$sDBName';";
-		$aDBInfo = CMDBSource::QueryToArray($sDBInfoQuery);
-		$sDBCharset = $aDBInfo[0]['DEFAULT_CHARACTER_SET_NAME'];
-		$sDBCollation = $aDBInfo[0]['DEFAULT_COLLATION_NAME'];
-
-		if ((DEFAULT_CHARACTER_SET == $sDBCharset) && (DEFAULT_COLLATION == $sDBCollation))
-		{
-			return null;
-		}
-
-		return 'ALTER DATABASE'.CMDBSource::GetSqlStringColumnDefinition().';';
 	}
 }

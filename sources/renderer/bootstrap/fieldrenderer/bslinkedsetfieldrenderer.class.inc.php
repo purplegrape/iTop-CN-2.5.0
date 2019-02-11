@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,14 +19,14 @@
 
 namespace Combodo\iTop\Renderer\Bootstrap\FieldRenderer;
 
-use Exception;
-use ApplicationContext;
-use IssueLog;
-use Dict;
-use MetaModel;
-use AttributeFriendlyName;
-use Combodo\iTop\Renderer\FieldRenderer;
-use Combodo\iTop\Renderer\RenderingOutput;
+use \Exception;
+use \ApplicationContext;
+use \IssueLog;
+use \Dict;
+use \MetaModel;
+use \AttributeFriendlyName;
+use \Combodo\iTop\Renderer\FieldRenderer;
+use \Combodo\iTop\Renderer\RenderingOutput;
 
 /**
  * Description of BsLinkedSetFieldRenderer
@@ -576,6 +576,7 @@ EOF
 			);
 
 			// Target object others attributes
+            // TODO: Support for AttriubteImage, AttributeBlob
 			foreach ($this->oField->GetAttributesToDisplay(true) as $sAttCode)
 			{
 				if ($sAttCode !== 'id')
@@ -598,7 +599,7 @@ EOF
 					}
 					else
 					{
-						$aAttProperties['value'] = $oAttDef->GetValueLabel($oRemoteItem->Get($sAttCode));
+						$aAttProperties['value'] = $oAttDef->GetAsHTML($oRemoteItem->Get($sAttCode));
 
 						if ($oAttDef instanceof AttributeFriendlyName)
 						{

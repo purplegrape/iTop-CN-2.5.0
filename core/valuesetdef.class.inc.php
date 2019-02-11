@@ -170,16 +170,7 @@ class ValueSetObjects extends ValueSetDefinition
 		return new DBObjectSet($oFilter, $this->m_aOrderBy, $aArgs);
 	}
 
-    /**
-     * @param        $aArgs
-     * @param string $sContains
-     * @param string $sOperation for the values @see self::LoadValues()
-     *
-     * @return array
-     * @throws CoreException
-     * @throws OQLException
-     */
-    public function GetValues($aArgs, $sContains = '', $sOperation = 'contains')
+	public function GetValues($aArgs, $sContains = '', $sOperation = 'contains')
 	{
 		if (!$this->m_bIsLoaded || ($sContains != $this->m_sContains) || ($sOperation != $this->m_sOperation))
 		{
@@ -191,15 +182,6 @@ class ValueSetObjects extends ValueSetDefinition
 		return $aRet;
 	}
 
-	/**
-	 * @param $aArgs
-	 * @param string $sContains
-	 * @param string $sOperation 'contains' or 'equals_start_with'
-	 *
-	 * @return bool
-	 * @throws \CoreException
-	 * @throws \OQLException
-	 */
 	protected function LoadValues($aArgs, $sContains = '', $sOperation = 'contains')
 	{
 		$this->m_sContains = $sContains;
@@ -228,40 +210,48 @@ class ValueSetObjects extends ValueSetDefinition
 			}
 		}
 
+		$oExpression = DBObjectSearch::GetPolymorphicExpression($oFilter->GetClass(), 'friendlyname');
+		$aFields = $oExpression->ListRequiredFields();
+		$sClass = $oFilter->GetClass();
+		foreach($aFields as $sField)
+		{
+			$aFieldItems = explode('.', $sField);
+			if ($aFieldItems[0] != $sClass)
+			{
+				$sOperation = 'contains';
+				break;
+			}
+		}
+
 		switch ($sOperation)
 		{
-			case 'equals':
+			case 'equals_start_with':
 				$aAttributes = MetaModel::GetFriendlyNameAttributeCodeList($oFilter->GetClass());
 				$sClassAlias = $oFilter->GetClassAlias();
 				$aFilters = array();
+				// Equals first
 				$oValueExpr = new ScalarExpression($sContains);
 				foreach($aAttributes as $sAttribute)
 				{
 					$oNewFilter = $oFilter->DeepClone();
 					$oNameExpr = new FieldExpression($sAttribute, $sClassAlias);
-					$oCondition = new BinaryExpression($oNameExpr, '=', $oValueExpr);
+					$oCondition = new BinaryExpression($oNameExpr, 'LIKE', $oValueExpr);
 					$oNewFilter->AddConditionExpression($oCondition);
 					$aFilters[] = $oNewFilter;
 				}
-                // Unions are much faster than OR conditions
+				// start with next
+				$oValueExpr = new ScalarExpression($sContains.'%');
+				foreach($aAttributes as $sAttribute)
+				{
+					$oNewFilter = $oFilter->DeepClone();
+					$oNameExpr = new FieldExpression($sAttribute, $sClassAlias);
+					$oCondition = new BinaryExpression($oNameExpr, 'LIKE', $oValueExpr);
+					$oNewFilter->AddConditionExpression($oCondition);
+					$aFilters[] = $oNewFilter;
+				}
+				// Unions are much faster than OR conditions
 				$oFilter = new DBUnionSearch($aFilters);
 				break;
-            case 'start_with':
-                $aAttributes = MetaModel::GetFriendlyNameAttributeCodeList($oFilter->GetClass());
-                $sClassAlias = $oFilter->GetClassAlias();
-                $aFilters = array();
-                $oValueExpr = new ScalarExpression($sContains.'%');
-                foreach($aAttributes as $sAttribute)
-                {
-                    $oNewFilter = $oFilter->DeepClone();
-                    $oNameExpr = new FieldExpression($sAttribute, $sClassAlias);
-                    $oCondition = new BinaryExpression($oNameExpr, 'LIKE', $oValueExpr);
-                    $oNewFilter->AddConditionExpression($oCondition);
-                    $aFilters[] = $oNewFilter;
-                }
-                // Unions are much faster than OR conditions
-                $oFilter = new DBUnionSearch($aFilters);
-                break;
 
 			default:
 				$oValueExpr = new ScalarExpression('%'.$sContains.'%');

@@ -11,76 +11,114 @@
 
 namespace Silex\Provider;
 
-use Pimple\Container;
-use Pimple\ServiceProviderInterface;
-use Silex\Api\EventListenerProviderInterface;
-use Silex\Provider\Session\SessionListener;
-use Silex\Provider\Session\TestSessionListener;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Silex\Application;
+use Silex\ServiceProviderInterface;
 use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 
 /**
  * Symfony HttpFoundation component Provider for sessions.
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-class SessionServiceProvider implements ServiceProviderInterface, EventListenerProviderInterface
+class SessionServiceProvider implements ServiceProviderInterface
 {
-    public function register(Container $app)
+    private $app;
+
+    public function register(Application $app)
     {
+        $this->app = $app;
+
         $app['session.test'] = false;
 
-        $app['session'] = function ($app) {
-            return new Session($app['session.storage'], $app['session.attribute_bag'], $app['session.flash_bag']);
-        };
-
-        $app['session.storage'] = function ($app) {
-            if ($app['session.test']) {
-                return $app['session.storage.test'];
+        $app['session'] = $app->share(function ($app) {
+            if (!isset($app['session.storage'])) {
+                if ($app['session.test']) {
+                    $app['session.storage'] = $app['session.storage.test'];
+                } else {
+                    $app['session.storage'] = $app['session.storage.native'];
+                }
             }
 
-            return $app['session.storage.native'];
-        };
+            return new Session($app['session.storage']);
+        });
 
-        $app['session.storage.handler'] = function ($app) {
+        $app['session.storage.handler'] = $app->share(function ($app) {
             return new NativeFileSessionHandler($app['session.storage.save_path']);
-        };
+        });
 
-        $app['session.storage.native'] = function ($app) {
+        $app['session.storage.native'] = $app->share(function ($app) {
             return new NativeSessionStorage(
                 $app['session.storage.options'],
                 $app['session.storage.handler']
             );
-        };
+        });
 
-        $app['session.listener'] = function ($app) {
-            return new SessionListener($app);
-        };
-
-        $app['session.storage.test'] = function () {
+        $app['session.storage.test'] = $app->share(function () {
             return new MockFileSessionStorage();
-        };
-
-        $app['session.listener.test'] = function ($app) {
-            return new TestSessionListener($app);
-        };
+        });
 
         $app['session.storage.options'] = array();
         $app['session.default_locale'] = 'en';
         $app['session.storage.save_path'] = null;
-        $app['session.attribute_bag'] = null;
-        $app['session.flash_bag'] = null;
     }
 
-    public function subscribe(Container $app, EventDispatcherInterface $dispatcher)
+    public function onEarlyKernelRequest(GetResponseEvent $event)
     {
-        $dispatcher->addSubscriber($app['session.listener']);
+        $event->getRequest()->setSession($this->app['session']);
+    }
+
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
+            return;
+        }
+
+        // bootstrap the session
+        if (!isset($this->app['session'])) {
+            return;
+        }
+
+        $session = $this->app['session'];
+        $cookies = $event->getRequest()->cookies;
+
+        if ($cookies->has($session->getName())) {
+            $session->setId($cookies->get($session->getName()));
+        } else {
+            $session->migrate(false);
+        }
+    }
+
+    public function onKernelResponse(FilterResponseEvent $event)
+    {
+        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
+            return;
+        }
+
+        $session = $event->getRequest()->getSession();
+        if ($session && $session->isStarted()) {
+            $session->save();
+
+            $params = session_get_cookie_params();
+
+            $event->getResponse()->headers->setCookie(new Cookie($session->getName(), $session->getId(), 0 === $params['lifetime'] ? 0 : time() + $params['lifetime'], $params['path'], $params['domain'], $params['secure'], $params['httponly']));
+        }
+    }
+
+    public function boot(Application $app)
+    {
+        $app['dispatcher']->addListener(KernelEvents::REQUEST, array($this, 'onEarlyKernelRequest'), 128);
 
         if ($app['session.test']) {
-            $app['dispatcher']->addSubscriber($app['session.listener.test']);
+            $app['dispatcher']->addListener(KernelEvents::REQUEST, array($this, 'onKernelRequest'), 192);
+            $app['dispatcher']->addListener(KernelEvents::RESPONSE, array($this, 'onKernelResponse'), -128);
         }
     }
 }

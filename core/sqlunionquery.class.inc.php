@@ -38,9 +38,8 @@ class SQLUnionQuery extends SQLQuery
 {
 	protected $aQueries;
 	protected $aGroupBy;
-	protected $aSelectExpr;
 
-	public function __construct($aQueries, $aGroupBy, $aSelectExpr = array())
+	public function __construct($aQueries, $aGroupBy)
 	{
 		parent::__construct();
 
@@ -50,7 +49,6 @@ class SQLUnionQuery extends SQLQuery
 			$this->aQueries[] = $oSQLQuery->DeepClone();
 		}
 		$this->aGroupBy = $aGroupBy;
-		$this->aSelectExpr = $aSelectExpr;
 	}
 
 	public function DisplayHtml()
@@ -71,21 +69,12 @@ class SQLUnionQuery extends SQLQuery
 		}
 	}
 
-	/**
-	 * @param array $aArgs
-	 * @throws Exception
-	 */
 	public function RenderDelete($aArgs = array())
 	{
 		throw new Exception(__class__.'::'.__function__.'Not implemented !');
 	}
 
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aArgs
-	 * @throws Exception
-	 */
 	public function RenderUpdate($aArgs = array())
 	{
 		throw new Exception(__class__.'::'.__function__.'Not implemented !');
@@ -135,20 +124,11 @@ class SQLUnionQuery extends SQLQuery
 	}
 
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aArgs
-	 * @param bool $bBeautifulQuery
-	 * @param array $aOrderBy
-	 * @param int $iLimitCount
-	 * @param int $iLimitStart
-	 * @return string
-	 * @throws CoreException
-	 */
-	public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false, $aOrderBy = array(), $iLimitCount = 0, $iLimitStart = 0)
+	public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false)
 	{
 		$this->m_bBeautifulQuery = $bBeautifulQuery;
 		$sLineSep = $this->m_bBeautifulQuery ? "\n" : '';
+		$sIndent = $this->m_bBeautifulQuery ? "   " : null;
 
 		$aSelects = array();
 		foreach ($this->aQueries as $oSQLQuery)
@@ -159,41 +139,15 @@ class SQLUnionQuery extends SQLQuery
 		$sSelects = '('.implode(")$sLineSep UNION$sLineSep(", $aSelects).')';
 		$sFrom = "($sLineSep$sSelects$sLineSep) as __selects__";
 
-		$aSelectAliases = array();
-		$aGroupAliases = array();
+		$aAliases = array();
 		foreach ($this->aGroupBy as $sGroupAlias => $trash)
 		{
-			$aSelectAliases[$sGroupAlias] = "`$sGroupAlias`";
-			$aGroupAliases[] = "`$sGroupAlias`";
+			$aAliases[] = "`$sGroupAlias`";
 		}
-		foreach($this->aSelectExpr as $sSelectAlias => $oExpr)
-		{
-			$aSelectAliases[$sSelectAlias] = $oExpr->Render()." AS `$sSelectAlias`";
-		}
+		$sSelect = implode(', ', $aAliases);
+		$sGroupBy = implode(', ', $aAliases);
 
-		$sSelect = implode(",$sLineSep ", $aSelectAliases);
-		$sGroupBy = implode(', ', $aGroupAliases);
-
-		$sOrderBy = self::ClauseOrderBy($aOrderBy, $aSelectAliases);
-		if (!empty($sGroupBy))
-		{
-			$sGroupBy = "GROUP BY $sGroupBy$sLineSep";
-		}
-		if (!empty($sOrderBy))
-		{
-			$sOrderBy = "ORDER BY $sOrderBy$sLineSep";
-		}
-		if ($iLimitCount > 0)
-		{
-			$sLimit = 'LIMIT '.$iLimitStart.', '.$iLimitCount;
-		}
-		else
-		{
-			$sLimit = '';
-		}
-
-
-		$sSQL = "SELECT $sSelect,$sLineSep COUNT(*) AS _itop_count_$sLineSep FROM $sFrom$sLineSep $sGroupBy $sOrderBy$sLineSep $sLimit";
+		$sSQL = "SELECT $sSelect,$sLineSep COUNT(*) AS _itop_count_$sLineSep FROM $sFrom$sLineSep GROUP BY $sGroupBy";
 		return $sSQL;
 	}
 

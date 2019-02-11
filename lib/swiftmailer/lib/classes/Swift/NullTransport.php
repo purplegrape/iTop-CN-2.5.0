@@ -11,10 +11,14 @@
 /**
  * Pretends messages have been sent, but just ignores them.
  *
- * @author Fabien Potencier
+ * @package Swift
+ * @author  Fabien Potencier
  */
 class Swift_NullTransport extends Swift_Transport_NullTransport
 {
+    /**
+     * Create a new NullTransport.
+     */
     public function __construct()
     {
         call_user_func_array(
@@ -27,7 +31,7 @@ class Swift_NullTransport extends Swift_Transport_NullTransport
     /**
      * Create a new NullTransport instance.
      *
-     * @return self
+     * @return Swift_NullTransport
      */
     public static function newInstance()
     {

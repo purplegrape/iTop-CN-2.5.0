@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,27 +19,26 @@
 
 namespace Combodo\iTop\Portal\Helper;
 
-use ApplicationContext;
-use Combodo\iTop\Portal\Brick\AbstractBrick;
-use DBObjectSearch;
-use DBObjectSet;
-use Dict;
-use DOMFormatException;
-use Exception;
-use iPortalUIExtension;
-use IssueLog;
-use MetaModel;
-use cmdbAbstractObject;
-use ModuleDesign;
-use Silex\Application;
-use Symfony\Component\Debug\ErrorHandler;
-use Symfony\Component\Debug\ExceptionHandler;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\HttpException;
-use Twig_Environment;
-use Twig_SimpleFilter;
-use UserRights;
-use utils;
+use \Exception;
+use \Silex\Application;
+use \Symfony\Component\Debug\ErrorHandler;
+use \Symfony\Component\Debug\ExceptionHandler;
+use \Symfony\Component\HttpFoundation\Request;
+use \Twig_Environment;
+use \Twig_SimpleFilter;
+use \Dict;
+use \utils;
+use \IssueLog;
+use \UserRights;
+use \CMDBSource;
+use \DOMFormatException;
+use \ModuleDesign;
+use \MetaModel;
+use \DBObjectSearch;
+use \DBObjectSet;
+use \iPortalUIExtension;
+use \ApplicationContext;
+use \Combodo\iTop\Portal\Brick\AbstractBrick;
 
 /**
  * Contains static methods to help loading / registering classes of the application.
@@ -49,10 +48,10 @@ use utils;
  */
 class ApplicationHelper
 {
-	const FORM_ENUM_DISPLAY_MODE_COSY = 'cosy';
-	const FORM_ENUM_DISPLAY_MODE_COMPACT = 'compact';
-	const FORM_DEFAULT_DISPLAY_MODE = self::FORM_ENUM_DISPLAY_MODE_COSY;
-	const FORM_DEFAULT_ALWAYS_SHOW_SUBMIT = false;
+    const FORM_ENUM_DISPLAY_MODE_COSY = 'cosy';
+    const FORM_ENUM_DISPLAY_MODE_COMPACT = 'compact';
+    const FORM_DEFAULT_DISPLAY_MODE = self::FORM_ENUM_DISPLAY_MODE_COSY;
+    const FORM_DEFAULT_ALWAYS_SHOW_SUBMIT = false;
 
 	/**
 	 * Loads classes from the base portal
@@ -60,7 +59,6 @@ class ApplicationHelper
 	 * @param string $sScannedDir Directory to load the files from
 	 * @param string $sFilePattern Pattern of files to load
 	 * @param string $sType Type of files to load, used only in the Exception message, can be anything
-	 *
 	 * @throws \Exception
 	 */
 	public static function LoadClasses($sScannedDir, $sFilePattern, $sType)
@@ -68,7 +66,7 @@ class ApplicationHelper
 		// Loading classes from base portal
 		foreach (scandir($sScannedDir) as $sFile)
 		{
-			if (strpos($sFile, $sFilePattern) !== false && file_exists($sFilepath = $sScannedDir.'/'.$sFile))
+			if (strpos($sFile, $sFilePattern) !== false && file_exists($sFilepath = $sScannedDir . '/' . $sFile))
 			{
 				try
 				{
@@ -76,7 +74,7 @@ class ApplicationHelper
 				}
 				catch (Exception $e)
 				{
-					throw new Exception('Error while trying to load '.$sType.' '.$sFile);
+					throw new Exception('Error while trying to load ' . $sType . ' ' . $sFile);
 				}
 			}
 		}
@@ -86,14 +84,13 @@ class ApplicationHelper
 	 * Loads controllers from the base portal
 	 *
 	 * @param string $sScannedDir Directory to load the controllers from
-	 *
 	 * @throws \Exception
 	 */
 	public static function LoadControllers($sScannedDir = null)
 	{
 		if ($sScannedDir === null)
 		{
-			$sScannedDir = __DIR__.'/../controllers';
+			$sScannedDir = __DIR__ . '/../controllers';
 		}
 
 		// Loading controllers from base portal (those from modules have already been loaded by module.xxx.php files)
@@ -104,14 +101,13 @@ class ApplicationHelper
 	 * Loads routers from the base portal
 	 *
 	 * @param string $sScannedDir Directory to load the routers from
-	 *
 	 * @throws \Exception
 	 */
 	public static function LoadRouters($sScannedDir = null)
 	{
 		if ($sScannedDir === null)
 		{
-			$sScannedDir = __DIR__.'/../routers';
+			$sScannedDir = __DIR__ . '/../routers';
 		}
 
 		// Loading routers from base portal (those from modules have already been loaded by module.xxx.php files)
@@ -122,14 +118,13 @@ class ApplicationHelper
 	 * Loads bricks from the base portal
 	 *
 	 * @param string $sScannedDir Directory to load the bricks from
-	 *
 	 * @throws \Exception
 	 */
 	public static function LoadBricks($sScannedDir = null)
 	{
 		if ($sScannedDir === null)
 		{
-			$sScannedDir = __DIR__.'/../entities';
+			$sScannedDir = __DIR__ . '/../entities';
 		}
 
 		// Loading bricks from base portal (those from modules have already been loaded by module.xxx.php files)
@@ -140,14 +135,13 @@ class ApplicationHelper
 	 * Loads form managers from the base portal
 	 *
 	 * @param string $sScannedDir Directory to load the managers from
-	 *
 	 * @throws \Exception
 	 */
 	public static function LoadFormManagers($sScannedDir = null)
 	{
 		if ($sScannedDir === null)
 		{
-			$sScannedDir = __DIR__.'/../forms';
+			$sScannedDir = __DIR__ . '/../forms';
 		}
 
 		// Loading form managers from base portal (those from modules have already been loaded by module.xxx.php files)
@@ -158,7 +152,6 @@ class ApplicationHelper
 	 * Registers routes in the Silex Application from all declared Router classes
 	 *
 	 * @param \Silex\Application $oApp
-	 *
 	 * @throws \Exception
 	 */
 	public static function RegisterRoutes(Application $oApp)
@@ -195,7 +188,6 @@ class ApplicationHelper
 	 *
 	 * @param \Silex\Application $oApp
 	 * @param boolean $bNamesOnly If set to true, function will return only the routes' names, not the objects
-	 *
 	 * @return array
 	 */
 	public static function GetRoutes(Application $oApp, $bNamesOnly = false)
@@ -213,61 +205,63 @@ class ApplicationHelper
 	{
 		// Filter to translate a string via the Dict::S function
 		// Usage in twig : {{ 'String:ToTranslate'|dict_s }}
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('dict_s',
-				function ($sStringCode, $sDefault = null, $bUserLanguageOnly = false) {
-					return Dict::S($sStringCode, $sDefault, $bUserLanguageOnly);
-				})
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('dict_s', function($sStringCode, $sDefault = null, $bUserLanguageOnly = false)
+		{
+			return Dict::S($sStringCode, $sDefault, $bUserLanguageOnly);
+		})
 		);
 
 		// Filter to format a string via the Dict::Format function
 		// Usage in twig : {{ 'String:ToTranslate'|dict_format() }}
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('dict_format',
-				function ($sStringCode, $sParam01 = null, $sParam02 = null, $sParam03 = null, $sParam04 = null) {
-					return Dict::Format($sStringCode, $sParam01, $sParam02, $sParam03, $sParam04);
-				})
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('dict_format', function($sStringCode, $sParam01 = null, $sParam02 = null, $sParam03 = null, $sParam04 = null)
+		{
+			return Dict::Format($sStringCode, $sParam01, $sParam02, $sParam03, $sParam04);
+		})
 		);
 
 		// Filter to enable base64 encode/decode
 		// Usage in twig : {{ 'String to encode'|base64_encode }}
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('base64_encode', 'base64_encode'));
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('base64_decode', 'base64_decode'));
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('base64_encode', 'base64_encode'));
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('base64_decode', 'base64_decode'));
 
 		// Filter to enable json decode  (encode already exists)
 		// Usage in twig : {{ aSomeArray|json_decode }}
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('json_decode', function ($sJsonString, $bAssoc = false) {
-				return json_decode($sJsonString, $bAssoc);
-			})
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('json_decode', function($sJsonString, $bAssoc = false)
+		{
+			return json_decode($sJsonString, $bAssoc);
+		})
 		);
 
 		// Filter to add itopversion to an url
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('add_itop_version', function ($sUrl) {
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('add_itop_version', function($sUrl)
+		{
 			if (strpos($sUrl, '?') === false)
 			{
-				$sUrl = $sUrl."?itopversion=".ITOP_VERSION;
+				$sUrl = $sUrl . "?itopversion=" . ITOP_VERSION;
 			}
 			else
 			{
-				$sUrl = $sUrl."&itopversion=".ITOP_VERSION;
+				$sUrl = $sUrl . "&itopversion=" . ITOP_VERSION;
 			}
 
 			return $sUrl;
 		}));
 
-		// Filter to add a module's version to an url
-		$oTwigEnv->addFilter(new Twig_SimpleFilter('add_module_version', function ($sUrl, $sModuleName) {
-			$sModuleVersion = utils::GetCompiledModuleVersion($sModuleName);
+        // Filter to add a module's version to an url
+        $oTwigEnv->addFilter(new Twig_SimpleFilter('add_module_version', function($sUrl, $sModuleName){
+            $sModuleVersion = utils::GetCompiledModuleVersion($sModuleName);
 
-			if (strpos($sUrl, '?') === false)
-			{
-				$sUrl = $sUrl."?moduleversion=".$sModuleVersion;
-			}
-			else
-			{
-				$sUrl = $sUrl."&moduleversion=".$sModuleVersion;
-			}
+            if (strpos($sUrl, '?') === false)
+            {
+                $sUrl = $sUrl . "?moduleversion=" . $sModuleVersion;
+            }
+            else
+            {
+                $sUrl = $sUrl . "&moduleversion=" . $sModuleVersion;
+            }
 
-			return $sUrl;
-		}));
+            return $sUrl;
+        }));
 	}
 
 	/**
@@ -278,24 +272,23 @@ class ApplicationHelper
 	 */
 	public static function RegisterExceptionHandler(Application $oApp)
 	{
-		// Intercepting fatal errors and exceptions
+	    // Intercepting fatal errors and exceptions
 		ErrorHandler::register();
 		ExceptionHandler::register(($oApp['debug'] === true));
 
 		// Intercepting manually aborted request
 		if (1 || !$oApp['debug'])
 		{
-			$oApp->error(function (Exception $oException, Request $oRequest) use ($oApp) {
-				$iErrorCode = ($oException instanceof HttpException) ? $oException->getStatusCode() : 500;
-
+			$oApp->error(function(Exception $e, $code) use ($oApp)
+			{
 				$aData = array(
-					'exception' => $oException,
-					'code' => $iErrorCode,
+					'exception' => $e,
+					'code' => $code,
 					'error_title' => '',
-					'error_message' => $oException->getMessage()
+					'error_message' => $e->getMessage()
 				);
 
-				switch ($iErrorCode)
+				switch ($code)
 				{
 					case 404:
 						$aData['error_title'] = Dict::S('Error:HTTP:404');
@@ -305,77 +298,75 @@ class ApplicationHelper
 						break;
 				}
 
-				IssueLog::Error($aData['error_title'].' : '.$aData['error_message']);
+				IssueLog::Error($aData['error_title'] . ' : ' . $aData['error_message']);
 
-				if ($oApp['request_stack']->getCurrentRequest()->isXmlHttpRequest())
+				if ($oApp['request']->isXmlHttpRequest())
 				{
-					$oResponse = $oApp->json($aData, $iErrorCode);
+					$oResponse = $oApp->json($aData, $code);
 				}
 				else
 				{
-					// Preparing debug trace
-					$aSteps = array();
-					foreach ($oException->getTrace() as $aStep)
-					{
-						// - Default file name
-						if (!isset($aStep['file']))
-						{
-							$aStep['file'] = '';
-						}
-						$aFileParts = explode('\\', $aStep['file']);
-						// - Default line number
-						if (!isset($aStep['line']))
-						{
-							$aStep['line'] = 'unknown';
-						}
-						// - Default class name
-						if (isset($aStep['class']) && isset($aStep['function']) && isset($aStep['type']))
-						{
-							$aClassParts = explode('\\', $aStep['class']);
-							$sClassName = $aClassParts[count($aClassParts) - 1];
-							$sClassFQ = $aStep['class'];
+				    // Preparing debug trace
+                    $aSteps = array();
+                    foreach($e->getTrace() as $aStep)
+                    {
+                        // - Default file name
+                        if(!isset($aStep['file']))
+                        {
+                            $aStep['file'] = '';
+                        }
+                        $aFileParts = explode('\\', $aStep['file']);
+                        // - Default line number
+                        if(!isset($aStep['line']))
+                        {
+                            $aStep['line'] = 'unknown';
+                        }
+                        // - Default class name
+                        if(isset($aStep['class']) && isset($aStep['function']) && isset($aStep['type']))
+                        {
+                            $aClassParts = explode('\\', $aStep['class']);
+                            $sClassName = $aClassParts[count($aClassParts)-1];
+                            $sClassFQ = $aStep['class'];
 
-							$aArgsAsString = array();
-							foreach ($aStep['args'] as $arg)
-							{
-								if (is_array($arg))
-								{
-									$aArgsAsString[] = 'array(...)';
-								}
-								elseif (is_object($arg))
-								{
-									$aArgsAsString[] = 'object('.get_class($arg).')';
-								}
-								else
-								{
-									$aArgsAsString[] = $arg;
-								}
-							}
+                            $aArgsAsString = array();
+                            foreach($aStep['args'] as $arg)
+                            {
+                                if(is_array($arg))
+                                {
+                                    $aArgsAsString[] = 'array(...)';
+                                }
+                                elseif(is_object($arg))
+                                {
+                                    $aArgsAsString[] = 'object('.get_class($arg).')';
+                                }
+                                else
+                                {
+                                    $aArgsAsString[] = $arg;
+                                }
+                            }
 
-							$sFunctionCall = $sClassName.$aStep['type'].$aStep['function'].'('.implode(', ',
-									$aArgsAsString).')';
-						}
-						else
-						{
-							$sClassName = null;
-							$sClassFQ = null;
-							$sFunctionCall = null;
-						}
+                            $sFunctionCall = $sClassName . $aStep['type'] . $aStep['function'] . '(' . implode(', ', $aArgsAsString) . ')';
+                        }
+                        else
+                        {
+                            $sClassName = null;
+                            $sClassFQ = null;
+                            $sFunctionCall = null;
+                        }
 
-						$aSteps[] = array(
-							'file_fq' => $aStep['file'],
-							'file_name' => $aFileParts[count($aFileParts) - 1],
-							'line' => $aStep['line'],
-							'class_name' => $sClassName,
-							'class_fq' => $sClassFQ,
-							'function_call' => $sFunctionCall,
-						);
-					}
+                        $aSteps[] = array(
+                            'file_fq' => $aStep['file'],
+                            'file_name' => $aFileParts[count($aFileParts)-1],
+                            'line' => $aStep['line'],
+                            'class_name' => $sClassName,
+                            'class_fq' => $sClassFQ,
+                            'function_call' => $sFunctionCall,
+                        );
+                    }
 
-					$aData['debug_trace_steps'] = $aSteps;
+                    $aData['debug_trace_steps'] = $aSteps;
 
-					$oResponse = $oApp['twig']->render('itop-portal-base/portal/src/views/errors/layout.html.twig',
-						$aData);
+					$oResponse = $oApp['twig']->render('itop-portal-base/portal/src/views/errors/layout.html.twig', $aData);
 				}
 
 				return $oResponse;
@@ -387,7 +378,6 @@ class ApplicationHelper
 	 * Loads the portal instance configuration from its module design into the Silex application
 	 *
 	 * @param \Silex\Application $oApp
-	 *
 	 * @throws Exception
 	 */
 	public static function LoadPortalConfiguration(Application $oApp)
@@ -400,14 +390,14 @@ class ApplicationHelper
 				throw new Exception('Cannot load module design, Portal ID is not defined');
 			}
 			$oDesign = new ModuleDesign(PORTAL_ID);
-
+			
 			// Parsing file
 			// - Default values
 			$aPortalConf = array(
 				'properties' => array(
 					'id' => PORTAL_ID,
 					'name' => 'Page:DefaultTitle',
-					'logo' => (file_exists(MODULESROOT.'branding/portal-logo.png')) ? utils::GetAbsoluteUrlModulesRoot().'branding/portal-logo.png' : '../images/logo-itop-dark-bg.svg',
+					'logo' => (file_exists(MODULESROOT . 'branding/portal-logo.png')) ? utils::GetAbsoluteUrlModulesRoot() . 'branding/portal-logo.png' : '../images/logo-itop-dark-bg.svg',
 					'themes' => array(
 						'bootstrap' => 'itop-portal-base/portal/web/css/bootstrap-theme-combodo.scss',
 						'portal' => 'itop-portal-base/portal/web/css/portal.scss',
@@ -422,29 +412,30 @@ class ApplicationHelper
 					'attachments' => array(
 						'allow_delete' => true
 					),
-					'allowed_portals' => array(
-						'opening_mode' => null,
-					),
+                    'allowed_portals' => array(
+                        'opening_mode' => null,
+                    ),
 				),
 				'portals' => array(),
 				'forms' => array(),
-				'ui_extensions' => array(
-					'css_files' => array(),
-					'css_inline' => null,
-					'js_files' => array(),
-					'js_inline' => null,
-					'html' => array(),
-				),
+                'ui_extensions' => array(
+                    'css_files' => array(),
+                    'css_inline' => null,
+                    'js_files' => array(),
+                    'js_inline' => null,
+                    'html' => array(),
+                ),
 				'bricks' => array(),
 				'bricks_total_width' => 0,
 			);
 			// - Global portal properties
 			foreach ($oDesign->GetNodes('/module_design/properties/*') as $oPropertyNode)
 			{
+				$bPropertyNodeError = false;
 				switch ($oPropertyNode->nodeName)
 				{
 					case 'name':
-					case 'urlmaker_class':
+                    case 'urlmaker_class':
 					case 'triggers_query':
 						$aPortalConf['properties'][$oPropertyNode->nodeName] = $oPropertyNode->GetText($aPortalConf['properties'][$oPropertyNode->nodeName]);
 						break;
@@ -457,8 +448,7 @@ class ApplicationHelper
 						{
 							if (!$oSubNode->hasAttribute('id') || $oSubNode->GetText(null) === null)
 							{
-								throw new DOMFormatException('Tag '.$oSubNode->nodeName.' must have a "id" attribute as well as a value',
-									null, null, $oSubNode);
+								throw new DOMFormatException('Tag ' . $oSubNode->nodeName . ' must have a "id" attribute as well as a value', null, null, $oSubNode);
 							}
 
 							$sNodeId = $oSubNode->getAttribute('id');
@@ -485,8 +475,7 @@ class ApplicationHelper
 											$aPortalConf['properties']['templates'][$sNodeId] = $oSubNode->GetText(null);
 											break;
 										default:
-											throw new DOMFormatException('Value "'.$sNodeId.'" is not handled for template[@id]',
-												null, null, $oSubNode);
+											throw new DOMFormatException('Value "' . $sNodeId . '" is not handled for template[@id]', null, null, $oSubNode);
 											break;
 									}
 									break;
@@ -510,23 +499,23 @@ class ApplicationHelper
 							}
 						}
 						break;
-					case 'allowed_portals':
-						foreach ($oPropertyNode->GetNodes('*') as $oSubNode)
-						{
-							switch ($oSubNode->nodeName)
-							{
-								case 'opening_mode':
-									$sValue = $oSubNode->GetText();
-									// If the text is null, we keep the default value
-									// Else we set it
-									if ($sValue !== null)
-									{
-										$aPortalConf['properties']['allowed_portals'][$oSubNode->nodeName] = ($sValue === 'self') ? 'self' : 'tab';
-									}
-									break;
-							}
-						}
-						break;
+                    case 'allowed_portals':
+                        foreach ($oPropertyNode->GetNodes('*') as $oSubNode)
+                        {
+                            switch ($oSubNode->nodeName)
+                            {
+                                case 'opening_mode':
+                                    $sValue = $oSubNode->GetText();
+                                    // If the text is null, we keep the default value
+                                    // Else we set it
+                                    if ($sValue !== null)
+                                    {
+                                        $aPortalConf['properties']['allowed_portals'][$oSubNode->nodeName] = ($sValue === 'self') ? 'self' : 'tab';
+                                    }
+                                    break;
+                            }
+                        }
+                        break;
 				}
 			}
 			// - Rectifying portal logo url
@@ -534,7 +523,7 @@ class ApplicationHelper
 			if (!preg_match('/^http/', $sLogoUri))
 			{
 				// We prefix it with the server base url
-				$sLogoUri = utils::GetAbsoluteUrlAppRoot().'env-'.utils::GetCurrentEnvironment().'/'.$sLogoUri;
+				$sLogoUri = utils::GetAbsoluteUrlAppRoot() . 'env-' . utils::GetCurrentEnvironment() . '/' . $sLogoUri;
 			}
 			$aPortalConf['properties']['logo'] = $sLogoUri;
 			// - User allowed portals
@@ -546,34 +535,32 @@ class ApplicationHelper
 			// - Scopes
 			static::LoadScopesConfiguration($oApp, $oDesign);
 			// - Lifecycle
-			static::LoadLifecycleConfiguration($oApp, $oDesign);
+            static::LoadLifecycleConfiguration($oApp, $oDesign);
 			// - Presentation lists
 			$aPortalConf['lists'] = static::LoadListsConfiguration($oApp, $oDesign);
 			// - UI extensions
-			$aPortalConf['ui_extensions'] = static::LoadUIExtensions($oApp);
+            $aPortalConf['ui_extensions'] = static::LoadUIExtensions($oApp);
 			// - Action rules
 			static::LoadActionRulesConfiguration($oApp, $oDesign);
 			// - Setting UrlMakerClass
-			if ($aPortalConf['properties']['urlmaker_class'] !== null)
-			{
-				ApplicationContext::SetUrlMakerClass($aPortalConf['properties']['urlmaker_class']);
-			}
+            if($aPortalConf['properties']['urlmaker_class'] !== null)
+            {
+                ApplicationContext::SetUrlMakerClass($aPortalConf['properties']['urlmaker_class']);
+            }
 			// - Generating CSS files
-			$aImportPaths = array($oApp['combodo.portal.base.absolute_path'].'css/');
+			$aImportPaths = array($oApp['combodo.portal.base.absolute_path'] . 'css/');
 			foreach ($aPortalConf['properties']['themes'] as $key => $value)
 			{
 				if (!is_array($value))
 				{
-					$aPortalConf['properties']['themes'][$key] = $oApp['combodo.absolute_url'].utils::GetCSSFromSASS('env-'.utils::GetCurrentEnvironment().'/'.$value,
-							$aImportPaths);
+					$aPortalConf['properties']['themes'][$key] = $oApp['combodo.absolute_url'] . utils::GetCSSFromSASS('env-' . utils::GetCurrentEnvironment() . '/' . $value, $aImportPaths);
 				}
 				else
 				{
 					$aValues = array();
 					foreach ($value as $sSubvalue)
 					{
-						$aValues[] = $oApp['combodo.absolute_url'].utils::GetCSSFromSASS('env-'.utils::GetCurrentEnvironment().'/'.$sSubvalue,
-								$aImportPaths);
+						$aValues[] = $oApp['combodo.absolute_url'] . utils::GetCSSFromSASS('env-' . utils::GetCurrentEnvironment() . '/' . $sSubvalue, $aImportPaths);
 					}
 					$aPortalConf['properties']['themes'][$key] = $aValues;
 				}
@@ -583,7 +570,7 @@ class ApplicationHelper
 		}
 		catch (Exception $e)
 		{
-			throw new Exception('Error while parsing portal configuration file : '.$e->getMessage());
+			throw new Exception('Error while parsing portal configuration file : ' . $e->getMessage());
 		}
 	}
 
@@ -591,7 +578,6 @@ class ApplicationHelper
 	 * Loads the current user and stores it in the Silex application so we can use it wherever in the application
 	 *
 	 * @param \Silex\Application $oApp
-	 *
 	 * @throws Exception
 	 */
 	public static function LoadCurrentUser(Application $oApp)
@@ -606,25 +592,23 @@ class ApplicationHelper
 		$oApp['combodo.current_user'] = $oUser;
 
 		// Contact
-		$sContactPhotoUrl = $oApp['combodo.portal.base.absolute_url'].'img/user-profile-default-256px.png';
+		$sContactPhotoUrl = $oApp['combodo.portal.base.absolute_url'] . 'img/user-profile-default-256px.png';
 		// - Checking if we can load the contact
-		try
-		{
-			$oContact = UserRights::GetContactObject();
-		}
-		catch (Exception $e)
-		{
-			$oAllowedOrgSet = $oUser->Get('allowed_org_list');
-			if ($oAllowedOrgSet->Count() > 0)
-			{
-				throw new Exception('Could not load contact related to connected user. (Tip: Make sure the contact\'s organization is among the user\'s allowed organizations)');
-			}
-			else
-			{
-				throw new Exception('Could not load contact related to connected user.');
-			}
-		}
-		// - Retrieving picture
+        try{
+            $oContact = UserRights::GetContactObject();
+        }
+        catch(Exception $e)
+        {
+            $oAllowedOrgSet = $oUser->Get('allowed_org_list');
+            if($oAllowedOrgSet->Count() > 0)
+            {
+                throw new Exception('Could not load contact related to connected user. (Tip: Make sure the contact\'s organization is among the user\'s allowed organizations)');
+            }
+            else{
+                throw new Exception('Could not load contact related to connected user.');
+            }
+        }
+        // - Retrieving picture
 		if ($oContact)
 		{
 			if (MetaModel::IsValidAttCode(get_class($oContact), 'picture'))
@@ -636,8 +620,7 @@ class ApplicationHelper
 				}
 				else
 				{
-					$sContactPhotoUrl = MetaModel::GetAttributeDef(get_class($oContact),
-						'picture')->Get('default_image');
+					$sContactPhotoUrl = MetaModel::GetAttributeDef(get_class($oContact), 'picture')->Get('default_image');
 				}
 			}
 		}
@@ -647,9 +630,7 @@ class ApplicationHelper
 	/**
 	 * Loads the brick's security from the OQL queries to profiles arrays
 	 *
-	 * @param \Combodo\iTop\Portal\Brick\AbstractBrick $oBrick
-	 *
-	 * @throws \Exception
+	 * @param \Combodo\iTop\Portal\Helper\AbstractBrick $oBrick
 	 */
 	public static function LoadBrickSecurity(AbstractBrick &$oBrick)
 	{
@@ -679,7 +660,7 @@ class ApplicationHelper
 		}
 		catch (Exception $e)
 		{
-			throw new Exception('Error while loading security from '.$oBrick->GetId().' brick');
+			throw new Exception('Error while loading security from ' . $oBrick->GetId() . ' brick');
 		}
 	}
 
@@ -688,7 +669,6 @@ class ApplicationHelper
 	 *
 	 * @param \Silex\Application $oApp
 	 * @param string $sBrickId
-	 *
 	 * @return \Combodo\iTop\Portal\Brick\AbstractBrick
 	 * @throws Exception
 	 */
@@ -707,7 +687,7 @@ class ApplicationHelper
 
 		if (!$bFound)
 		{
-			throw new Exception('Brick with id = "'.$sBrickId.'" was not found among loaded bricks.');
+			throw new Exception('Brick with id = "' . $sBrickId . '" was not found among loaded bricks.');
 		}
 
 		return $oBrick;
@@ -722,9 +702,7 @@ class ApplicationHelper
 	 * @param Application $oApp
 	 * @param string $sClass Object class to find a form for
 	 * @param string $sMode Form mode to find (view|edit|create)
-	 *
 	 * @return array
-	 * @throws \CoreException
 	 */
 	public static function GetLoadedFormFromClass(Application $oApp, $sClass, $sMode)
 	{
@@ -752,7 +730,12 @@ class ApplicationHelper
 			// If we have still not found one, we return a default form
 			if (!$bFound)
 			{
-			    $aForm = static::GenerateDefaultFormForClass($sClass);
+				$aForm = array(
+					'id' => 'default',
+					'type' => 'zlist',
+					'fields' => 'details',
+					'layout' => null
+				);
 			}
 		}
 
@@ -768,9 +751,7 @@ class ApplicationHelper
 	 * @param Application $oApp
 	 * @param string $sClass Object class to find a list for
 	 * @param string $sList List name to find
-	 *
 	 * @return array Array of attribute codes
-	 * @throws \CoreException
 	 */
 	public static function GetLoadedListFromClass(Application $oApp, $sClass, $sList = 'default')
 	{
@@ -791,20 +772,34 @@ class ApplicationHelper
 		// If not found, we try find one from the closest parent class
 		else
 		{
+			$bFound = false;
 			foreach (MetaModel::EnumParentClasses($sClass) as $sParentClass)
 			{
 				// Trying to find the right list
 				if (isset($aLists[$sParentClass]) && isset($aLists[$sParentClass][$sList]))
 				{
 					$aList = $aLists[$sParentClass][$sList];
+					$bFound = true;
 					break;
 				}
 				// Or the default list
 				elseif (isset($aLists[$sParentClass]) && isset($aLists[$sParentClass]['default']))
 				{
 					$aList = $aLists[$sParentClass]['default'];
+					$bFound = true;
 					break;
 				}
+			}
+
+			// If we have still not found one, we return a default form
+			if (!$bFound)
+			{
+				$aForm = array(
+					'id' => 'default',
+					'type' => 'zlist',
+					'fields' => 'details',
+					'layout' => null
+				);
 			}
 		}
 
@@ -831,9 +826,9 @@ class ApplicationHelper
 	 *
 	 * @param \Silex\Application $oApp
 	 * @param ModuleDesign $oDesign
-	 *
 	 * @return array
 	 * @throws Exception
+	 * @throws DOMFormatException
 	 */
 	protected static function LoadBricksConfiguration(Application $oApp, ModuleDesign $oDesign)
 	{
@@ -889,29 +884,30 @@ class ApplicationHelper
 				}
 				else
 				{
-					throw new DOMFormatException('Unknown brick class "'.$sBrickClass.'" from xsi:type attribute', null,
-						null, $oBrickNode);
+					throw new DOMFormatException('Unknown brick class "' . $sBrickClass . '" from xsi:type attribute', null, null, $oBrickNode);
 				}
 			}
 			catch (DOMFormatException $e)
 			{
-				throw new Exception('Could not create brick ('.$sBrickClass.') from XML because of a DOM problem : '.$e->getMessage());
+				throw new Exception('Could not create brick (' . $sBrickClass . ') from XML because of a DOM problem : ' . $e->getMessage());
 			}
 			catch (Exception $e)
 			{
-				throw new Exception('Could not create brick ('.$sBrickClass.') from XML : '.$oBrickNode->Dump().' '.$e->getMessage());
+				throw new Exception('Could not create brick (' . $sBrickClass . ') from XML : ' . $oBrickNode->Dump() . ' ' . $e->getMessage());
 			}
 		}
 		// - Sorting bricks by rank
 		$aPortalConf['bricks_ordering'] = array();
 		//   - Home
 		$aPortalConf['bricks_ordering']['home'] = $aPortalConf['bricks'];
-		usort($aPortalConf['bricks_ordering']['home'], function ($a, $b) {
+		usort($aPortalConf['bricks_ordering']['home'], function($a, $b)
+		{
 			return $a->GetRankHome() > $b->GetRankHome();
 		});
 		//    - Navigation menu
 		$aPortalConf['bricks_ordering']['navigation_menu'] = $aPortalConf['bricks'];
-		usort($aPortalConf['bricks_ordering']['navigation_menu'], function ($a, $b) {
+		usort($aPortalConf['bricks_ordering']['navigation_menu'], function($a, $b)
+		{
 			return $a->GetRankNavigationMenu() > $b->GetRankNavigationMenu();
 		});
 
@@ -921,17 +917,16 @@ class ApplicationHelper
 	/**
 	 * Loads the forms configuration from the module design XML and returns it as an array containing :
 	 * - <CLASSNAME> => array(
-	 *                      'view'|'edit'|'create' => array(
-	 *                          'fields_type' => 'custom_list'|'twig'|'zlist',
-	 *                          'fields' => <CONTENT>
-	 *                      ),
-	 *                      ...
-	 *                  ),
+	 * 					  'view'|'edit'|'create' => array(
+	 * 						  'fields_type' => 'custom_list'|'twig'|'zlist',
+	 * 						  'fields' => <CONTENT>
+	 * 					  ),
+	 * 					  ...
+	 * 				  ),
 	 *  ...
 	 *
 	 * @param \Silex\Application $oApp
 	 * @param ModuleDesign $oDesign
-	 *
 	 * @return array
 	 * @throws Exception
 	 * @throws DOMFormatException
@@ -953,32 +948,32 @@ class ApplicationHelper
 				// Parsing form object class
 				if ($oFormNode->GetUniqueElement('class')->GetText() !== null)
 				{
-					// Parsing class
+				    // Parsing class
 					$sFormClass = $oFormNode->GetUniqueElement('class')->GetText();
 
-					// Parsing properties
-					$aFormProperties = array(
-						'display_mode' => static::FORM_DEFAULT_DISPLAY_MODE,
-						'always_show_submit' => static::FORM_DEFAULT_ALWAYS_SHOW_SUBMIT,
-					);
-					if ($oFormNode->GetOptionalElement('properties') !== null)
-					{
-						foreach ($oFormNode->GetOptionalElement('properties')->childNodes as $oPropertyNode)
-						{
-							switch ($oPropertyNode->nodeName)
-							{
-								case 'display_mode':
-									$aFormProperties['display_mode'] = $oPropertyNode->GetText(static::FORM_DEFAULT_DISPLAY_MODE);
-									break;
-								case 'always_show_submit':
-									$aFormProperties['always_show_submit'] = ($oPropertyNode->GetText('false') === 'true') ? true : false;
-									break;
-							}
-						}
-					}
+                    // Parsing properties
+                    $aFormProperties = array(
+                        'display_mode' => static::FORM_DEFAULT_DISPLAY_MODE,
+                        'always_show_submit' => static::FORM_DEFAULT_ALWAYS_SHOW_SUBMIT,
+                    );
+                    if($oFormNode->GetOptionalElement('properties') !== null)
+                    {
+                        foreach($oFormNode->GetOptionalElement('properties')->childNodes as $oPropertyNode)
+                        {
+                            switch($oPropertyNode->nodeName)
+                            {
+                                case 'display_mode':
+                                    $aFormProperties['display_mode'] = $oPropertyNode->GetText(static::FORM_DEFAULT_DISPLAY_MODE);
+                                    break;
+                                case 'always_show_submit':
+                                    $aFormProperties['always_show_submit'] = ($oPropertyNode->GetText('false') === 'true') ? true : false;
+                                    break;
+                            }
+                        }
+                    }
 
 					// Parsing availables modes for that form (view, edit, create, apply_stimulus)
-					$aFormStimuli = array();
+                    $aFormStimuli = array();
 					if (($oFormNode->GetOptionalElement('modes') !== null) && ($oFormNode->GetOptionalElement('modes')->GetNodes('mode')->length > 0))
 					{
 						$aModes = array();
@@ -990,37 +985,36 @@ class ApplicationHelper
 							}
 							else
 							{
-								throw new DOMFormatException('Mode tag must have an id attribute', null, null,
-									$oFormNode);
+								throw new DOMFormatException('Mode tag must have an id attribute', null, null, $oFormNode);
 							}
 
 							// If apply_stimulus mode, checking if stimuli are defined
-							if ($oModeNode->getAttribute('id') === 'apply_stimulus')
-							{
-								$oStimuliNode = $oModeNode->GetOptionalElement('stimuli');
-								// if stimuli are defined, we overwrite the form that could have been set by the generic form
-								if ($oStimuliNode !== null)
-								{
-									foreach ($oStimuliNode->GetNodes('stimulus') as $oStimulusNode)
-									{
-										$sStimulusCode = $oStimulusNode->getAttribute('id');
+                            if ($oModeNode->getAttribute('id') === 'apply_stimulus')
+                            {
+                                $oStimuliNode = $oModeNode->GetOptionalElement('stimuli');
+                                // if stimuli are defined, we overwrite the form that could have been set by the generic form
+                                if($oStimuliNode !== null)
+                                {
+                                    foreach ($oStimuliNode->GetNodes('stimulus') as $oStimulusNode)
+                                    {
+                                        $sStimulusCode = $oStimulusNode->getAttribute('id');
 
-										// Removing default form is present (in case the default forms were parsed before the current one (from current or parent class))
-										if (isset($aForms[$sFormClass]['apply_stimulus'][$sStimulusCode]))
-										{
-											unset($aForms[$sFormClass]['apply_stimulus'][$sStimulusCode]);
-										}
+                                        // Removing default form is present (in case the default forms were parsed before the current one (from current or parent class))
+                                        if(isset($aForms[$sFormClass]['apply_stimulus'][$sStimulusCode]))
+                                        {
+                                            unset($aForms[$sFormClass]['apply_stimulus'][$sStimulusCode]);
+                                        }
 
-										$aFormStimuli[] = $oStimulusNode->getAttribute('id');
-									}
-								}
-							}
+                                        $aFormStimuli[] = $oStimulusNode->getAttribute('id');
+                                    }
+                                }
+                            }
 						}
 					}
 					else
 					{
-						// If no mode was specified, we set it all but stimuli as it would have no sense that every transition forms
-						// have as many fields displayed as a regular edit form for example.
+					    // If no mode was specified, we set it all but stimuli as it would have no sense that every transition forms
+                        // have as many fields displayed as a regular edit form for example.
 						$aModes = array('view', 'edit', 'create');
 					}
 
@@ -1028,7 +1022,7 @@ class ApplicationHelper
 					$aFields = array(
 						'id' => $oFormNode->getAttribute('id'),
 						'type' => null,
-						'properties' => $aFormProperties,
+                        'properties' => $aFormProperties,
 						'fields' => null,
 						'layout' => null
 					);
@@ -1062,8 +1056,7 @@ class ApplicationHelper
 							}
 							else
 							{
-								throw new DOMFormatException('Field tag must have an id attribute', null, null,
-									$oFormNode);
+								throw new DOMFormatException('Field tag must have an id attribute', null, null, $oFormNode);
 							}
 						}
 					}
@@ -1091,62 +1084,60 @@ class ApplicationHelper
 					// Adding form for each class / mode
 					foreach ($aModes as $sMode)
 					{
-						// Initializing current class if necessary
+					    // Initializing current class if necessary
 						if (!isset($aForms[$sFormClass]))
 						{
 							$aForms[$sFormClass] = array();
 						}
 
 						if ($sMode === 'apply_stimulus')
-						{
-							// Iterating over current class and child classes to fill stimuli forms
-							foreach (MetaModel::EnumChildClasses($sFormClass, ENUM_CHILD_CLASSES_ALL) as $sChildClass)
-							{
-								// Initializing child class if necessary
-								if (!isset($aForms[$sChildClass][$sMode]))
-								{
-									$aForms[$sChildClass][$sMode] = array();
-								}
+                        {
+                            // Iterating over current class and child classes to fill stimuli forms
+                            foreach (MetaModel::EnumChildClasses($sFormClass, ENUM_CHILD_CLASSES_ALL) as $sChildClass)
+                            {
+                                // Initializing child class if necessary
+                                if(!isset($aForms[$sChildClass][$sMode]))
+                                {
+                                    $aForms[$sChildClass][$sMode] = array();
+                                }
 
-								// If stimuli are implicitly defined (empty tag), we define all those that have not already been by other forms.
-								$aChildStimuli = $aFormStimuli;
-								if (empty($aChildStimuli))
-								{
-									// Stimuli already declared
-									$aDeclaredStimuli = array();
-									if (array_key_exists($sChildClass, $aForms) && array_key_exists('apply_stimulus',
-											$aForms[$sChildClass]))
-									{
-										$aDeclaredStimuli = array_keys($aForms[$sChildClass]['apply_stimulus']);
-									}
-									// All stimuli
-									$aDatamodelStimuli = array_keys(MetaModel::EnumStimuli($sChildClass));
-									// Missing stimuli
-									$aChildStimuli = array_diff($aDatamodelStimuli, $aDeclaredStimuli);
-								}
+                                // If stimuli are implicitly defined (empty tag), we define all those that have not already been by other forms.
+                                $aChildStimuli = $aFormStimuli;
+                                if(empty($aChildStimuli))
+                                {
+                                    // Stimuli already declared
+                                    $aDeclaredStimuli = array();
+                                    if(array_key_exists($sChildClass, $aForms) && array_key_exists('apply_stimulus', $aForms[$sChildClass]))
+                                    {
+                                        $aDeclaredStimuli = array_keys($aForms[$sChildClass]['apply_stimulus']);
+                                    }
+                                    // All stimuli
+                                    $aDatamodelStimuli = array_keys(MetaModel::EnumStimuli($sChildClass));
+                                    // Missing stimuli
+                                    $aChildStimuli = array_diff($aDatamodelStimuli, $aDeclaredStimuli);
+                                }
 
-								foreach ($aChildStimuli as $sFormStimulus)
-								{
-									// Setting form if not defined OR if it was defined by a parent (abstract) class
-									if (!isset($aForms[$sChildClass][$sMode][$sFormStimulus]) || !empty($aFormStimuli))
-									{
-										$aForms[$sChildClass][$sMode][$sFormStimulus] = $aFields;
-										$aForms[$sChildClass][$sMode][$sFormStimulus]['id'] = 'apply_stimulus-'.$sChildClass.'-'.$sFormStimulus;
-									}
-								}
-							}
-						}
+                                foreach($aChildStimuli as $sFormStimulus)
+                                {
+                                    // Setting form if not defined OR if it was defined by a parent (abstract) class
+                                    if(!isset($aForms[$sChildClass][$sMode][$sFormStimulus]) || !empty($aFormStimuli))
+                                    {
+                                        $aForms[$sChildClass][$sMode][$sFormStimulus] = $aFields;
+                                        $aForms[$sChildClass][$sMode][$sFormStimulus]['id'] = 'apply_stimulus-'.$sChildClass.'-'.$sFormStimulus;
+                                    }
+                                }
+                            }
+                        }
 						elseif (!isset($aForms[$sFormClass][$sMode]))
 						{
 							$aForms[$sFormClass][$sMode] = $aFields;
 						}
 						else
 						{
-							throw new DOMFormatException('There is already a form for the class "'.$sFormClass.'" in "'.$sMode.'"',
-								null, null, $oFormNode);
+							throw new DOMFormatException('There is already a form for the class "' . $sFormClass . '" in "' . $sMode . '"', null, null, $oFormNode);
 						}
 					}
-				}
+                }
 				else
 				{
 					throw new DOMFormatException('Class tag must be defined', null, null, $oFormNode);
@@ -1154,40 +1145,40 @@ class ApplicationHelper
 			}
 			catch (DOMFormatException $e)
 			{
-				throw new Exception('Could not create from [id="'.$oFormNode->getAttribute('id').'"] from XML because of a DOM problem : '.$e->getMessage());
+				throw new Exception('Could not create from [id="' . $oFormNode->getAttribute('id') . '"] from XML because of a DOM problem : ' . $e->getMessage());
 			}
 			catch (Exception $e)
 			{
-				throw new Exception('Could not create from from XML : '.$oFormNode->Dump().' '.$e->getMessage());
+				throw new Exception('Could not create from from XML : ' . $oFormNode->Dump() . ' ' . $e->getMessage());
 			}
 		}
 
 		return $aForms;
 	}
 
-	/**
-	 * Loads the scopes configuration from the module design XML
-	 *
-	 * @param \Silex\Application $oApp
-	 * @param ModuleDesign $oDesign
-	 */
-	public static function LoadScopesConfiguration(Application $oApp, ModuleDesign $oDesign)
-	{
-		$oApp['scope_validator']->Init($oDesign->GetNodes('/module_design/classes/class'));
-	}
+    /**
+     * Loads the scopes configuration from the module design XML
+     *
+     * @param \Silex\Application $oApp
+     * @param ModuleDesign $oDesign
+     */
+    public static function LoadScopesConfiguration(Application $oApp, ModuleDesign $oDesign)
+    {
+        $oApp['scope_validator']->Init($oDesign->GetNodes('/module_design/classes/class'));
+    }
 
-	/**
-	 * Loads the lifecycle configuration from the module design XML
-	 *
-	 * @param \Silex\Application $oApp
-	 * @param ModuleDesign $oDesign
-	 */
-	protected static function LoadLifecycleConfiguration(Application $oApp, ModuleDesign $oDesign)
-	{
-		$oApp['lifecycle_validator']->Init($oDesign->GetNodes('/module_design/classes/class'));
-	}
+    /**
+     * Loads the lifecycle configuration from the module design XML
+     *
+     * @param \Silex\Application $oApp
+     * @param ModuleDesign $oDesign
+     */
+    protected static function LoadLifecycleConfiguration(Application $oApp, ModuleDesign $oDesign)
+    {
+        $oApp['lifecycle_validator']->Init($oDesign->GetNodes('/module_design/classes/class'));
+    }
 
-	/**
+    /**
 	 * Loads the context helper from the module design XML
 	 *
 	 * @param \Silex\Application $oApp
@@ -1199,14 +1190,11 @@ class ApplicationHelper
 	}
 
 	/**
-	 * Loads the classes lists from the module design XML. They are mainly used when searching an external key but
-	 * could be used more extensively later
+	 * Loads the classes lists from the module design XML. They are mainly used when searching an external key but could be used more extensively later
 	 *
 	 * @param \Silex\Application $oApp
 	 * @param ModuleDesign $oDesign
-	 *
 	 * @return array
-	 * @throws \DOMFormatException
 	 */
 	protected static function LoadListsConfiguration(Application $oApp, ModuleDesign $oDesign)
 	{
@@ -1231,8 +1219,7 @@ class ApplicationHelper
 				$sListId = $oListNode->getAttribute('id');
 				if ($sListId === null)
 				{
-					throw new DOMFormatException('List tag of "'.$sClassId.'" class must have an id attribute', null,
-						null, $oListNode);
+					throw new DOMFormatException('List tag of "' . $sClassId . '" class must have an id attribute', null, null, $oListNode);
 				}
 
 				// - Each items
@@ -1241,8 +1228,7 @@ class ApplicationHelper
 					$sItemId = $oItemNode->getAttribute('id');
 					if ($sItemId === null)
 					{
-						throw new DOMFormatException('Item tag of "'.$sItemId.'" list must have an id attribute', null,
-							null, $oItemNode);
+						throw new DOMFormatException('Item tag of "' . $sItemId . '" list must have an id attribute', null, null, $oItemNode);
 					}
 
 					$aItem = array(
@@ -1259,7 +1245,8 @@ class ApplicationHelper
 					$aListItems[] = $aItem;
 				}
 				// - Sorting list items by rank
-				usort($aListItems, function ($a, $b) {
+				usort($aListItems, function($a, $b)
+				{
 					return $a['rank'] > $b['rank'];
 				});
 				$aClassLists[$sListId] = $aListItems;
@@ -1272,183 +1259,86 @@ class ApplicationHelper
 			}
 		}
 
+		// Creating lists for child classes
+		// Note : This has been removed has we now dynamically look for the closest parent list only when necessary instead of generating list for child classes everytime
+		/* $aParentClasses = array_keys($aClassesLists);
+		  foreach ($aParentClasses as $sParentClass)
+		  {
+		  foreach (MetaModel::EnumChildClasses($sParentClass) as $sChildClass)
+		  {
+		  // If the child class is not in the scope, we are going to try to add it
+		  if (!in_array($sChildClass, $aParentClasses))
+		  {
+		  $aClassesLists[$sChildClass] = $aClassesLists[$sParentClass];
+		  }
+		  }
+		  } */
+
 		return $aClassesLists;
 	}
 
-	/**
-	 * Loads portal UI extensions
-	 *
-	 * @param \Silex\Application $oApp
-	 *
-	 * @return array
-	 */
-	protected static function LoadUIExtensions(Application $oApp)
-	{
-		$aUIExtensions = array(
-			'css_files' => array(),
-			'css_inline' => null,
-			'js_files' => array(),
-			'js_inline' => null,
-			'html' => array(),
-		);
-		$aUIExtensionHooks = array(
-			iPortalUIExtension::ENUM_PORTAL_EXT_UI_BODY,
-			iPortalUIExtension::ENUM_PORTAL_EXT_UI_NAVIGATION_MENU,
-			iPortalUIExtension::ENUM_PORTAL_EXT_UI_MAIN_CONTENT,
-		);
-
-		/** @var iPortalUIExtension $oExtensionInstance */
-		foreach (MetaModel::EnumPlugins('iPortalUIExtension') as $oExtensionInstance)
-		{
-			// Adding CSS files
-			$aUIExtensions['css_files'] = array_merge($aUIExtensions['css_files'],
-				$oExtensionInstance->GetCSSFiles($oApp));
-
-			// Adding CSS inline
-			$sCSSInline = $oExtensionInstance->GetCSSInline($oApp);
-			if ($sCSSInline !== null)
-			{
-				$aUIExtensions['css_inline'] .= "\n\n".$sCSSInline;
-			}
-
-			// Adding JS files
-			$aUIExtensions['js_files'] = array_merge($aUIExtensions['js_files'],
-				$oExtensionInstance->GetJSFiles($oApp));
-
-			// Adding JS inline
-			$sJSInline = $oExtensionInstance->GetJSInline($oApp);
-			if ($sJSInline !== null)
-			{
-				// Note: Semi-colon is to prevent previous script that would have omitted it.
-				$aUIExtensions['js_inline'] .= "\n\n;\n".$sJSInline;
-			}
-
-			// Adding HTML for each hook
-			foreach ($aUIExtensionHooks as $sUIExtensionHook)
-			{
-				$sFunctionName = 'Get'.$sUIExtensionHook.'HTML';
-				$sHTML = $oExtensionInstance->$sFunctionName($oApp);
-				if ($sHTML !== null)
-				{
-					if (!array_key_exists($sUIExtensionHook, $aUIExtensions['html']))
-					{
-						$aUIExtensions['html'][$sUIExtensionHook] = '';
-					}
-					$aUIExtensions['html'][$sUIExtensionHook] .= "\n\n".$sHTML;
-				}
-			}
-		}
-
-		return $aUIExtensions;
-	}
-
     /**
-     * Generate the form data for the $sClass.
-     * Form will look like the "Properties" tab of a $sClass object in the console.
+     * Loads portal UI extensions
      *
-     * @param string $sClass
-     *
+     * @param \Silex\Application $oApp
      * @return array
      */
-	protected static function GenerateDefaultFormForClass($sClass, $bAddLinksets = false)
+	protected static function LoadUIExtensions(Application $oApp)
     {
-        $aForm = array(
-            'id' => strtolower($sClass)."-default-".uniqid(),
-            'type' => 'custom_list',
-            'properties' => array(
-                'display_mode' => static::FORM_DEFAULT_DISPLAY_MODE,
-                'always_show_submit' => static::FORM_DEFAULT_ALWAYS_SHOW_SUBMIT,
-            ),
-            'fields' => array(),
-            'layout' => array(
-                'type' => 'xhtml',
-                'content' => '',
-            ),
+        $aUIExtensions = array(
+            'css_files' => array(),
+            'css_inline' => null,
+            'js_files' => array(),
+            'js_inline' => null,
+            'html' => array(),
+        );
+        $aUIExtensionHooks = array(
+            iPortalUIExtension::ENUM_PORTAL_EXT_UI_BODY,
+            iPortalUIExtension::ENUM_PORTAL_EXT_UI_NAVIGATION_MENU,
+            iPortalUIExtension::ENUM_PORTAL_EXT_UI_MAIN_CONTENT,
         );
 
-        // Generate layout
-        $sContent = "";
-
-        // - Retrieve zlist details
-        $aDetailsList = MetaModel::GetZListItems($sClass, 'details');
-        $aDetailsStruct = cmdbAbstractObject::ProcessZlist($aDetailsList, array(), 'UI:PropertiesTab', 'col1', '');
-        $aPropertiesStruct = $aDetailsStruct['UI:PropertiesTab'];
-
-        // Count cols (not linksets)
-        $iColCount = 0;
-        foreach($aPropertiesStruct as $sColId => $aColFieldsets)
+        /** @var iPortalUIExtension $oExtensionInstance */
+        foreach(MetaModel::EnumPlugins('iPortalUIExtension') as $oExtensionInstance)
         {
-            if(substr($sColId, 0, 1) !== '_')
-            {
-                foreach($aColFieldsets as $sFieldsetName => $aAttCodes)
+                // Adding CSS files
+                $aUIExtensions['css_files'] = array_merge($aUIExtensions['css_files'], $oExtensionInstance->GetCSSFiles($oApp));
+
+                // Adding CSS inline
+                $sCSSInline = $oExtensionInstance->GetCSSInline($oApp);
+                if($sCSSInline !== null)
                 {
-                    if(substr($sFieldsetName, 0, 1) !== '_')
+                    $aUIExtensions['css_inline'] .= "\n\n" . $sCSSInline;
+                }
+
+                // Adding JS files
+                $aUIExtensions['js_files'] = array_merge($aUIExtensions['js_files'], $oExtensionInstance->GetJSFiles($oApp));
+
+                // Adding JS inline
+                $sJSInline = $oExtensionInstance->GetJSInline($oApp);
+                if($sJSInline !== null)
+                {
+                    // Note: Semi-colon is to prevent previous script that would have omitted it.
+                    $aUIExtensions['js_inline'] .= "\n\n;\n" . $sJSInline;
+                }
+
+                // Adding HTML for each hook
+                foreach($aUIExtensionHooks as $sUIExtensionHook)
+                {
+                    $sFunctionName = 'Get'.$sUIExtensionHook.'HTML';
+                    $sHTML = $oExtensionInstance->$sFunctionName($oApp);
+                    if($sHTML !== null)
                     {
-                        $iColCount++;
-                        break;
+                        if(!array_key_exists($sUIExtensionHook, $aUIExtensions['html']))
+                        {
+                            $aUIExtensions['html'][$sUIExtensionHook] = '';
+                        }
+                        $aUIExtensions['html'][$sUIExtensionHook] .= "\n\n" . $sHTML;
                     }
                 }
-            }
         }
-        // If no cols, return a default form with all fields one after another
-        if($iColCount === 0)
-        {
-            return array(
-                'id' => 'default',
-                'type' => 'zlist',
-                'fields' => 'details',
-                'layout' => null
-            );
-        }
-        // Warning, this might not be great when 12 modulo $iColCount is greater than 0.
-        $sColCSSClass = 'col-sm-'.floor(12/$iColCount);
 
-        $sLinksetsHTML = "";
-        $sRowHTML = "<div class=\"row\">\n";
-        foreach($aPropertiesStruct as $sColId => $aColFieldsets)
-        {
-            $sColsHTML = "\t<div class=\"".$sColCSSClass."\">\n";
-            foreach($aColFieldsets as $sFieldsetName => $aAttCodes)
-            {
-                // Add fieldset, not linkset
-                if(substr($sFieldsetName, 0, 1) !== '_')
-                {
-                    $sFieldsetHTML = "\t\t<fieldset>\n";
-                    $sFieldsetHTML .= "\t\t\t<legend>".htmlentities(Dict::S($sFieldsetName), ENT_QUOTES, 'UTF-8')."</legend>\n";
-
-                    foreach($aAttCodes as $sAttCode)
-                    {
-                        $sFieldsetHTML .= "\t\t\t<div class=\"form_field\" data-field-id=\"".$sAttCode."\"></div>\n";
-                    }
-
-                    $sFieldsetHTML .= "\t\t</fieldset>\n";
-
-                    // Add to col
-                    $sColsHTML .= $sFieldsetHTML;
-                }
-                elseif($bAddLinksets)
-                {
-                    foreach($aAttCodes as $sAttCode)
-                    {
-                        $sLinksetsHTML .= "<div class=\"form_field\" data-field-id=\"".$sAttCode."\"></div>\n";
-                    }
-                }
-            }
-            $sColsHTML .= "\t</div>\n";
-
-            // Add col to row
-            $sRowHTML .= $sColsHTML;
-        }
-        $sRowHTML .= "</div>\n";
-
-        // Add row to twig
-        $sContent .= $sRowHTML;
-        // Add linksets to twig
-        $sContent .= $sLinksetsHTML;
-
-        $aForm['layout']['content'] = $sContent;
-
-        return $aForm;
+        return $aUIExtensions;
     }
 
 }

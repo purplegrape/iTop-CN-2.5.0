@@ -11,7 +11,9 @@
 /**
  * An ESMTP handler.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Transport
+ * @author     Chris Corbyn
  */
 interface Swift_Transport_EsmtpHandler
 {

@@ -1,5 +1,5 @@
-Remember Me
-===========
+RememberMeServiceProvider
+=========================
 
 The *RememberMeServiceProvider* adds "Remember-Me" authentication to the
 *SecurityServiceProvider*.

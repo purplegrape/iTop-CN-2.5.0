@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -36,6 +36,8 @@ require_once __DIR__ . '/../src/providers/urlgeneratorserviceprovider.class.inc.
 require_once __DIR__ . '/../src/helpers/urlgeneratorhelper.class.inc.php';
 require_once __DIR__ . '/../src/providers/contextmanipulatorserviceprovider.class.inc.php';
 require_once __DIR__ . '/../src/helpers/contextmanipulatorhelper.class.inc.php';
+require_once __DIR__ . '/../src/providers/requestmanipulatorserviceprovider.class.inc.php';
+require_once __DIR__ . '/../src/helpers/requestmanipulatorhelper.class.inc.php';
 require_once __DIR__ . '/../src/providers/scopevalidatorserviceprovider.class.inc.php';
 require_once __DIR__ . '/../src/helpers/scopevalidatorhelper.class.inc.php';
 require_once __DIR__ . '/../src/providers/lifecyclevalidatorserviceprovider.class.inc.php';
@@ -43,8 +45,8 @@ require_once __DIR__ . '/../src/helpers/lifecyclevalidatorhelper.class.inc.php';
 require_once __DIR__ . '/../src/helpers/securityhelper.class.inc.php';
 require_once __DIR__ . '/../src/helpers/applicationhelper.class.inc.php';
 
-use Silex\Application;
-use Combodo\iTop\Portal\Helper\ApplicationHelper;
+use \Silex\Application;
+use \Combodo\iTop\Portal\Helper\ApplicationHelper;
 
 // Stacking context tag so it knows we are in the portal
 $oContex = new ContextTag('GUI:Portal');
@@ -84,20 +86,21 @@ $oApp->register(new Silex\Provider\HttpFragmentServiceProvider());
 $oKPI->ComputeAndReport('Initialization of the Silex application');
 
 $oApp->before(function(Symfony\Component\HttpFoundation\Request $oRequest, Silex\Application $oApp) use ($bDebug){
-    // User pre-checks
-	// Note: At this point the Exception handler is not registered, so we can't use $oApp::abort() method, hence the die().
-	// - Checking user rights and prompt if needed (401 HTTP code returned if XHR request)
+    // Checking user rights and prompt if needed (401 HTTP code returned if XHR request)
     $iExitMethod = ($oRequest->isXmlHttpRequest()) ? LoginWebPage::EXIT_RETURN : LoginWebPage::EXIT_PROMPT;
     $iLogonRes = LoginWebPage::DoLoginEx(PORTAL_ID, false, $iExitMethod);
     if( ($iExitMethod === LoginWebPage::EXIT_RETURN) && ($iLogonRes != 0) )
     {
-        die(Dict::S('Portal:ErrorUserLoggedOut'));
+        $oApp->abort(401, Dict::S('Portal:ErrorUserLoggedOut'));
     }
-	// - User must be associated with a Contact
+
     if (UserRights::GetContactId() == 0)
     {
-        die(Dict::S('Portal:ErrorNoContactForThisUser'));
+        $oApp->abort(500, Dict::S('Portal:ErrorNoContactForThisUser'));
     }
+
+    // Register request manipulator now that the request has been created.
+    $oApp->register(new Combodo\iTop\Portal\Provider\RequestManipulatorServiceProvider());
 
 	// Enable archived data
 	utils::InitArchiveMode();

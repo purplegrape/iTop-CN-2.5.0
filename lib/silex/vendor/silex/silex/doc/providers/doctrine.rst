@@ -1,9 +1,12 @@
-Doctrine
-========
+DoctrineServiceProvider
+=======================
 
 The *DoctrineServiceProvider* provides integration with the `Doctrine DBAL
-<http://www.doctrine-project.org/projects/dbal>`_ for easy database access
-(Doctrine ORM integration is **not** supplied).
+<http://www.doctrine-project.org/projects/dbal>`_ for easy database access.
+
+.. note::
+
+    There is only a Doctrine DBAL. An ORM service is **not** supplied.
 
 Parameters
 ----------
@@ -63,7 +66,8 @@ Registering
 
 .. note::
 
-    Add the Doctrine DBAL as a dependency:
+    Doctrine DBAL comes with the "fat" Silex archive but not with the regular
+    one. If you are using Composer, add it as a dependency:
 
     .. code-block:: bash
 

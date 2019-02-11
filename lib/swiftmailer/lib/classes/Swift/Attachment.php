@@ -11,7 +11,9 @@
 /**
  * Attachment class for attaching files to a {@link Swift_Mime_Message}.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_Attachment extends Swift_Mime_Attachment
 {

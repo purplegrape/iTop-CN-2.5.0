@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2016 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -31,14 +31,11 @@ require_once(APPROOT.'/application/webpage.class.inc.php');
 require_once(APPROOT.'/application/clipage.class.inc.php');
 require_once(APPROOT.'/core/background.inc.php');
 
-const EXIT_CODE_ERROR = -1;
-const EXIT_CODE_FATAL = -2;
-
 $sConfigFile = APPCONF.ITOP_DEFAULT_ENV.'/'.ITOP_CONFIG_FILE;
 if (!file_exists($sConfigFile))
 {
 	echo "iTop is not yet installed. Exiting...\n";
-	exit(EXIT_CODE_ERROR);
+	exit(-1);
 }
 
 require_once(APPROOT.'/application/startup.inc.php');
@@ -53,7 +50,6 @@ function ReadMandatoryParam($oP, $sParam, $sSanitizationFilter = 'parameter')
 		$oP->p("ERROR: Missing argument '$sParam'\n");
 		UsageAndExit($oP);
 	}
-
 	return trim($sValue);
 }
 
@@ -64,29 +60,19 @@ function UsageAndExit($oP)
 	if ($bModeCLI)
 	{
 		$oP->p("USAGE:\n");
-		$oP->p("php cron.php --auth_user=<login> --auth_pwd=<password> [--param_file=<file>] [--verbose=1] [--debug=1] [--status_only=1]\n");
+		$oP->p("php cron.php --auth_user=<login> --auth_pwd=<password> [--param_file=<file>] [--verbose=1] [--debug=1] [--status_only=1]\n");		
 	}
 	else
 	{
-		$oP->p("Optional parameters: verbose, param_file, status_only\n");
+		$oP->p("Optional parameters: verbose, param_file, status_only\n");		
 	}
 	$oP->output();
-	exit(EXIT_CODE_FATAL);
+	exit -2;
 }
 
-/**
- * @param iProcess $oProcess
- * @param \BackgroundTask $oTask
- * @param DateTime $oStartDate
- * @param int $iTimeLimit
- *
- * @return string
- * @throws \ProcessFatalException
- * @throws MySQLHasGoneAwayException
- */
 function RunTask($oProcess, BackgroundTask $oTask, $oStartDate, $iTimeLimit)
 {
-	$oDateStarted = new DateTime();
+	$oNow = new DateTime();
 	$fStart = microtime(true);
 	$oCtx = new ContextTag('CRON:Task:'.$oTask->Get('class_name'));
 
@@ -94,20 +80,9 @@ function RunTask($oProcess, BackgroundTask $oTask, $oStartDate, $iTimeLimit)
 	$oExceptionToThrow = null;
 	try
 	{
-		// Record (when starting) that this task was started, just in case it crashes during the execution
-		$oTask->Set('latest_run_date', $oDateStarted->format('Y-m-d H:i:s'));
-		$oTask->DBUpdate();
 		$sMessage = $oProcess->Process($iTimeLimit);
 	}
-	catch (MySQLHasGoneAwayException $e)
-	{
-		throw $e;
-	}
-	catch (ProcessFatalException $e)
-	{
-		$oExceptionToThrow = $e;
-	}
-	catch (Exception $e) // we shouldn't get so much exceptions... but we need to handle legacy code, and cron.php has to keep running
+	catch(Exception $e)
 	{
 		$sMessage = 'Processing failed with message: '.$e->getMessage();
 	}
@@ -115,13 +90,10 @@ function RunTask($oProcess, BackgroundTask $oTask, $oStartDate, $iTimeLimit)
 	if ($oTask->Get('total_exec_count') == 0)
 	{
 		// First execution
-		$oTask->Set('first_run_date', $oDateStarted->format('Y-m-d H:i:s'));
+		$oTask->Set('first_run_date', $oNow->format('Y-m-d H:i:s'));
 	}
 	$oTask->ComputeDurations($fDuration); // does increment the counter and compute statistics
-	
-	// Update the timestamp since we want to be able to re-order the tasks based on the time they finished
-	$oDateEnded = new DateTime();
-	$oTask->Set('latest_run_date', $oDateEnded->format('Y-m-d H:i:s'));
+	$oTask->Set('latest_run_date', $oNow->format('Y-m-d H:i:s'));
 
 	$oRefClass = new ReflectionClass(get_class($oProcess));
 	if ($oRefClass->implementsInterface('iScheduledProcess'))
@@ -132,7 +104,7 @@ function RunTask($oProcess, BackgroundTask $oTask, $oStartDate, $iTimeLimit)
 	else
 	{
 		// Background processes do repeat periodically
-		$oPlannedStart = clone $oDateStarted;
+		$oPlannedStart = new DateTime($oTask->Get('latest_run_date'));
 		// Let's assume that the task was started exactly when planned so that the schedule does no shift each time
 		// this allows to schedule a task everyday "around" 11:30PM for example
 		$oPlannedStart->modify('+'.$oProcess->GetPeriodicity().' seconds');
@@ -146,28 +118,17 @@ function RunTask($oProcess, BackgroundTask $oTask, $oStartDate, $iTimeLimit)
 
 	$oTask->Set('next_run_date', $oPlannedStart->format('Y-m-d H:i:s'));
 	$oTask->DBUpdate();
-
-	if ($oExceptionToThrow)
-	{
-		throw $oExceptionToThrow;
-	}
-
 	unset($oCtx);
 
 	return $sMessage;
 }
 
-/**
- * @param CLIPage|WebPage $oP
- * @param iProcess[] $aProcesses
- * @param boolean $bVerbose
- */
 function CronExec($oP, $aProcesses, $bVerbose)
 {
 	$iStarted = time();
 	$iMaxDuration = MetaModel::GetConfig()->Get('cron_max_execution_time');
 	$iTimeLimit = $iStarted + $iMaxDuration;
-
+	
 	if ($bVerbose)
 	{
 		$oP->p("Planned duration = $iMaxDuration seconds");
@@ -175,37 +136,13 @@ function CronExec($oP, $aProcesses, $bVerbose)
 
 	// Reset the next planned execution to take into account new settings
 	$oSearch = new DBObjectSearch('BackgroundTask');
-	/** @var DBObjectSet $oTasks */
 	$oTasks = new DBObjectSet($oSearch);
-	while (
-		/** @var BackgroundTask $oTask */
-	$oTask = $oTasks->Fetch())
+	while($oTask = $oTasks->Fetch())
 	{
 		$sTaskClass = $oTask->Get('class_name');
-		// The BackgroundTask can point to a non existing class : this could happen for example if an extension has been removed
-		// we could also try/catch when instanciating ReflectionClass, but sometimes old recipes are good too ;)
-		if (!class_exists($sTaskClass))
-		{
-			if ($oTask->Get('status') == 'active')
-			{
-				$oP->p("ERROR : the background task was paused because it references the non existing class '$sTaskClass'");
-
-				$oTask->Set('status', 'paused');
-				$oTask->DBUpdate();
-			}
-
-			continue;
-		}
-
 		$oRefClass = new ReflectionClass($sTaskClass);
-		if (!$oRefClass->implementsInterface('iScheduledProcess'))
-		{
-			continue;
-		}
-
 		$oNow = new DateTime();
-		if (($oTask->Get('status') != 'active')
-			|| ($oTask->Get('next_run_date') > $oNow->format('Y-m-d H:i:s')))
+		if($oRefClass->implementsInterface('iScheduledProcess') && (($oTask->Get('status') != 'active') || ($oTask->Get('next_run_date') > $oNow->format('Y-m-d H:i:s'))))
 		{
 			if ($bVerbose)
 			{
@@ -219,23 +156,20 @@ function CronExec($oP, $aProcesses, $bVerbose)
 	}
 
 	$iCronSleep = MetaModel::GetConfig()->Get('cron_sleep');
-
+	
 	$oSearch = new DBObjectSearch('BackgroundTask');
 	while (time() < $iTimeLimit)
 	{
 		$oTasks = new DBObjectSet($oSearch);
 		$aTasks = array();
-		while ($oTask = $oTasks->Fetch())
+		while($oTask = $oTasks->Fetch())
 		{
 			$aTasks[$oTask->Get('class_name')] = $oTask;
 		}
-		
-		$oNow = new DateTime();
-		ReorderProcesses($aProcesses, $aTasks, $oNow, $bVerbose, $oP);
-		
 		foreach ($aProcesses as $oProcess)
 		{
 			$sTaskClass = get_class($oProcess);
+			$oNow = new DateTime();
 			if (!array_key_exists($sTaskClass, $aTasks))
 			{
 				// New entry, let's create a new BackgroundTask record, and plan the first execution
@@ -265,30 +199,17 @@ function CronExec($oP, $aProcesses, $bVerbose)
 				$aTasks[$oTask->Get('class_name')] = $oTask;
 			}
 
-			if (($aTasks[$sTaskClass]->Get('status') == 'active') && ($aTasks[$sTaskClass]->Get('next_run_date') <= $oNow->format('Y-m-d H:i:s')))
+			if( ($aTasks[$sTaskClass]->Get('status') == 'active') && ($aTasks[$sTaskClass]->Get('next_run_date') <= $oNow->format('Y-m-d H:i:s')))
 			{
 				// Run the task and record its next run time
 				if ($bVerbose)
 				{
 					$oP->p(">> === ".$oNow->format('Y-m-d H:i:s').sprintf(" Starting:%-'=40s", ' '.$sTaskClass.' '));
 				}
-				try
-				{
-					$sMessage = RunTask($oProcess, $aTasks[$sTaskClass], $oNow, $iTimeLimit);
-				}
-				catch (MySQLHasGoneAwayException $e)
-				{
-					$oP->p("ERROR : 'MySQL has gone away' thrown when processing $sTaskClass  (error_code=".$e->getCode().")");
-					exit(EXIT_CODE_FATAL);
-				}
-				catch (ProcessFatalException $e)
-				{
-					$oP->p("ERROR : an exception was thrown when processing '$sTaskClass' (".$e->getInfoLog().")");
-					IssueLog::Error("Cron.php error : an exception was thrown when processing '$sTaskClass' (".$e->getInfoLog().')');
-				}
+				$sMessage = RunTask($oProcess, $aTasks[$sTaskClass], $oNow, $iTimeLimit);
 				if ($bVerbose)
 				{
-					if (!empty($sMessage))
+					if(!empty($sMessage))
 					{
 						$oP->p("$sTaskClass: $sMessage");
 					}
@@ -296,7 +217,7 @@ function CronExec($oP, $aProcesses, $bVerbose)
 					$oP->p("<< === ".$oEnd->format('Y-m-d H:i:s').sprintf(" End of:  %-'=40s", ' '.$sTaskClass.' '));
 				}
 			}
-			else
+			else 
 			{
 				// will run later
 				if (($aTasks[$sTaskClass]->Get('status') == 'active') && $bVerbose)
@@ -313,7 +234,7 @@ function CronExec($oP, $aProcesses, $bVerbose)
 	}
 	if ($bVerbose)
 	{
-		$oP->p("Reached normal execution time limit (exceeded by ".(time() - $iTimeLimit)."s)");
+		$oP->p("Reached normal execution time limit (exceeded by ".(time()-$iTimeLimit)."s)");
 	}
 }
 
@@ -324,7 +245,7 @@ function DisplayStatus($oP)
 	$oP->p('+---------------------------+---------+---------------------+---------------------+--------+-----------+');
 	$oP->p('| Task Class                | Status  | Last Run            | Next Run            | Nb Run | Avg. Dur. |');
 	$oP->p('+---------------------------+---------+---------------------+---------------------+--------+-----------+');
-	while ($oTask = $oTasks->Fetch())
+	while($oTask = $oTasks->Fetch())
 	{
 		$sTaskName = $oTask->Get('class_name');
 		$sStatus = $oTask->Get('status');
@@ -332,129 +253,9 @@ function DisplayStatus($oP)
 		$sNextRunDate = $oTask->Get('next_run_date');
 		$iNbRun = (int)$oTask->Get('total_exec_count');
 		$sAverageRunTime = $oTask->Get('average_run_duration');
-		$oP->p(sprintf('| %1$-25.25s | %2$-7s | %3$-19s | %4$-19s | %5$6d | %6$7s s |', $sTaskName, $sStatus,
-			$sLastRunDate, $sNextRunDate, $iNbRun, $sAverageRunTime));
-	}
+		$oP->p(sprintf('| %1$-25.25s | %2$-7s | %3$-19s | %4$-19s | %5$6d | %6$7s s |', $sTaskName, $sStatus, $sLastRunDate, $sNextRunDate, $iNbRun, $sAverageRunTime));
+	}	
 	$oP->p('+---------------------------+---------+---------------------+---------------------+--------+-----------+');
-}
-
-/**
- * Arrange the list of processes in the best order for their execution.
- * The idea is to continue just after the last task that was run, to let a chance to every task
- * even when there are tasks taking a very long time (for example to process a big backlog)
- * Note: We first record the last_run_date at the startup of a task, then at the end
- *       so that in case of a crash, the task is still listed has having run.
- *       In case the task crashes AND the previous task was very quick (less than 1 second)
- *       both tasks will have the same last_run_date. In this case it is important NOT to start again
- *       by the task that just crashed.
- * @param iProcess[] $aProcesses
- * @param BackgroundTask[] $aTasks
- * @param DateTime $oNow
- * @param Page $oP
- */
-function ReorderProcesses(&$aProcesses, $aTasks, $oNow, $bVerbose, &$oP)
-{
-	$aIndexes = array_keys($aProcesses);
-	
-	// Step 1: find which task was run last
-	$idx = 0;
-	$idxLastTaskExecuted = 0;
-	$sMaxRunDate = '';
-	if ($bVerbose)
-	{
-		$oP->p('Re-ordering the tasks - planned to run now -  to continue after the last task run:');
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-		$oP->p('| Task Class                | Status  | Last Run            | Next Run            |');
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-		
-		foreach($aProcesses as $sClass => $oProcess)
-		{
-			$sTaskClass = get_class($oProcess);
-			if (array_key_exists($sTaskClass, $aTasks))
-			{
-				$oTask = $aTasks[$sTaskClass];
-				if (($aTasks[$sTaskClass]->Get('status') == 'active') && ($aTasks[$sTaskClass]->Get('next_run_date') <= $oNow->format('Y-m-d H:i:s')))
-				{
-					$sTaskName = $oTask->Get('class_name');
-					$sStatus = $oTask->Get('status');
-					$sLastRunDate = $oTask->Get('latest_run_date');
-					$sNextRunDate = $oTask->Get('next_run_date');
-					$oP->p(sprintf('| %1$-25.25s | %2$-7s | %3$-19s | %4$-19s |', $sTaskName, $sStatus, $sLastRunDate, $sNextRunDate));
-				}
-			}
-		}
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-	}
-	foreach($aProcesses as $sClass => $oProcess)
-	{
-		$sTaskClass = get_class($oProcess);
-		if (array_key_exists($sTaskClass, $aTasks))
-		{
-			$oTask = $aTasks[$sTaskClass];
-
-			if (($aTasks[$sTaskClass]->Get('status') == 'active') && ($aTasks[$sTaskClass]->Get('next_run_date') <= $oNow->format('Y-m-d H:i:s')))
-			{
-				if (($oTask->Get('latest_run_date') != '') && strcmp($oTask->Get('latest_run_date'), $sMaxRunDate) >= 0)
-				{
-					// More recent or equal (!important) will run later
-					$sMaxRunDate = $oTask->Get('latest_run_date');
-					$idxLastTaskExecuted = $idx;
-				}
-			}
-		}
-		$idx++;
-	}
-	if ($bVerbose)
-	{		
-		$oLastRunProcess = $aProcesses[$aIndexes[$idxLastTaskExecuted]];
-		
-		$oP->p('Last run process: '.get_class($oProcess)." (idx=$idxLastTaskExecuted) at ".$sMaxRunDate);
-	}
-	
-	
-	
-	$aReorderedProcesses = array();
-	
-	
-	// Step 2: the first task will the one just after the last run one, then the next, and so on (circular permutation)
-	$idx = 0;
-	$iTotal = count($aProcesses);
-	foreach($aProcesses as $oProcess)
-	{
-		$iActualIdx = (1 + $idxLastTaskExecuted + $idx )% $iTotal;
-		$sKey = $aIndexes[$iActualIdx];
-		$aReorderedProcesses[] =  $aProcesses[$sKey];
-		$idx++;
-	}
-	
-	if ($bVerbose)
-	{
-		$oP->p('After reordering, the execution order is:');
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-		$oP->p('| Task Class                | Status  | Last Run            | Next Run            |');
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-		
-		foreach($aReorderedProcesses as $sClass => $oProcess)
-		{
-			$sTaskClass = get_class($oProcess);
-			if (array_key_exists($sTaskClass, $aTasks))
-			{
-				$oTask = $aTasks[$sTaskClass];
-				if (($aTasks[$sTaskClass]->Get('status') == 'active') && ($aTasks[$sTaskClass]->Get('next_run_date') <= $oNow->format('Y-m-d H:i:s')))
-				{
-					$sTaskName = $oTask->Get('class_name');
-					$sStatus = $oTask->Get('status');
-					$sLastRunDate = $oTask->Get('latest_run_date');
-					$sNextRunDate = $oTask->Get('next_run_date');
-					$oP->p(sprintf('| %1$-25.25s | %2$-7s | %3$-19s | %4$-19s |', $sTaskName, $sStatus, $sLastRunDate, $sNextRunDate));
-				}
-			}
-		}
-		$oP->p('+---------------------------+---------+---------------------+---------------------+');
-	}
-	
-	// Update the array
-	$aProcesses = $aReorderedProcesses;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -477,11 +278,11 @@ try
 {
 	utils::UseParamFile();
 }
-catch (Exception $e)
+catch(Exception $e)
 {
 	$oP->p("Error: ".$e->GetMessage());
 	$oP->output();
-	exit(EXIT_CODE_FATAL);
+	exit -2;
 }
 
 if (utils::IsModeCLI())
@@ -499,7 +300,7 @@ if (utils::IsModeCLI())
 	{
 		$oP->p("Access wrong credentials ('$sAuthUser')");
 		$oP->output();
-		exit(EXIT_CODE_ERROR);
+		exit -1;
 	}
 }
 else
@@ -513,13 +314,13 @@ if (!UserRights::IsAdministrator())
 {
 	$oP->p("Access restricted to administrators");
 	$oP->Output();
-	exit(EXIT_CODE_ERROR);
+	exit -1;
 }
 
 // Enumerate classes implementing BackgroundProcess
 //
 $aProcesses = array();
-foreach (get_declared_classes() as $sPHPClass)
+foreach(get_declared_classes() as $sPHPClass)
 {
 	$oRefClass = new ReflectionClass($sPHPClass);
 	$oExtensionInstance = null;
@@ -569,7 +370,7 @@ try
 		{
 			$oP->p("A database maintenance is ongoing (read-only mode even for admins).");
 			$oP->Output();
-			exit(EXIT_CODE_ERROR);
+			exit -1;
 		}
 
 		CronExec($oP, $aProcesses, $bVerbose);

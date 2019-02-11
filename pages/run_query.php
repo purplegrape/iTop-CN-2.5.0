@@ -27,11 +27,11 @@
 require_once('../approot.inc.php');
 require_once(APPROOT.'/application/application.inc.php');
 require_once(APPROOT.'/application/itopwebpage.class.inc.php');
-require_once(APPROOT.'/application/startup.inc.php');
-require_once(APPROOT.'/application/loginwebpage.class.inc.php');
 
-LoginWebPage::DoLogin(); // Check user rights and prompt if needed
-ApplicationMenu::CheckMenuIdEnabled('RunQueriesMenu');
+require_once(APPROOT.'/application/startup.inc.php');
+
+require_once(APPROOT.'/application/loginwebpage.class.inc.php');
+LoginWebPage::DoLogin(true); // Check user rights and prompt if needed (must be admin)
 
 function ShowExamples($oP, $sExpression)
 {
@@ -169,15 +169,7 @@ try
 
 	$oP->add("<form method=\"post\">\n");
 	$oP->add(Dict::S('UI:RunQuery:ExpressionToEvaluate')."<br/>\n");
-	$oP->add("<textarea cols=\"120\" rows=\"8\" id=\"expression\" name=\"expression\">".htmlentities($sExpression, ENT_QUOTES, 'UTF-8')."</textarea>\n");
-	$oP->add_linked_script(utils::GetDefaultUrlAppRoot()."/js/jquery.hotkeys.js");
-	$oP->add_ready_script(<<<EOF
-$("#expression").select();
-$("#expression").on("keydown", null, "ctrl+return", function() {
-	$(this).closest("form").submit();
-});
-EOF
-	);
+	$oP->add("<textarea cols=\"120\" rows=\"8\" name=\"expression\">".htmlentities($sExpression, ENT_QUOTES, 'UTF-8')."</textarea>\n");
 
 	if (count($aArgs) > 0)
 	{
@@ -190,7 +182,7 @@ EOF
 		$oP->add("</div>\n"); 
 	}
 
-	$oP->add("<input type=\"submit\" value=\"".Dict::S('UI:Button:Evaluate')."\" title=\"".Dict::S('UI:Button:Evaluate:Title')."\">\n");
+	$oP->add("<input type=\"submit\" value=\"".Dict::S('UI:Button:Evaluate')."\">\n");
 	$oP->add($oAppContext->GetForForm());
 	$oP->add("</form>\n");
 
@@ -225,7 +217,7 @@ EOF
 		$oP->SetBreadCrumbEntry($sPageId, $sLabel, $oFilter->ToOQL(true), $sUrl, '../images/breadcrumb-search.png');
 
 		$oP->p('');
-		$oP->StartCollapsibleSection(Dict::S('UI:RunQuery:MoreInfo'), false, 'runQuery');
+		$oP->StartCollapsibleSection(Dict::S('UI:RunQuery:MoreInfo'), false);
 		$oP->p(Dict::S('UI:RunQuery:DevelopedQuery').htmlentities($oFilter->ToOQL(), ENT_QUOTES, 'UTF-8'));
 		$oP->p(Dict::S('UI:RunQuery:SerializedFilter').$oFilter->serialize());
 		$oP->EndCollapsibleSection();

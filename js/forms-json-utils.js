@@ -282,25 +282,25 @@ function ValidateCKEditField(sFieldId, sPattern, bMandatory, sFormId, nullValue,
 		// Get the original value without the tags
 		var oFormattedOriginalContents = (originalValue !== undefined) ? $('<div></div>').html(originalValue) : undefined;
 		var sTextOriginalContents = (oFormattedOriginalContents !== undefined) ? oFormattedOriginalContents.text() : undefined;
-	
+
 		if (bMandatory && (sTextContent == nullValue))
 		{
 			bValid = false;
 			sExplain = Dict.S('UI:ValueMustBeSet');
 		}
-		else if ((sTextOriginalContents != undefined) && (sTextContent == sTextOriginalContents))
-		{
-			bValid = false;
-			if (sTextOriginalContents == nullValue)
-			{
-				sExplain = Dict.S('UI:ValueMustBeSet');
-			}
-			else
-			{
-				// Note: value change check is not working well yet as the HTML to Text conversion is not exactly the same when done from the PHP value or the CKEditor value.
-				sExplain = Dict.S('UI:ValueMustBeChanged');
-			}
-		}
+        else if ((sTextOriginalContents != undefined) && (sTextContent == sTextOriginalContents))
+        {
+            bValid = false;
+            if (sTextOriginalContents == nullValue)
+            {
+                sExplain = Dict.S('UI:ValueMustBeSet');
+            }
+            else
+            {
+                // Note: value change check is not working well yet as the HTML to Text conversion is not exactly the same when done from the PHP value or the CKEditor value.
+                sExplain = Dict.S('UI:ValueMustBeChanged');
+            }
+        }
 		else
 		{
 			bValid = true;

@@ -3,17 +3,16 @@
 /*
  * This file is part of Twig.
  *
- * (c) Fabien Potencier
+ * (c) 2012 Fabien Potencier
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-/**
- * @final
- */
 class Twig_Extension_StringLoader extends Twig_Extension
 {
+    /**
+     * {@inheritdoc}
+     */
     public function getFunctions()
     {
         return array(
@@ -21,6 +20,9 @@ class Twig_Extension_StringLoader extends Twig_Extension
         );
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getName()
     {
         return 'string_loader';
@@ -35,13 +37,11 @@ class Twig_Extension_StringLoader extends Twig_Extension
  * </pre>
  *
  * @param Twig_Environment $env      A Twig_Environment instance
- * @param string           $template A template as a string or object implementing __toString()
+ * @param string           $template A template as a string
  *
- * @return Twig_Template
+ * @return Twig_Template A Twig_Template instance
  */
 function twig_template_from_string(Twig_Environment $env, $template)
 {
-    return $env->createTemplate((string) $template);
+    return $env->createTemplate($template);
 }
-
-class_alias('Twig_Extension_StringLoader', 'Twig\Extension\StringLoaderExtension', false);

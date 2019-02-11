@@ -81,11 +81,11 @@ class DBObjectSet implements iDBObjectSetIterator
 
 	/**
 	 * Create a new set based on a Search definition.
-	 * 
+	 *
 	 * @param DBSearch $oFilter The search filter defining the objects which are part of the set (multiple columns/objects per row are supported)
 	 * @param array $aOrderBy Array of '[<classalias>.]attcode' => bAscending
 	 * @param array $aArgs Values to substitute for the search/query parameters (if any). Format: param_name => value
-	 * @param array $aExtendedDataSpec
+	 * @param hash $aExtendedDataSpec
 	 * @param int $iLimitCount Maximum number of rows to load (i.e. equivalent to MySQL's LIMIT start, count)
 	 * @param int $iLimitStart Index of the first row to load (i.e. equivalent to MySQL's LIMIT start, count)
 	 * @param bool $bSort if false no order by is done
@@ -173,8 +173,8 @@ class DBObjectSet implements iDBObjectSetIterator
 
 	/**
 	 * Specify the subset of attributes to load (for each class of objects) before performing the SQL query for retrieving the rows from the DB
-	 *
-	 * @param array $aAttToLoad Format: alias => array of attribute_codes
+	 * 
+	 * @param hash $aAttToLoad Format: alias => array of attribute_codes
 	 * 
 	 * @return void
 	 */
@@ -570,7 +570,7 @@ class DBObjectSet implements iDBObjectSetIterator
 		$aAttributes = array();
 		foreach ($aAliases as $sAlias => $bClassDirection)
 		{
-			foreach (MetaModel::GetOrderByDefault($this->m_oFilter->GetClassName($sAlias)) as $sAttCode => $bAttributeDirection)
+			foreach (MetaModel::GetOrderByDefault($this->m_oFilter->GetClass($sAlias)) as $sAttCode => $bAttributeDirection)
 			{
 				$bDirection = $bClassDirection ? $bAttributeDirection : !$bAttributeDirection;
 				$aAttributes[$sAlias.'.'.$sAttCode] = $bDirection;
@@ -642,6 +642,7 @@ class DBObjectSet implements iDBObjectSetIterator
 			$this->m_oSQLResult->free();
 			$this->m_oSQLResult = null;
 		}
+		$this->m_iNumTotalDBRows = null;
 
 		try
 		{
@@ -673,12 +674,11 @@ class DBObjectSet implements iDBObjectSetIterator
 		}
 
 		if ($this->m_oSQLResult === false) return;
-
-		if ((($this->m_iLimitCount == 0) || ($this->m_iLimitCount > $this->m_oSQLResult->num_rows)) && ($this->m_iLimitStart == 0))
+		
+		if (($this->m_iLimitCount == 0) && ($this->m_iLimitStart == 0))
 		{
 			$this->m_iNumTotalDBRows = $this->m_oSQLResult->num_rows;
 		}
-
 		$this->m_iNumLoadedDBRows = $this->m_oSQLResult->num_rows;
 	}
 
@@ -710,92 +710,30 @@ class DBObjectSet implements iDBObjectSetIterator
 	 * May actually perform the SQL query SELECT COUNT... if the set was not previously loaded, or loaded with a
 	 * SetLimit
 	 *
+	 * @param int $iLimit used for autocomplete: the count is only used to know if the number of entries exceed
+	 *                    a certain amount or not
+	 *
 	 * @return int The total number of rows for this set.
+	 * @throws \CoreException
+	 * @throws \MissingQueryArgument
+	 * @throws \MySQLException
 	 */
-	public function Count()
+	public function Count($iLimit = 0)
 	{
 		if (is_null($this->m_iNumTotalDBRows))
 		{
-			$sSQL = $this->m_oFilter->MakeSelectQuery(array(), $this->m_aArgs, null, null, 0, 0, true);
+			$sSQL = $this->m_oFilter->MakeSelectQuery(array(), $this->m_aArgs, null, null, $iLimit, 0, true);
 			$resQuery = CMDBSource::Query($sSQL);
 			if (!$resQuery) return 0;
 
 			$aRow = CMDBSource::FetchArray($resQuery);
 			CMDBSource::FreeResult($resQuery);
-			$this->m_iNumTotalDBRows = intval($aRow['COUNT']);
+			$this->m_iNumTotalDBRows = $aRow['COUNT'];
 		}
 
 		return $this->m_iNumTotalDBRows + count($this->m_aAddedObjects); // Does it fix Trac #887 ??
 	}
-
-	/** Check if the count exceeds a given limit
-	 * @param $iLimit
-	 *
-	 * @return bool
-	 * @throws \CoreException
-	 * @throws \MissingQueryArgument
-	 * @throws \MySQLException
-	 * @throws \MySQLHasGoneAwayException
-	 */
-	public function CountExceeds($iLimit)
-	{
-		if (is_null($this->m_iNumTotalDBRows))
-		{
-			$sSQL = $this->m_oFilter->MakeSelectQuery(array(), $this->m_aArgs, null, null, $iLimit + 2, 0, true);
-			$resQuery = CMDBSource::Query($sSQL);
-			if ($resQuery)
-			{
-				$aRow = CMDBSource::FetchArray($resQuery);
-				CMDBSource::FreeResult($resQuery);
-				$iCount = intval($aRow['COUNT']);
-			}
-			else
-			{
-				$iCount = 0;
-			}
-		}
-		else
-		{
-			$iCount = $this->m_iNumTotalDBRows;
-		}
-
-		return ($iCount > $iLimit);
-	}
-
-	/** Count only up to the given limit
-	 * @param $iLimit
-	 *
-	 * @return int
-	 * @throws \CoreException
-	 * @throws \MissingQueryArgument
-	 * @throws \MySQLException
-	 * @throws \MySQLHasGoneAwayException
-	 */
-	public function CountWithLimit($iLimit)
-	{
-		if (is_null($this->m_iNumTotalDBRows))
-		{
-			$sSQL = $this->m_oFilter->MakeSelectQuery(array(), $this->m_aArgs, null, null, $iLimit + 2, 0, true);
-			$resQuery = CMDBSource::Query($sSQL);
-			if ($resQuery)
-			{
-				$aRow = CMDBSource::FetchArray($resQuery);
-				CMDBSource::FreeResult($resQuery);
-				$iCount = intval($aRow['COUNT']);
-			}
-			else
-			{
-				$iCount = 0;
-			}
-		}
-		else
-		{
-			$iCount = $this->m_iNumTotalDBRows;
-		}
-
-		return $iCount;
-	}
-
+	
 	/**
 	 * Number of rows available in memory (loaded from DB + added in memory)
 	 * 

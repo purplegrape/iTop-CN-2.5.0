@@ -392,7 +392,7 @@ $(function()
 				}
 			});
 			
-			this.element.height(maxHeight - 13);
+			this.element.height(maxHeight - 20);
 			this.oPaper.setSize(this.element.width(), this.element.height());
 		},
 		auto_scale: function()
@@ -407,7 +407,7 @@ $(function()
 			ymax = this.options.ymax + iMargin;
 			var xScale = this.element.width() / (xmax - xmin);
 			var yScale = this.element.height() / (ymax - ymin + this.iTextHeight);
-
+			
 			this.fZoom = Math.min(xScale, yScale, fMaxZoom);
 			switch(this.options.align)
 			{
@@ -682,7 +682,7 @@ $(function()
 		},
 		_on_resize: function()
 		{
-			this.element.closest('.ui-tabs').tabs({ heightStyle: "content" });
+			this.element.closest('.ui-tabs').tabs({ heightStyle: "fill" });
 			this.auto_scale();
 			this._close_all_tooltips();
 			this.draw();
@@ -801,11 +801,7 @@ $(function()
 			}
 			var aContexts = [];
 			$('#'+sId+'_contexts').multiselect('getChecked').each(function() { aContexts[$(this).val()] = me.options.additional_contexts[$(this).val()].oql; });
-			// Don't set the height on the tabs widget, only on the current tab
-			// Adjust the height of the graph to the window size
-			var sTabHeight = parseInt($(window).height() - this.element.parent().offset().top - 50);
-			this.element.closest('.ui-tabs-panel').css({ height: sTabHeight + "px" });
-
+			this.element.closest('.ui-tabs').tabs({ heightStyle: "fill" });
 			this.adjust_height();
 			this._close_all_tooltips();
 			this.oPaper.rect(this.xPan, this.yPan, this.element.width(), this.element.height()).attr({fill: '#000', opacity: 0.4, 'stroke-width': 0});

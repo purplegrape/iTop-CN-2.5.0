@@ -19,6 +19,9 @@
 
 namespace Combodo\iTop\Form\Field;
 
+use \AttributeDatetime;
+use \Combodo\iTop\Form\Field\StringField;
+
 /**
  * A field for Dates and Date & Times, supporting custom formats
  */
@@ -27,7 +30,7 @@ class DateTimeField extends StringField
 	protected $sJSDateTimeFormat;
 	protected $sPHPDateTimeFormat;
 	protected $bDateOnly;
-
+	
 	/**
 	 * Overloaded constructor
 	 *
@@ -39,10 +42,9 @@ class DateTimeField extends StringField
 		parent::__construct($sId, $onFinalizeCallback);
 		$this->bDateOnly = false;
 	}
-
+	
 	/**
 	 * Get the PHP format string
-	 *
 	 * @return string
 	 */
 	public function GetPHPDateTimeFormat()
@@ -53,16 +55,14 @@ class DateTimeField extends StringField
 	/**
 	 *
 	 * @param string $sFormat
-	 *
 	 * @return \Combodo\iTop\Form\Field\DateTimeField
 	 */
 	public function SetPHPDateTimeFormat($sDateTimeFormat)
 	{
 		$this->sPHPDateTimeFormat = $sDateTimeFormat;
-
 		return $this;
 	}
-
+	
 	/**
 	 * @return string
 	 */
@@ -74,26 +74,23 @@ class DateTimeField extends StringField
 	/**
 	 *
 	 * @param string $sFormat
-	 *
 	 * @return \Combodo\iTop\Form\Field\DateTimeField
 	 */
 	public function SetJSDateTimeFormat($sDateTimeFormat)
 	{
 		$this->sDateTimeFormat = $sDateTimeFormat;
-
 		return $this;
 	}
-
+	
 	/**
 	 * Set the DateOnly flag
-	 *
 	 * @return \Combodo\iTop\Form\Field\DateTimeField
 	 */
 	public function SetDateOnly($bDateOnly)
 	{
 		return $this->bDateOnly = $bDateOnly;
+		return $this;
 	}
-
 	/**
 	 * @return bool
 	 */

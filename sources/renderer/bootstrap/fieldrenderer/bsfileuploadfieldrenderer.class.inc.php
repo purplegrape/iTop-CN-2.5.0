@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,16 +19,16 @@
 
 namespace Combodo\iTop\Renderer\Bootstrap\FieldRenderer;
 
-use utils;
-use Dict;
-use UserRights;
-use InlineImage;
-use DBObjectSet;
-use DBObjectSearch;
-use MetaModel;
-use Combodo\iTop\Renderer\FieldRenderer;
-use Combodo\iTop\Renderer\RenderingOutput;
-use Combodo\iTop\Form\Field\LinkedSetField;
+use \utils;
+use \Dict;
+use \UserRights;
+use \InlineImage;
+use \DBObjectSet;
+use \DBObjectSearch;
+use \MetaModel;
+use \Combodo\iTop\Renderer\FieldRenderer;
+use \Combodo\iTop\Renderer\RenderingOutput;
+use \Combodo\iTop\Form\Field\LinkedSetField;
 
 /**
  * Description of BsFileUploadFieldRenderer
@@ -79,8 +79,8 @@ class BsFileUploadFieldRenderer extends FieldRenderer
 		// Removing upload input if in read only
 		// TODO : Add max upload size when itop attachment has been refactored
 		if (!$this->oField->GetReadOnly())
-        {
-			$oOutput->AddHtml('<div class="upload_container row">' . Dict::S('Attachments:AddAttachment') . '<input type="file" id="' . $this->oField->GetGlobalId() . '" name="' . $this->oField->GetId() . '" /><span class="loader glyphicon glyphicon-refresh"></span>' . InlineImage::GetMaxUpload() . '</div>');
+		{
+			$oOutput->AddHtml('<div class="upload_container row">' . Dict::S('Attachments:AddAttachment') . '<input type="file" id="' . $this->oField->GetGlobalId() . '" name="' . $this->oField->GetId() . '" /><span class="loader glyphicon glyphicon-refresh"></span></div>');
 		}
 		// Ending files container
         $oOutput->AddHtml('</div>');

@@ -11,7 +11,9 @@
 /**
  * The Reporter plugin sends pass/fail notification to a Reporter.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Plugins
+ * @author     Chris Corbyn
  */
 interface Swift_Plugins_Reporter
 {

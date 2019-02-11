@@ -18,16 +18,16 @@
 
 namespace Combodo\iTop\Renderer\Console\FieldRenderer;
 
-use AttributeDate;
-use AttributeDateTime;
-use AttributeDuration;
-use Combodo\iTop\Form\Field\TextAreaField;
+use \Dict;
 use Combodo\iTop\Renderer\FieldRenderer;
 use Combodo\iTop\Renderer\RenderingOutput;
-use DateTimeFormat;
-use Dict;
-use InlineImage;
-use UserRights;
+use Combodo\iTop\Form\Field\TextAreaField;
+use \InlineImage;
+use \UserRights;
+use \AttributeDuration;
+use \DateTimeFormat;
+use \AttributeDateTime;
+use \AttributeDate;
 
 class ConsoleSimpleFieldRenderer extends FieldRenderer
 {
@@ -217,6 +217,7 @@ EOF
 
 		switch ($sFieldClass)
 		{
+			case 'Combodo\\iTop\Form\\Field\\DateTimeField':
 			case 'Combodo\\iTop\\Form\\Field\\DateTimeField':
 				$sDateTimeFormat = $this->oField->GetPHPDateTimeFormat();
 				$oFormat = new DateTimeFormat($sDateTimeFormat);

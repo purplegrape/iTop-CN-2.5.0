@@ -74,8 +74,8 @@ abstract class DBObject implements iDisplay
   	private static $m_aBulkInsertCols = array(); // class => array of ('table' => array of <sql_column>)
   	private static $m_bBulkInsert = false;
 
-	protected $m_bIsInDB = false; // true IIF the object is mapped to a DB record
-	protected $m_iKey = null;
+	private $m_bIsInDB = false; // true IIF the object is mapped to a DB record
+	private $m_iKey = null;
 	private $m_aCurrValues = array();
 	protected $m_aOrigValues = array();
 
@@ -159,13 +159,18 @@ abstract class DBObject implements iDisplay
 
 	public function __toString()
 	{
-        $sRet = '';
-        $sClass = get_class($this);
-        $sRootClass = MetaModel::GetRootClass($sClass);
-        $iPKey = $this->GetKey();
-        $sFriendlyname = $this->Get('friendlyname');
-        $sRet .= "<b title=\"$sRootClass\">$sClass</b>::$iPKey ($sFriendlyname)<br/>\n";
-        return $sRet;
+		$sRet = '';
+		$sClass = get_class($this);
+		$sRootClass = MetaModel::GetRootClass($sClass);
+		$iPKey = $this->GetKey();
+		$sRet .= "<b title=\"$sRootClass\">$sClass</b>::$iPKey<br/>\n";
+		$sRet .= "<ul class=\"treeview\">\n";
+		foreach(MetaModel::ListAttributeDefs(get_class($this)) as $sAttCode=>$oAttDef)
+		{
+			$sRet .= "<li>".$oAttDef->GetLabel()." = ".$this->GetAsHtml($sAttCode)."</li>\n";
+		}
+		$sRet .= "</ul>";
+		return $sRet;
 	}
 	
 	// Restore initial values... mmmm, to be discussed
@@ -1048,24 +1053,24 @@ abstract class DBObject implements iDisplay
 	}
 
 	/**
-	 *
-	 * @param string $sAttCode $sAttCode The code of the attribute
-	 * @param array $aReasons To store the reasons why the attribute is read-only (info about the synchro replicas)
-	 * @param string $sTargetState The target state in which to evalutate the flags, if empty the current state will be
-	 *     used
-	 *
-	 * @return integer the binary combination of flags (OPT_ATT_HIDDEN, OPT_ATT_READONLY, OPT_ATT_MANDATORY...) for the
-	 *     given attribute in the given state of the object
-	 * @throws \CoreException
-	 */
+	 * Returns the set of flags (OPT_ATT_HIDDEN, OPT_ATT_READONLY, OPT_ATT_MANDATORY...)
+	 * for the given attribute in the current state of the object
+	 * @param $sAttCode string $sAttCode The code of the attribute
+	 * @param $aReasons array To store the reasons why the attribute is read-only (info about the synchro replicas)
+	 * @param $sTargetState string The target state in which to evalutate the flags, if empty the current state will be used
+	 * @return integer Flags: the binary combination of the flags applicable to this attribute
+	 */	 	  	 	
 	public function GetAttributeFlags($sAttCode, &$aReasons = array(), $sTargetState = '')
 	{
 		$iFlags = 0; // By default (if no life cycle) no flag at all
 
 		$aReadOnlyAtts = $this->GetReadOnlyAttributes();
-		if (($aReadOnlyAtts != null) && (in_array($sAttCode, $aReadOnlyAtts)))
+		if ($aReadOnlyAtts != null)
 		{
-			return OPT_ATT_READONLY;
+			if (in_array($sAttCode, $aReadOnlyAtts))
+			{
+				return OPT_ATT_READONLY;
+			}
 		}
 
 		$sStateAttCode = MetaModel::GetStateAttributeCode(get_class($this));
@@ -1087,19 +1092,6 @@ abstract class DBObject implements iDisplay
 			$iSynchroFlags = $this->GetSynchroReplicaFlags($sAttCode, $aReasons);
 		}
 		return $iFlags | $iSynchroFlags; // Combine both sets of flags
-	}
-
-	/**
-	 * @param string $sAttCode
-	 * @param array $aReasons To store the reasons why the attribute is read-only (info about the synchro replicas)
-	 *
-	 * @throws \CoreException
-	 */
-	public function IsAttributeReadOnlyForCurrentState($sAttCode, &$aReasons = array())
-	{
-		$iAttFlags = $this->GetAttributeFlags($sAttCode, $aReasons);
-
-		return ($iAttFlags & OPT_ATT_READONLY);
 	}
 
     /**
@@ -1224,17 +1216,16 @@ abstract class DBObject implements iDisplay
 			if ($oAtt->IsHierarchicalKey())
 			{
 				// This check cannot be deactivated since otherwise the user may break things by a CSV import of a bulk modify
-				$aValues = $oAtt->GetAllowedValues(array('this' => $this));
-				if (!array_key_exists($toCheck, $aValues))
+				if ($toCheck == $this->GetKey())
 				{
-					return "Value not allowed [$toCheck]";
+					return "An object can not be its own parent in a hierarchy (".$oAtt->Getlabel()." = $toCheck)";
 				}
 			}
 		}
 		elseif ($oAtt->IsScalar())
 		{
 			$aValues = $oAtt->GetAllowedValues($this->ToArgsForQuery());
-			if (is_array($aValues) && (count($aValues) > 0))
+			if (count($aValues) > 0)
 			{
 				if (!array_key_exists($toCheck, $aValues))
 				{
@@ -2939,7 +2930,7 @@ abstract class DBObject implements iDisplay
 					$oSearch->AllowAllData();
 				}
 				$oSet = new CMDBObjectSet($oSearch);
-				if ($oSet->CountExceeds(0))
+				if ($oSet->Count(1) > 0)
 				{
 					$aDependentObjects[$sRemoteClass][$sExtKeyAttCode] = array(
 						'attribute' => $oExtKeyAttDef,
@@ -3656,77 +3647,6 @@ abstract class DBObject implements iDisplay
 		$this->m_aOrigValues['archive_flag'] = false;
 		$this->m_aCurrValues['archive_date'] = null;
 		$this->m_aOrigValues['archive_date'] = null;
-	}
-
-
-
-	/**
-	 * @param string $sClass Needs to be an instanciable class
-	 * @returns $oObj
-	 **/
-	public static function MakeDefaultInstance($sClass)
-	{
-		$sStateAttCode = MetaModel::GetStateAttributeCode($sClass);
-		$oObj = MetaModel::NewObject($sClass);
-		if (!empty($sStateAttCode))
-		{
-			$sTargetState = MetaModel::GetDefaultState($sClass);
-			$oObj->Set($sStateAttCode, $sTargetState);
-		}
-		return $oObj;
-	}
-
-	/**
-	 * Complete a new object with data from context
-	 * @param array $aContextParam Context used for creation form prefilling
-	 *
-	 */
-	public function PrefillCreationForm(&$aContextParam)
-	{
-	}
-
-	/**
-	 * Complete an object after a state transition with data from context
-	 * @param array $aContextParam Context used for creation form prefilling
-	 *
-	 */
-	public function PrefillTransitionForm(&$aContextParam)
-	{
-	}
-
-	/**
-	 * Complete a filter ($aContextParam['filter']) data from context
-	 * (Called on source object)
-	 * @param array $aContextParam Context used for creation form prefilling
-	 *
-	 */
-	public function PrefillSearchForm(&$aContextParam)
-	{
-	}
-
-	/**
-	 * Prefill a creation / stimulus change / search form according to context, current state of an object, stimulus.. $sOperation
-	 * @param string $sOperation Operation identifier
-	 * @param array $aContextParam Context used for creation form prefilling
-	 *
-	 */
-	public function PrefillForm($sOperation, &$aContextParam)
-	{
-		switch($sOperation){
-			case 'creation_from_0':
-			case 'creation_from_extkey':
-			case 'creation_from_editinplace':
-				$this->PrefillCreationForm($aContextParam);
-				break;
-			case 'state_change':
-				$this->PrefillTransitionForm($aContextParam);
-				break;
-			case 'search':
-				$this->PrefillSearchForm($aContextParam);
-				break;
-			default:
-				break;
-		}
 	}
 }
 

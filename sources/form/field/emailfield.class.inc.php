@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,8 +19,8 @@
 
 namespace Combodo\iTop\Form\Field;
 
-use Str;
-use utils;
+use \Str;
+use \Combodo\iTop\Form\Field\StringField;
 
 /**
  * Description of EmailField
@@ -38,8 +38,6 @@ class EmailField extends StringField
             $sLabel = substr($sLabel, 0, 100).'.....'.substr($sLabel, -20);
         }
 
-        $sUrlDecorationClass = utils::GetConfig()->Get('email_decoration_class');
-
-        return "<a class=\"mailto\" href=\"mailto:$this->currentValue\"><span class=\"form_field_decoration $sUrlDecorationClass\"></span>$sLabel</a>";
+        return "<a class=\"mailto\" href=\"mailto:$this->currentValue\">$sLabel</a>";
     }
 }

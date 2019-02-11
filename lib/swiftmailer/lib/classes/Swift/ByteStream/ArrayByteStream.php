@@ -11,7 +11,9 @@
 /**
  * Allows reading and writing of bytes to and from an array.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage ByteStream
+ * @author     Chris Corbyn
  */
 class Swift_ByteStream_ArrayByteStream implements Swift_InputByteStream, Swift_OutputByteStream
 {
@@ -23,7 +25,7 @@ class Swift_ByteStream_ArrayByteStream implements Swift_InputByteStream, Swift_O
     private $_array = array();
 
     /**
-     * The size of the stack.
+     * The size of the stack
      *
      * @var int
      */
@@ -70,7 +72,7 @@ class Swift_ByteStream_ArrayByteStream implements Swift_InputByteStream, Swift_O
      * remaining bytes are given instead. If no bytes are remaining at all, boolean
      * false is returned.
      *
-     * @param int $length
+     * @param int     $length
      *
      * @return string
      */
@@ -82,7 +84,9 @@ class Swift_ByteStream_ArrayByteStream implements Swift_InputByteStream, Swift_O
 
         // Don't use array slice
         $end = $length + $this->_offset;
-        $end = $this->_arraySize < $end ? $this->_arraySize : $end;
+        $end = $this->_arraySize<$end
+            ?$this->_arraySize
+            :$end;
         $ret = '';
         for (; $this->_offset < $end; ++$this->_offset) {
             $ret .= $this->_array[$this->_offset];
@@ -150,7 +154,7 @@ class Swift_ByteStream_ArrayByteStream implements Swift_InputByteStream, Swift_O
     /**
      * Move the internal read pointer to $byteOffset in the stream.
      *
-     * @param int $byteOffset
+     * @param int     $byteOffset
      *
      * @return bool
      */

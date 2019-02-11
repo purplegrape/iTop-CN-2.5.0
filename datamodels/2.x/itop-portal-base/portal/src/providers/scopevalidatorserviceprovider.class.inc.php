@@ -19,8 +19,8 @@
 
 namespace Combodo\iTop\Portal\Provider;
 
-use Pimple\Container;
-use Pimple\ServiceProviderInterface;
+use Silex\Application;
+use Silex\ServiceProviderInterface;
 use Combodo\iTop\Portal\Helper\ScopeValidatorHelper;
 
 /**
@@ -31,9 +31,9 @@ use Combodo\iTop\Portal\Helper\ScopeValidatorHelper;
 class ScopeValidatorServiceProvider implements ServiceProviderInterface
 {
 
-	public function register(Container $oApp)
+	public function register(Application $oApp)
 	{
-		$oApp['scope_validator'] = function ($oApp)
+		$oApp['scope_validator'] = $oApp->share(function ($oApp)
 		{
 			$oApp->flush();
 
@@ -44,10 +44,10 @@ class ScopeValidatorServiceProvider implements ServiceProviderInterface
 			}
 
 			return $oScopeValidatorHelper;
-		};
+		});
 	}
 
-	public function boot(Container $oApp)
+	public function boot(Application $oApp)
 	{
 
 	}

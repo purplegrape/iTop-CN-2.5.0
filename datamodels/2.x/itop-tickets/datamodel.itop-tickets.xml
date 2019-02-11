@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
 	<constants>
 		<constant id="RESPONSE_TICKET_SLT_QUERY" xsi:type="string" _delta="define"><![CDATA[SELECT SLT AS slt JOIN lnkSLAToSLT AS l1 ON l1.slt_id=slt.id JOIN SLA AS sla ON l1.sla_id=sla.id JOIN lnkCustomerContractToService AS l2 ON l2.sla_id=sla.id JOIN CustomerContract AS sc ON l2.customercontract_id=sc.id WHERE slt.metric = :metric AND l2.service_id = :this->service_id AND sc.org_id = :this->org_id AND slt.request_type = :request_type AND slt.priority = :this->priority]]></constant>
 		<constant id="PORTAL_POWER_USER_PROFILE" xsi:type="string" _delta="define"><![CDATA[Portal power user]]></constant>
@@ -46,13 +46,9 @@
 						<attribute id="finalclass"/>
 					</attributes>
 				</reconciliation>
-				<indexes>
-				 <index id="ref">
-				   <attributes>
-				     <attribute id="ref"/>
-				   </attributes>
-				 </index>
-				</indexes>
+		        <obsolescence>
+        			<condition><![CDATA[operational_status='closed' AND (close_date < DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MONTH),'%Y-%m-%d 00:00:00') OR (ISNULL(close_date) AND last_update < DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 15 MONTH),'%Y-%m-%d 00:00:00')))]]></condition>
+        		</obsolescence>
 			</properties>
 			<fields>
 				<field id="operational_status" xsi:type="AttributeMetaEnum">
@@ -305,22 +301,6 @@
 						</item>
 					</items>
 				</details>
-				<default_search>
-					<items>
-						<item id="ref">
-							<rank>10</rank>
-						</item>
-						<item id="title">
-							<rank>20</rank>
-						</item>
-						<item id="caller_id">
-							<rank>30</rank>
-						</item>
-						<item id="org_id">
-							<rank>35</rank>
-						</item>
-					</items>
-				</default_search>
 				<search>
 					<items>
 						<item id="ref">
@@ -986,30 +966,6 @@
 					    </argument>
 					  </arguments>
 					</method>
-					<method id="PrefillCreationForm">
-						<arguments>
-							<argument id="1">
-								<type>reference</type>
-								<mandatory>true</mandatory>
-							</argument>
-						</arguments>
-					</method>
-					<method id="PrefillTransitionForm">
-						<arguments>
-							<argument id="1">
-								<type>reference</type>
-								<mandatory>true</mandatory>
-							</argument>
-						</arguments>
-					</method>
-					<method id="PrefillSearchForm">
-					<arguments>
-							<argument id="1">
-								<type>reference</type>
-								<mandatory>true</mandatory>
-							</argument>
-						</arguments>
-					</method>
 				</methods>
 			</class>
 			<class id="ResponseTicketTTO" _delta="define">
@@ -1172,6 +1128,7 @@
 							</levels>
 						</level>
 					</levels>
+
 					<browse_modes>
 						<availables>
 							<mode id="list"/>
@@ -1192,19 +1149,6 @@
 					<title>
 						<default>Brick:Portal:OngoingRequests:Title</default>
 					</title>
-					<!-- Optional tag to define which display modes can be used in the brick's page and the brick's tile -->
-					<!--<display_modes>-->
-						<!-- Optional tag that must contain at least 1 <mode> tag. -->
-						<!--<availables>-->
-							<!--<mode id="list"/>-->
-							<!--<mode id="pie-chart"/>-->
-							<!--<mode id="bar-chart"/>-->
-						<!--</availables>-->
-						<!-- Optional tag to define which display mode will be used by default when opening the brick -->
-						<!--<default>list</default>-->
-						<!-- Optional tag to define which display mode will be used to render the brick's tile -->
-						<!--<tile>text</tile>-->
-					<!--</display_modes>-->
 					<description>Brick:Portal:OngoingRequests:Title+</description>
 					<decoration_class>
 						<default>fc fc-ongoing-request fc-2x</default>
@@ -1251,9 +1195,6 @@
 						<!-- Implicit grouping on y axis by finalclass -->
 					</grouping>
 					<data_loading>full</data_loading>
-					<export>
-            			<export_default_fields>true</export_default_fields>
-          			</export>
 				</brick>
 				<brick id="closed-tickets-for-portal-user" xsi:type="Combodo\iTop\Portal\Brick\ManageBrick">
 					<active>true</active>
@@ -1298,9 +1239,6 @@
 						<!-- Implicit grouping on y axis by finalclass -->
 					</grouping>
 					<data_loading>auto</data_loading>
-					<export>
-            			<export_default_fields>true</export_default_fields>
-          			</export>
 				</brick>
 			</bricks>
 			<forms>
@@ -1331,9 +1269,9 @@
 				</form>
 				<form id="servicesubcategory">
 					<class>ServiceSubcategory</class>
-					<!-- Optional tag to list the fields. If empty only fields from <twig> tag will be displayed, if omitted fields from zlist details will. -->
+					<!-- Optionnal tag to list the fields. If empty only fields from <twig> tag will be displayed, if ommited fields from zlist details will. -->
 					<fields />
-					<!-- Optional tag to specify the form layout. Fields that are not positioned in the layout will be placed at the end of the form -->
+					<!-- Optionnal tag to specify the form layout. Fields that are not positionned in the layout will be placed at the end of the form -->
 					<twig>
 						<div class="row">
 							<div class="col-sm-6">
@@ -1404,7 +1342,7 @@
 					<properties>
 						<!--Display mode of the form fields. "cosy" for a regular labels over values layout; "compact" for a side-by-side layout with input aligned; "dense" for a side-by-side layout with input filling all available space. You can also use a custom css class that will be used on the form as "form_xxx", as well as on the fields as "form_field_xxx".-->
 						<!--<display_mode>cosy</display_mode>-->
-						<!-- When set to false, submit button is hidden when transitions are available on the object (in creation and edit mode). Default is false. -->
+						<!-- When set to false, submit button is hidden when transitions are available on the object (in edit mode only). Default is false. -->
 						<!--<always_show_submit>false</always_show_submit>-->
 					</properties>
 					<fields></fields>
@@ -1552,7 +1490,7 @@
 						<scope id="all">
 							<oql_view><![CDATA[SELECT Contact WHERE org_id = :current_contact->org_id]]></oql_view>
 						</scope>
-						<scope id="admin">
+						<scope id="all">
 							<oql_view><![CDATA[SELECT Contact]]></oql_view>
 							<allowed_profiles>
 								<allowed_profile id="Administrator"/>

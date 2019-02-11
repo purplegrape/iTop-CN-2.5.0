@@ -11,7 +11,9 @@
 /**
  * Throttles the rate at which emails are sent.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Plugins
+ * @author     Chris Corbyn
  */
 class Swift_Plugins_ThrottlerPlugin extends Swift_Plugins_BandwidthMonitorPlugin implements Swift_Plugins_Sleeper, Swift_Plugins_Timer
 {
@@ -97,17 +99,17 @@ class Swift_Plugins_ThrottlerPlugin extends Swift_Plugins_BandwidthMonitorPlugin
         }
         $duration = $time - $this->_start;
 
-        switch ($this->_mode) {
-            case self::BYTES_PER_MINUTE:
+        switch($this->_mode) {
+            case self::BYTES_PER_MINUTE :
                 $sleep = $this->_throttleBytesPerMinute($duration);
                 break;
-            case self::MESSAGES_PER_SECOND:
+            case self::MESSAGES_PER_SECOND :
                 $sleep = $this->_throttleMessagesPerSecond($duration);
                 break;
-            case self::MESSAGES_PER_MINUTE:
+            case self::MESSAGES_PER_MINUTE :
                 $sleep = $this->_throttleMessagesPerMinute($duration);
                 break;
-            default:
+            default :
                 $sleep = 0;
                 break;
         }
@@ -131,7 +133,7 @@ class Swift_Plugins_ThrottlerPlugin extends Swift_Plugins_BandwidthMonitorPlugin
     /**
      * Sleep for $seconds.
      *
-     * @param int $seconds
+     * @param int     $seconds
      */
     public function sleep($seconds)
     {
@@ -151,15 +153,17 @@ class Swift_Plugins_ThrottlerPlugin extends Swift_Plugins_BandwidthMonitorPlugin
     {
         if (isset($this->_timer)) {
             return $this->_timer->getTimestamp();
+        } else {
+            return time();
         }
-
-        return time();
     }
+
+    // -- Private methods
 
     /**
      * Get a number of seconds to sleep for.
      *
-     * @param int $timePassed
+     * @param int     $timePassed
      *
      * @return int
      */
@@ -187,7 +191,7 @@ class Swift_Plugins_ThrottlerPlugin extends Swift_Plugins_BandwidthMonitorPlugin
     /**
      * Get a number of seconds to sleep for.
      *
-     * @param int $timePassed
+     * @param int     $timePassed
      *
      * @return int
      */

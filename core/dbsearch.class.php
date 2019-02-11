@@ -61,8 +61,6 @@ abstract class DBSearch
 
 	/**
 	 * Perform a deep clone (as opposed to "clone" which does copy a reference to the underlying objects)
-	 *
-	 * @return \DBSearch
 	 **/	 	
 	public function DeepClone()
 	{
@@ -245,7 +243,7 @@ abstract class DBSearch
     public function serialize($bDevelopParams = false, $aContextParams = null)
 	{
 		$sOql = $this->ToOql($bDevelopParams, $aContextParams);
-		return rawurlencode(base64_encode(serialize(array($sOql, $this->GetInternalParams(), $this->m_aModifierProperties))));
+		return base64_encode(serialize(array($sOql, $this->GetInternalParams(), $this->m_aModifierProperties)));
 	}
 
 	/**
@@ -255,7 +253,7 @@ abstract class DBSearch
 	 */
 	static public function unserialize($sValue)
 	{
-		$aData = unserialize(base64_decode(rawurldecode($sValue)));
+		$aData = unserialize(base64_decode($sValue));
 		$sOql = $aData[0];
 		$aParams = $aData[1];
 		// We've tried to use gzcompress/gzuncompress, but for some specific queries
@@ -298,7 +296,7 @@ abstract class DBSearch
 	/**
 	 * @param string $sQuery
 	 * @param array $aParams
-	 * @return self
+	 * @return DBSearch
 	 * @throws OQLException
 	 */
 	static public function FromOQL($sQuery, $aParams = null)
@@ -394,7 +392,7 @@ abstract class DBSearch
 			array_unshift($aColumns, 'id');
 		}
 
-		$aQueryCols = CMDBSource::GetColumns($resQuery, $sSQL);
+		$aQueryCols = CMDBSource::GetColumns($resQuery);
 
 		$sClassAlias = $this->GetClassAlias();
 		$aColMap = array();
@@ -429,53 +427,8 @@ abstract class DBSearch
 	protected static $m_aQueryStructCache = array();
 
 
-	/** Generate a Group By SQL request from a search
-	 * @param array $aArgs
-	 * @param array $aGroupByExpr array('alias' => Expression)
-	 * @param bool $bExcludeNullValues
-	 * @param array $aSelectExpr array('alias' => Expression) Additional expressions added to the request
-	 * @param array $aOrderBy array('alias' => bool) true = ASC false = DESC
-	 * @param int $iLimitCount
-	 * @param int $iLimitStart
-	 * @return string SQL query generated
-	 * @throws Exception
-	 */
-	public function MakeGroupByQuery($aArgs, $aGroupByExpr, $bExcludeNullValues = false, $aSelectExpr = array(), $aOrderBy = array(), $iLimitCount = 0, $iLimitStart = 0)
+	public function MakeGroupByQuery($aArgs, $aGroupByExpr, $bExcludeNullValues = false)
 	{
-		// Sanity check
-		foreach($aGroupByExpr as $sAlias => $oExpr)
-		{
-			if (!($oExpr instanceof Expression))
-			{
-				throw new CoreException("Wrong parameter for 'Group By' for [$sAlias] (an array('alias' => Expression) is awaited)");
-			}
-		}
-		foreach($aSelectExpr as $sAlias => $oExpr)
-		{
-			if (array_key_exists($sAlias, $aGroupByExpr))
-			{
-				throw new CoreException("Alias collision between 'Group By' and 'Select Expressions' [$sAlias]");
-			}
-			if (!($oExpr instanceof Expression))
-			{
-				throw new CoreException("Wrong parameter for 'Select Expressions' for [$sAlias] (an array('alias' => Expression) is awaited)");
-			}
-		}
-		foreach($aOrderBy as $sAlias => $bAscending)
-		{
-			if (!array_key_exists($sAlias, $aGroupByExpr) && !array_key_exists($sAlias, $aSelectExpr) && ($sAlias != '_itop_count_'))
-			{
-				$aAllowedAliases = array_keys($aSelectExpr);
-				$aAllowedAliases = array_merge($aAllowedAliases,  array_keys($aGroupByExpr));
-				$aAllowedAliases[] = '_itop_count_';
-				throw new CoreException("Wrong alias [$sAlias] for 'Order By'. Allowed values are: ", null, implode(", ", $aAllowedAliases));
-			}
-			if (!is_bool($bAscending))
-			{
-				throw new CoreException("Wrong direction in ORDER BY spec, found '$bAscending' and expecting a boolean value for '$sAlias''");
-			}
-		}
-
 		if ($bExcludeNullValues)
 		{
 			// Null values are not handled (though external keys set to 0 are allowed)
@@ -493,15 +446,15 @@ abstract class DBSearch
 		}
 
 		$aAttToLoad = array();
-		$oSQLQuery = $oQueryFilter->GetSQLQuery(array(), $aArgs, $aAttToLoad, null, 0, 0, false, $aGroupByExpr, $aSelectExpr);
+		$oSQLQuery = $oQueryFilter->GetSQLQuery(array(), $aArgs, $aAttToLoad, null, 0, 0, false, $aGroupByExpr);
 
 		$aScalarArgs = MetaModel::PrepareQueryArguments($aArgs, $this->GetInternalParams());
 		try
 		{
 			$bBeautifulSQL = self::$m_bTraceQueries || self::$m_bDebugQuery || self::$m_bIndentQueries;
-			$sRes = $oSQLQuery->RenderGroupBy($aScalarArgs, $bBeautifulSQL, $aOrderBy, $iLimitCount, $iLimitStart);
+			$sRes = $oSQLQuery->RenderGroupBy($aScalarArgs, $bBeautifulSQL);
 		}
-		catch (Exception $e)
+		catch (MissingQueryArgument $e)
 		{
 			// Add some information...
 			$e->addInfo('OQL', $this->ToOQL());
@@ -608,9 +561,9 @@ abstract class DBSearch
 	}
 
 
-	protected function GetSQLQuery($aOrderBy, $aArgs, $aAttToLoad, $aExtendedDataSpec, $iLimitCount, $iLimitStart, $bGetCount, $aGroupByExpr = null, $aSelectExpr = null)
+	protected function GetSQLQuery($aOrderBy, $aArgs, $aAttToLoad, $aExtendedDataSpec, $iLimitCount, $iLimitStart, $bGetCount, $aGroupByExpr = null)
 	{
-		$oSQLQuery = $this->GetSQLQueryStructure($aAttToLoad, $bGetCount, $aGroupByExpr, null, $aSelectExpr);
+		$oSQLQuery = $this->GetSQLQueryStructure($aAttToLoad, $bGetCount, $aGroupByExpr);
 		$oSQLQuery->SetSourceOQL($this->ToOQL());
 
 		// Join to an additional table, if required...
@@ -632,7 +585,7 @@ abstract class DBSearch
 	}
 
 	public abstract function GetSQLQueryStructure(
-		$aAttToLoad, $bGetCount, $aGroupByExpr = null, $aSelectedClasses = null, $aSelectExpr = null
+		$aAttToLoad, $bGetCount, $aGroupByExpr = null, $aSelectedClasses = null
 	);
 
 	////////////////////////////////////////////////////////////////////////////

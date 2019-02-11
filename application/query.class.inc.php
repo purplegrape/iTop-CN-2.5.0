@@ -32,7 +32,7 @@ abstract class Query extends cmdbAbstractObject
 	{
 		$aParams = array
 		(
-			"category" => "core/cmdb,view_in_gui,application,grant_by_profile",
+			"category" => "core/cmdb,view_in_gui,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "name",
 			"state_attcode" => "",
@@ -54,8 +54,7 @@ abstract class Query extends cmdbAbstractObject
 		MetaModel::Init_SetZListItems('list', array('description')); // Attributes to be displayed for a list
 		// Search criteria
 		MetaModel::Init_SetZListItems('standard_search', array('name', 'description', 'fields')); // Criteria of the std search form
-		MetaModel::Init_SetZListItems('default_search', array('name', 'description')); // Criteria of the default search form
-		// MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
+//		MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
 	}
 }
 
@@ -65,7 +64,7 @@ class QueryOQL extends Query
 	{
 		$aParams = array
 		(
-			"category" => "core/cmdb,view_in_gui,application,grant_by_profile",
+			"category" => "core/cmdb,view_in_gui,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "name",
 			"state_attcode" => "",
@@ -84,6 +83,7 @@ class QueryOQL extends Query
 		MetaModel::Init_SetZListItems('list', array('description')); // Attributes to be displayed for a list
 		// Search criteria
 		MetaModel::Init_SetZListItems('standard_search', array('name', 'description', 'fields', 'oql')); // Criteria of the std search form
+//		MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
 	}
 
 	function DisplayBareProperties(WebPage $oPage, $bEditMode = false, $sPrefix = '', $aExtraParams = array())

@@ -245,12 +245,6 @@ class SQLObjectQuery extends SQLQuery
 	}
 	
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aArgs
-	 * @return string
-	 * @throws CoreException
-	 */
 	public function RenderDelete($aArgs = array())
 	{
 		$this->PrepareRendering();
@@ -276,7 +270,6 @@ class SQLObjectQuery extends SQLQuery
 			$sWhere  = self::ClauseWhere($this->m_oConditionExpr, $aArgs);
 			return "DELETE $sDelete FROM $sFrom WHERE $sWhere";
 		}
-		return '';
 	}
 
 	/**
@@ -290,25 +283,16 @@ class SQLObjectQuery extends SQLQuery
 	}
 
 	/**
-	 *    Needed for the unions
-	 * @param $aOrderBy
-	 * @return string
-	 * @throws CoreException
+	 *	Needed for the unions
 	 */
 	public function RenderOrderByClause($aOrderBy)
 	{
 		$this->PrepareRendering();
-		$sOrderBy = self::ClauseOrderBy($aOrderBy, $this->__aFields);
+		$sOrderBy = self::ClauseOrderBy($aOrderBy);
 		return $sOrderBy;
 	}
 
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aArgs
-	 * @return string
-	 * @throws CoreException
-	 */
 	public function RenderUpdate($aArgs = array())
 	{
 		$this->PrepareRendering();
@@ -319,17 +303,6 @@ class SQLObjectQuery extends SQLQuery
 	}
 
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aOrderBy
-	 * @param array $aArgs
-	 * @param int $iLimitCount
-	 * @param int $iLimitStart
-	 * @param bool $bGetCount
-	 * @param bool $bBeautifulQuery
-	 * @return string
-	 * @throws CoreException
-	 */
 	public function RenderSelect($aOrderBy = array(), $aArgs = array(), $iLimitCount = 0, $iLimitStart = 0, $bGetCount = false, $bBeautifulQuery = false)
 	{
 		$this->m_bBeautifulQuery = $bBeautifulQuery;
@@ -368,8 +341,8 @@ class SQLObjectQuery extends SQLQuery
 		}
 		else
 		{
-			$sSelect = self::ClauseSelect($this->__aFields, $sLineSep);
-			$sOrderBy = self::ClauseOrderBy($aOrderBy, $this->__aFields);
+			$sSelect = self::ClauseSelect($this->__aFields);
+			$sOrderBy = self::ClauseOrderBy($aOrderBy);
 			if (!empty($sOrderBy))
 			{
 				$sOrderBy = "ORDER BY $sOrderBy$sLineSep";
@@ -381,46 +354,18 @@ class SQLObjectQuery extends SQLQuery
 	}
 
 	// Interface, build the SQL query
-
-	/**
-	 * @param array $aArgs
-	 * @param bool $bBeautifulQuery
-	 * @param array $aOrderBy
-	 * @param int $iLimitCount
-	 * @param int $iLimitStart
-	 * @return string
-	 * @throws CoreException
-	 */
-	public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false, $aOrderBy = array(), $iLimitCount = 0, $iLimitStart = 0)
+	public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false)
 	{
 		$this->m_bBeautifulQuery = $bBeautifulQuery;
 		$sLineSep = $this->m_bBeautifulQuery ? "\n" : '';
 		$sIndent = $this->m_bBeautifulQuery ? "   " : null;
 
 		$this->PrepareRendering();
-
 		$sSelect = self::ClauseSelect($this->__aFields);
 		$sFrom   = self::ClauseFrom($this->__aFrom, $sIndent);
 		$sWhere  = self::ClauseWhere($this->m_oConditionExpr, $aArgs);
 		$sGroupBy = self::ClauseGroupBy($this->__aGroupBy);
-		$sOrderBy = self::ClauseOrderBy($aOrderBy, $this->__aFields);
-		if (!empty($sGroupBy))
-		{
-			$sGroupBy = "GROUP BY $sGroupBy$sLineSep";
-		}
-		if (!empty($sOrderBy))
-		{
-			$sOrderBy = "ORDER BY $sOrderBy$sLineSep";
-		}
-		if ($iLimitCount > 0)
-		{
-			$sLimit = 'LIMIT '.$iLimitStart.', '.$iLimitCount;
-		}
-		else
-		{
-			$sLimit = '';
-		}
-		$sSQL = "SELECT $sSelect,$sLineSep COUNT(*) AS _itop_count_$sLineSep FROM $sFrom$sLineSep WHERE $sWhere$sLineSep $sGroupBy $sOrderBy$sLineSep $sLimit";
+		$sSQL = "SELECT $sSelect,$sLineSep COUNT(*) AS _itop_count_$sLineSep FROM $sFrom$sLineSep WHERE $sWhere$sLineSep GROUP BY $sGroupBy";
 		return $sSQL;
 	}
 
@@ -443,7 +388,6 @@ class SQLObjectQuery extends SQLQuery
 	private function PrepareSingleTable(SQLObjectQuery $oRootQuery, &$aFrom, $sCallerAlias = '', $aJoinData)
 	{
 		$aTranslationTable[$this->m_sTable]['*'] = $this->m_sTableAlias;
-		$sJoinCond = '';
 
 		// Handle the various kinds of join (or first table in the list)
 		//
@@ -561,7 +505,7 @@ class SQLObjectQuery extends SQLQuery
 		{
 			$oRightSelect = $aJoinData["select"];
 
-			$oRightSelect->PrepareSingleTable($oRootQuery, $aTempFrom, $this->m_sTableAlias, $aJoinData);
+			$sJoinTableAlias = $oRightSelect->PrepareSingleTable($oRootQuery, $aTempFrom, $this->m_sTableAlias, $aJoinData);
 		}
 		$aFrom[$this->m_sTableAlias]['subfrom'] = $aTempFrom;
 
@@ -637,7 +581,7 @@ class SQLObjectQuery extends SQLQuery
 				}
 				if (isset($aJoinInfo["on_expression"]))
 				{
-					$aJoinInfo["on_expression"]->CollectUsedParents($aTables);
+					$sJoinCond = $aJoinInfo["on_expression"]->CollectUsedParents($aTables);
 				}
 			}
 		}
@@ -665,7 +609,7 @@ class SQLObjectQuery extends SQLQuery
 				}
 				if (isset($aJoinInfo["on_expression"]))
 				{
-					$aJoinInfo["on_expression"]->CollectUsedParents($aTables);
+					$sJoinCond = $aJoinInfo["on_expression"]->CollectUsedParents($aTables);
 				}
 				$bResult = true;
 			}

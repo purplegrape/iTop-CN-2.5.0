@@ -25,9 +25,9 @@ $combodo-orange-darker:		darken($combodo-orange, 18%) !default;
 $combodo-dark-gray-dark:	darken($combodo-dark-gray, 13.5%) !default;
 $combodo-dark-gray-darker:	darken($combodo-dark-gray, 18%) !default;
 
-$brand-primary:         $combodo-orange !default;
+$brand-primary:         #EA7D1E !default;
 $brand-default:         #FFFFFF !default;
-$brand-secondary:       $combodo-dark-gray !default;
+$brand-secondary:       #FFFFFF !default;
 $brand-success:         #469408 !default;
 $brand-info:            #029ACF !default;
 $brand-warning:         #9B479F !default;
@@ -60,7 +60,7 @@ $body-bg:               #EDECEC !default;
 $text-color:            $gray !default;
 
 //** Global textual link color.
-$link-color:            darken($combodo-orange, 5%) !default;
+$link-color:            #D46201 !default;
 //** Link hover color set via `darken()` function.
 $link-hover-color:      darken($link-color, 5%) !default;
 //** Link hover decoration.
@@ -509,7 +509,7 @@ $pagination-disabled-border:           #ddd !default;
 
 $pager-bg:                             $pagination-bg !default;
 $pager-border:                         $pagination-border !default;
-$pager-border-radius:                  $border-radius-base !default;
+$pager-border-radius:                  15px !default;
 
 $pager-hover-bg:                       $brand-primary !default;
 
@@ -825,7 +825,7 @@ $badge-active-bg:             #fff !default;
 
 $badge-font-weight:           bold !default;
 $badge-line-height:           1 !default;
-$badge-border-radius:         $border-radius-base !default;
+$badge-border-radius:         10px !default;
 
 
 //== Breadcrumbs

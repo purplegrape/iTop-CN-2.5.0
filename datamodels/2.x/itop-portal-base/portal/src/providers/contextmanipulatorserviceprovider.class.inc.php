@@ -19,8 +19,8 @@
 
 namespace Combodo\iTop\Portal\Provider;
 
-use Pimple\Container;
-use Pimple\ServiceProviderInterface;
+use Silex\Application;
+use Silex\ServiceProviderInterface;
 use Combodo\iTop\Portal\Helper\ContextManipulatorHelper;
 
 /**
@@ -31,9 +31,9 @@ use Combodo\iTop\Portal\Helper\ContextManipulatorHelper;
 class ContextManipulatorServiceProvider implements ServiceProviderInterface
 {
 
-	public function register(Container $oApp)
+	public function register(Application $oApp)
 	{
-		$oApp['context_manipulator'] = function ($oApp)
+		$oApp['context_manipulator'] = $oApp->share(function ($oApp)
 		{
 			$oApp->flush();
 
@@ -41,10 +41,10 @@ class ContextManipulatorServiceProvider implements ServiceProviderInterface
 			$oContextManipulatorHelper->SetApp($oApp);
 
 			return $oContextManipulatorHelper;
-		};
+		});
 	}
 
-	public function boot(Container $oApp)
+	public function boot(Application $oApp)
 	{
 
 	}

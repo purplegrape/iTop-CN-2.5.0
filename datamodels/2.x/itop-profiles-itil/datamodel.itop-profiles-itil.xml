@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.5">
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
   <classes/>
   <user_rights>
     <groups>
@@ -101,70 +101,6 @@
       <group id="RoutineChange" _delta="define">
         <classes>
           <class id="RoutineChange"/>
-        </classes>
-      </group>
-      <group id="Notification" _delta="define">
-        <classes>
-          <!-- This class list is also present in AdminTools group -->
-          <class id="Trigger"/>
-          <class id="lnkTriggerAction"/>
-          <class id="Action"/>
-          <class id="ResourceRunQueriesMenu"/>
-        </classes>
-      </group>
-      <group id="User">
-        <classes>
-          <!-- This class list is also present in AdminTools group -->
-          <class id="User"/>
-          <class id="URP_UserOrg"/>
-          <class id="URP_UserProfile"/>
-          <class id="URP_Profiles"/>
-        </classes>
-      </group>
-      <group id="Audit">
-        <classes>
-          <!-- This class list is also present in AdminTools group -->
-          <class id="AuditCategory"/>
-          <class id="AuditRule"/>
-          <class id="ResourceRunQueriesMenu"/>
-        </classes>
-      </group>
-      <group id="Query">
-        <classes>
-          <!-- This class list is also present in AdminTools group -->
-          <class id="Query"/>
-          <class id="QueryOQL"/>
-          <class id="ResourceRunQueriesMenu"/>
-        </classes>
-      </group>
-      <group id="SynchroData">
-        <classes>
-          <!-- This class list is also present in AdminTools group -->
-          <class id="SynchroDataSource"/>
-          <class id="SynchroAttribute"/>
-        </classes>
-      </group>
-      <group id="AdminTools">
-        <classes>
-          <class id="ResourceAdminMenu"/>
-          <class id="ResourceRunQueriesMenu"/>
-          <!-- Notification group -->
-          <class id="Trigger"/>
-          <class id="lnkTriggerAction"/>
-          <class id="Action"/>
-          <!-- User group -->
-          <class id="User"/>
-          <class id="URP_UserOrg"/>
-          <class id="URP_UserProfile"/>
-          <class id="URP_Profiles"/>
-          <!-- Audit group -->
-          <class id="AuditCategory"/>
-          <class id="AuditRule"/>
-          <!-- Query group -->
-          <class id="Query"/>
-          <class id="QueryOQL"/>
-          <!-- SynchroData group -->
-          <class id="SynchroDataSource"/>
         </classes>
       </group>
     </groups>

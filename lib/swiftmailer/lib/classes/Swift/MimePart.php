@@ -11,7 +11,9 @@
 /**
  * A MIME part, in a multipart message.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_MimePart extends Swift_Mime_MimePart
 {
@@ -50,7 +52,7 @@ class Swift_MimePart extends Swift_Mime_MimePart
      * @param string $contentType
      * @param string $charset
      *
-     * @return self
+     * @return Swift_Mime_MimePart
      */
     public static function newInstance($body = null, $contentType = null, $charset = null)
     {

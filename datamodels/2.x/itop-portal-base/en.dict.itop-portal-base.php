@@ -25,7 +25,7 @@
 
 // Portal
 Dict::Add('EN US', 'English', 'English', array(
-	'Page:DefaultTitle' => '%1$s User portal',
+	'Page:DefaultTitle' => 'iTop User portal',
 	'Page:PleaseWait' => 'Please wait...',
 	'Page:Home' => 'Home',
 	'Page:GoPortalHome' => 'Home page',
@@ -43,8 +43,8 @@ Dict::Add('EN US', 'English', 'English', array(
     'Error:HTTP:401' => 'Authentication',
     'Error:HTTP:404' => 'Page not found',
 	'Error:HTTP:500' => 'Oops! An error has occured.',
-	'Error:HTTP:GetHelp' => 'Please contact your %1$s administrator if the problem keeps happening.',
-	'Error:XHR:Fail' => 'Could not load data, please contact your %1$s administrator',
+	'Error:HTTP:GetHelp' => 'Please contact your iTop administrator if the problem keeps happening.',
+	'Error:XHR:Fail' => 'Could not load data, please contact your iTop administrator',
     'Portal:ErrorUserLoggedOut' => 'You are logged out and need to log in again in order to continue.',
     'Portal:Datatables:Language:Processing' => 'Please wait...',
 	'Portal:Datatables:Language:Search' => 'Filter:',
@@ -76,15 +76,10 @@ Dict::Add('EN US', 'English', 'English', array(
 	'Brick:Portal:UserProfile:Password:Title' => 'Password',
 	'Brick:Portal:UserProfile:Password:ChoosePassword' => 'Choose password',
 	'Brick:Portal:UserProfile:Password:ConfirmPassword' => 'Confirm password',
-	'Brick:Portal:UserProfile:Password:CantChangeContactAdministrator' => 'To change your password, please contact your %1$s administrator',
-	'Brick:Portal:UserProfile:Password:CantChangeForUnknownReason' => 'Can\'t change password, please contact your %1$s administrator',
+	'Brick:Portal:UserProfile:Password:CantChangeContactAdministrator' => 'To change your password, please contact your iTop administrator',
+	'Brick:Portal:UserProfile:Password:CantChangeForUnknownReason' => 'Can\'t change password, please contact your iTop administrator',
 	'Brick:Portal:UserProfile:PersonalInformations:Title' => 'Personal informations',
 	'Brick:Portal:UserProfile:Photo:Title' => 'Photo',
-));
-
-// AggregatePageBrick
-Dict::Add('EN US', 'English', 'English', array(
-	'Brick:Portal:AggregatePage:DefaultTitle' => 'Dashboard',
 ));
 
 // BrowseBrick brick
@@ -108,17 +103,6 @@ Dict::Add('EN US', 'English', 'English', array(
 	'Brick:Portal:Manage:Name' => 'Manage items',
 	'Brick:Portal:Manage:Table:NoData' => 'No item.',
     'Brick:Portal:Manage:Table:ItemActions' => 'Actions',
-    'Brick:Portal:Manage:DisplayMode:list' => 'List',
-	'Brick:Portal:Manage:DisplayMode:pie-chart' => 'Pie Chart',
-	'Brick:Portal:Manage:DisplayMode:bar-chart' => 'Bar Chart',
-	'Brick:Portal:Manage:Others' => 'Others',
-	'Brick:Portal:Manage:All' => 'All',
-	'Brick:Portal:Manage:Group' => 'Group',
-	'Brick:Portal:Manage:fct:count' => 'Total',
-	'Brick:Portal:Manage:fct:sum' => 'Sum',
-	'Brick:Portal:Manage:fct:avg' => 'Average',
-	'Brick:Portal:Manage:fct:min' => 'Min',
-	'Brick:Portal:Manage:fct:max' => 'Max',
 ));
 
 // ObjectBrick brick

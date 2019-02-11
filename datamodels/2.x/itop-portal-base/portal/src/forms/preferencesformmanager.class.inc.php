@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2016 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,15 +19,14 @@
 
 namespace Combodo\iTop\Portal\Form;
 
-use Exception;
-use IssueLog;
-use CMDBSource;
-use Dict;
-use UserRights;
-use Combodo\iTop\Form\FormManager;
-use Combodo\iTop\Form\Form;
-use Combodo\iTop\Form\Field\HiddenField;
-use Combodo\iTop\Form\Field\SelectField;
+use \Exception;
+use \CMDBSource;
+use \Dict;
+use \UserRights;
+use \Combodo\iTop\Form\FormManager;
+use \Combodo\iTop\Form\Form;
+use \Combodo\iTop\Form\Field\HiddenField;
+use \Combodo\iTop\Form\Field\SelectField;
 
 /**
  * Description of preferencesformmanager
@@ -121,7 +120,6 @@ class PreferencesFormManager extends FormManager
 				// Updating only if preferences changed
 				if ($iFieldChanged > 0)
 				{
-					$oCurUser->AllowWrite(true);
 					$oCurUser->DBUpdate();
 					$aData['messages']['success'] += array('_main' => array(Dict::S('Brick:Portal:Object:Form:Message:Saved')));
 				}

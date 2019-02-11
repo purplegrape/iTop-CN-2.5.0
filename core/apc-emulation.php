@@ -29,9 +29,33 @@
 function apc_cache_info($cache_type = '', $limited = false)
 {
 	$aInfo = array();
-	$sRootCacheDir = apcFile::GetCacheFileName();
-	$aInfo['cache_list'] = apcFile::GetCacheEntries($sRootCacheDir);
+	$sRootCacheDir = apc_emul_get_cache_filename('');
+	$aInfo['cache_list'] = apc_emul_get_cache_entries($sRootCacheDir);
 	return $aInfo;
+}
+
+function apc_emul_get_cache_entries($sEntry)
+{
+	$aResult = array();
+	if (is_dir($sEntry))
+	{
+		$aFiles = array_diff(scandir($sEntry), array('.', '..'));
+		foreach($aFiles as $sFile)
+		{
+			$sSubFile = $sEntry.'/'.$sFile;
+			$aResult = array_merge($aResult, apc_emul_get_cache_entries($sSubFile));
+		}
+	}
+	else
+	{
+		$sKey = basename($sEntry);
+		if (strpos($sKey, '-') === 0)
+		{
+			$sKey = substr($sKey, 1);
+		}
+		$aResult[] = array('info' => $sKey);
+	}
+	return $aResult;
 }
 
 /**
@@ -47,11 +71,40 @@ function apc_store($key, $var = NULL, $ttl = 0)
 		$aResult = array();
 		foreach($key as $sKey => $value)
 		{
-			$aResult[] = apcFile::StoreOneFile($sKey, $value, $ttl);
+			$aResult[] = apc_emul_store_unit($sKey, $value, $ttl);
 		}
 		return $aResult;
 	}
-	return apcFile::StoreOneFile($key, $var, $ttl);
+	return apc_emul_store_unit($key, $var, $ttl);
+}
+
+/**
+ * @param string $sKey
+ * @param $value
+ * @param int $iTTL time to live
+ * @return bool
+ */
+function apc_emul_store_unit($sKey, $value, $iTTL)
+{
+	if ($iTTL > 0)
+	{
+		// hint for ttl management
+		$sKey = '-'.$sKey;
+	}
+
+	$sFilename = apc_emul_get_cache_filename($sKey);
+	// try to create the folder
+	$sDirname = dirname($sFilename);
+	if (!file_exists($sDirname))
+	{
+		if (!@mkdir($sDirname, 0755, true))
+		{
+			return false;
+		}
+	}
+	$bRes = !(@file_put_contents($sFilename, serialize($value), LOCK_EX) === false);
+	apc_emul_manage_new_entry($sFilename);
+	return $bRes;
 }
 
 /**
@@ -65,11 +118,45 @@ function apc_fetch($key)
 		$aResult = array();
 		foreach($key as $sKey)
 		{
-			$aResult[$sKey] = apcFile::FetchOneFile($sKey);
+			$aResult[$sKey] = apc_emul_fetch_unit($sKey);
 		}
 		return $aResult;
 	}
-	return apcFile::FetchOneFile($key);
+	return apc_emul_fetch_unit($key);
+}
+
+/**
+ * @param $sKey
+ * @return bool|mixed
+ */
+function apc_emul_fetch_unit($sKey)
+{
+	// Try the 'TTLed' version
+	$sValue = apc_emul_readcache_locked(apc_emul_get_cache_filename('-'.$sKey));
+	if ($sValue === false)
+	{
+		$sValue = apc_emul_readcache_locked(apc_emul_get_cache_filename($sKey));
+		if ($sValue === false)
+		{
+			return false;
+		}
+	}
+	$oRes = @unserialize($sValue);
+	return $oRes;
+}
+
+function apc_emul_readcache_locked($sFilename)
+{
+	$file = @fopen($sFilename, 'r');
+	if ($file === false)
+	{
+		return false;
+	}
+	flock($file, LOCK_SH);
+	$sContent = @fread($file, @filesize($sFilename));
+	flock($file, LOCK_UN);
+	fclose($file);
+	return $sContent;
 }
 
 /**
@@ -78,7 +165,36 @@ function apc_fetch($key)
  */
 function apc_clear_cache($cache_type = '')
 {
-	apcFile::DeleteEntry(utils::GetCachePath());
+	$sRootCacheDir = apc_emul_get_cache_filename('');
+	apc_emul_delete_entry($sRootCacheDir);
+	return true;
+}
+
+function apc_emul_delete_entry($sCache)
+{
+	if (is_dir($sCache))
+	{
+		$aFiles = array_diff(scandir($sCache), array('.', '..'));
+		foreach($aFiles as $sFile)
+		{
+			$sSubFile = $sCache.'/'.$sFile;
+			if (!apc_emul_delete_entry($sSubFile))
+			{
+				return false;
+			}
+		}
+		if (!@rmdir($sCache))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		if (!@unlink($sCache))
+		{
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -88,246 +204,98 @@ function apc_clear_cache($cache_type = '')
  */
 function apc_delete($key)
 {
-	if (empty($key))
-	{
-		return false;
-	}
-	$bRet1 = apcFile::DeleteEntry(apcFile::GetCacheFileName($key));
-	$bRet2 = apcFile::DeleteEntry(apcFile::GetCacheFileName('-'.$key));
-	return $bRet1 || $bRet2;
+	return apc_emul_delete_entry(apc_emul_get_cache_filename($key));
 }
 
-class apcFile
+
+function apc_emul_get_cache_filename($sKey)
+{
+	$sPath = str_replace(array(' ', '/', '\\', '.'), '-', $sKey);
+	return utils::GetCachePath().'apc-emul/'.$sPath;
+}
+
+
+/** Manage the cache files when a new cache entry is added
+ * @param string $sNewFilename new cache file added
+ */
+function apc_emul_manage_new_entry($sNewFilename)
 {
 	// Check only once per request
-	static public $aFilesByTime = null;
-	static public $iFileCount = 0;
-
-	/** Get the file name corresponding to the cache entry.
-	 * If an empty key is provided, the root of the cache is returned.
-	 * @param $sKey
-	 * @return string
-	 */
-	static public function GetCacheFileName($sKey = '')
+	static $aFilesByTime = null;
+	static $iFileCount = 0;
+	$iMaxFiles = MetaModel::GetConfig()->Get('apc_cache_emulation.max_entries');
+	if ($iMaxFiles == 0)
 	{
-		$sPath = str_replace(array(' ', '/', '\\', '.'), '-', $sKey);
-		return utils::GetCachePath().'apc-emul/'.$sPath;
+		return;
 	}
-
-	/** Get the list of entries from a starting folder.
-	 * @param $sEntry string starting folder.
-	 * @return array list of entries stored into array of key 'info'
-	 */
-	static public function GetCacheEntries($sEntry)
+	if (!$aFilesByTime)
 	{
-		$aResult = array();
-		if (is_dir($sEntry))
+		$sRootCacheDir = apc_emul_get_cache_filename('');
+		$aFilesByTime = apc_emul_list_files_time($sRootCacheDir);
+		$iFileCount = count($aFilesByTime);
+		if ($iMaxFiles !== 0)
 		{
-			$aFiles = array_diff(scandir($sEntry), array('.', '..'));
-			foreach($aFiles as $sFile)
+			asort($aFilesByTime);
+		}
+	}
+	else
+	{
+		$aFilesByTime[$sNewFilename] = time();
+		$iFileCount++;
+	}
+	if ($iFileCount > $iMaxFiles)
+	{
+		$iFileNbToRemove = $iFileCount - $iMaxFiles;
+		foreach($aFilesByTime as $sFileToRemove => $iTime)
+		{
+			@unlink($sFileToRemove);
+			if ($iFileNbToRemove-- === 0)
 			{
-				$sSubFile = $sEntry.'/'.$sFile;
-				$aResult = array_merge($aResult, self::GetCacheEntries($sSubFile));
+				break;
 			}
+		}
+		$aFilesByTime = array_slice($aFilesByTime, $iFileCount - $iMaxFiles, null, true);
+		$iFileCount = $iMaxFiles;
+	}
+}
+
+/** Get the list of files with their associated access time
+ * @param string $sCheck Directory to scan
+ * @param array $aFilesByTime used by recursion
+ * @return array
+ */
+function apc_emul_list_files_time($sCheck, &$aFilesByTime = array())
+{
+	// Garbage collection
+	$aFiles = array_diff(@scandir($sCheck), array('.', '..'));
+	foreach($aFiles as $sFile)
+	{
+		$sSubFile = $sCheck.'/'.$sFile;
+		if (is_dir($sSubFile))
+		{
+			apc_emul_list_files_time($sSubFile, $aFilesByTime);
 		}
 		else
 		{
-			$sKey = basename($sEntry);
-			if (strpos($sKey, '-') === 0)
+			$iTime = apc_emul_get_file_time($sSubFile);
+			if ($iTime !== false)
 			{
-				$sKey = substr($sKey, 1);
+				$aFilesByTime[$sSubFile] = $iTime;
 			}
-			$aResult[] = array('info' => $sKey);
 		}
-		return $aResult;
 	}
+	return $aFilesByTime;
+}
 
-	/** Delete one cache entry.
-	 * @param $sCache
-	 * @return bool true if the entry was deleted false if error occurs (like entry did not exist).
-	 */
-	static public function DeleteEntry($sCache)
+/** Get the file access time if TTL is managed
+ * @param string $sFilename
+ * @return bool|int returns the file atime or false if not relevant
+ */
+function apc_emul_get_file_time($sFilename)
+{
+	if (strpos(basename($sFilename), '-') === 0)
 	{
-		if (is_dir($sCache))
-		{
-			$aFiles = array_diff(scandir($sCache), array('.', '..'));
-			foreach($aFiles as $sFile)
-			{
-				$sSubFile = $sCache.'/'.$sFile;
-				if (!self::DeleteEntry($sSubFile))
-				{
-					return false;
-				}
-			}
-			if (!@rmdir($sCache))
-			{
-				return false;
-			}
-		}
-		else
-		{
-			if (!@unlink($sCache))
-			{
-				return false;
-			}
-		}
-
-		self::ResetFileCount();
-		return true;
+		return @fileatime($sFilename);
 	}
-
-	/** Get one cache entry content.
-	 * @param $sKey
-	 * @return bool|mixed
-	 */
-	static public function FetchOneFile($sKey)
-	{
-		// Try the 'TTLed' version
-		$sValue = self::ReadCacheLocked(self::GetCacheFileName('-'.$sKey));
-		if ($sValue === false)
-		{
-			$sValue = self::ReadCacheLocked(self::GetCacheFileName($sKey));
-			if ($sValue === false)
-			{
-				return false;
-			}
-		}
-		$oRes = @unserialize($sValue);
-		return $oRes;
-	}
-
-	/** Add one cache entry.
-	 * @param string $sKey
-	 * @param $value
-	 * @param int $iTTL time to live
-	 * @return bool
-	 */
-	static public function StoreOneFile($sKey, $value, $iTTL)
-	{
-		if (empty($sKey))
-		{
-			return false;
-		}
-
-		@unlink(self::GetCacheFileName($sKey));
-		@unlink(self::GetCacheFileName('-'.$sKey));
-		if ($iTTL > 0)
-		{
-			// hint for ttl management
-			$sKey = '-'.$sKey;
-		}
-
-		$sFilename = self::GetCacheFileName($sKey);
-		// try to create the folder
-		$sDirname = dirname($sFilename);
-		if (!file_exists($sDirname))
-		{
-			if (!@mkdir($sDirname, 0755, true))
-			{
-				return false;
-			}
-		}
-		$bRes = !(@file_put_contents($sFilename, serialize($value), LOCK_EX) === false);
-		self::AddFile($sFilename);
-		return $bRes;
-	}
-
-	/** Manage the cache files when adding a new cache entry:
-	 * remove older files if the mamximum is reached.
-	 * @param $sNewFilename
-	 */
-	static protected function AddFile($sNewFilename)
-	{
-		if (strpos(basename($sNewFilename), '-') !== 0)
-		{
-			return;
-		}
-
-		$iMaxFiles = MetaModel::GetConfig()->Get('apc_cache_emulation.max_entries');
-		if ($iMaxFiles == 0)
-		{
-			return;
-		}
-		if (!self::$aFilesByTime)
-		{
-			self::ListFilesByTime();
-			self::$iFileCount = count(self::$aFilesByTime);
-			if ($iMaxFiles !== 0)
-			{
-				asort(self::$aFilesByTime);
-			}
-		}
-		else
-		{
-			self::$aFilesByTime[$sNewFilename] = time();
-			self::$iFileCount++;
-		}
-		if (self::$iFileCount > $iMaxFiles)
-		{
-			$iFileNbToRemove = self::$iFileCount - $iMaxFiles;
-			foreach(self::$aFilesByTime as $sFileToRemove => $iTime)
-			{
-				@unlink($sFileToRemove);
-				if (--$iFileNbToRemove === 0)
-				{
-					break;
-				}
-			}
-			self::$aFilesByTime = array_slice(self::$aFilesByTime, self::$iFileCount - $iMaxFiles, null, true);
-			self::$iFileCount = $iMaxFiles;
-		}
-	}
-
-	/** Get the list of files with their associated access time
-	 * @param string $sCheck Directory to scan
-	 */
-	static protected function ListFilesByTime($sCheck = null)
-	{
-		if (empty($sCheck))
-		{
-			$sCheck = self::GetCacheFileName();
-		}
-		// Garbage collection
-		$aFiles = array_diff(@scandir($sCheck), array('.', '..'));
-		foreach($aFiles as $sFile)
-		{
-			$sSubFile = $sCheck.'/'.$sFile;
-			if (is_dir($sSubFile))
-			{
-				self::ListFilesByTime($sSubFile);
-			}
-			else
-			{
-				if (strpos(basename($sSubFile), '-') === 0)
-				{
-					self::$aFilesByTime[$sSubFile] = @fileatime($sSubFile);
-				}
-			}
-		}
-	}
-
-	/** Read the content of one cache file under lock protection
-	 * @param $sFilename
-	 * @return bool|string the content of the cache entry or false if error
-	 */
-	static protected function ReadCacheLocked($sFilename)
-	{
-		$file = @fopen($sFilename, 'r');
-		if ($file === false)
-		{
-			return false;
-		}
-		flock($file, LOCK_SH);
-		$sContent = @fread($file, @filesize($sFilename));
-		flock($file, LOCK_UN);
-		fclose($file);
-		return $sContent;
-	}
-
-	static protected function ResetFileCount()
-	{
-		self::$aFilesByTime = null;
-		self::$iFileCount = 0;
-	}
-
+	return false;
 }

@@ -63,8 +63,9 @@ function GraphvizLifecycle($sClass)
 		$aStates = MetaModel::EnumStates($sClass);
 		$aStimuli = MetaModel::EnumStimuli($sClass);
 		$sDotFileContent .= "digraph finite_state_machine {
-	graph [bgcolor = \"#eeeeee\"];
+	graph [bgcolor = \"transparent\"];
 	rankdir=LR;
+	size=\"12,12\"
 	node [ fontname=Verdana style=filled fillcolor=\"#ffffff\" ];
 	edge [ fontname=Verdana ];
 ";
@@ -135,7 +136,7 @@ if (file_exists($sDotExecutable))
 	@fwrite($rFile, $sDotDescription);
 	@fclose($rFile);
 	$aOutput = array();
-	$CommandLine = "\"$sDotExecutable\" -v -Tpng < \"$sDotFilePath\" -o \"$sImageFilePath\" 2>&1";
+	$CommandLine = "$sDotExecutable -v -Tpng < $sDotFilePath -o$sImageFilePath 2>&1";
 	
 	exec($CommandLine, $aOutput, $iRetCode);
 	if ($iRetCode != 0)

@@ -23,7 +23,7 @@ trait SecurityTrait
     public function secure($roles)
     {
         $this->before(function ($request, $app) use ($roles) {
-            if (!$app['security.authorization_checker']->isGranted($roles)) {
+            if (!$app['security']->isGranted($roles)) {
                 throw new AccessDeniedException();
             }
         });

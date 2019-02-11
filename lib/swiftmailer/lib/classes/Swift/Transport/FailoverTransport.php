@@ -11,7 +11,9 @@
 /**
  * Contains a list of redundant Transports so when one fails, the next is used.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Transport
+ * @author     Chris Corbyn
  */
 class Swift_Transport_FailoverTransport extends Swift_Transport_LoadBalancedTransport
 {
@@ -22,7 +24,9 @@ class Swift_Transport_FailoverTransport extends Swift_Transport_LoadBalancedTran
      */
     private $_currentTransport;
 
-    // needed as __construct is called from elsewhere explicitly
+    /**
+     * Creates a new FailoverTransport.
+     */
     public function __construct()
     {
         parent::__construct();
@@ -43,20 +47,16 @@ class Swift_Transport_FailoverTransport extends Swift_Transport_LoadBalancedTran
     {
         $maxTransports = count($this->_transports);
         $sent = 0;
-        $this->_lastUsedTransport = null;
 
         for ($i = 0; $i < $maxTransports
-            && $transport = $this->_getNextTransport(); ++$i) {
+            && $transport = $this->_getNextTransport(); ++$i)
+        {
             try {
                 if (!$transport->isStarted()) {
                     $transport->start();
                 }
 
-                if ($sent = $transport->send($message, $failedRecipients)) {
-                    $this->_lastUsedTransport = $transport;
-
-                    return $sent;
-                }
+                return $transport->send($message, $failedRecipients);
             } catch (Swift_TransportException $e) {
                 $this->_killCurrentTransport();
             }
@@ -70,6 +70,8 @@ class Swift_Transport_FailoverTransport extends Swift_Transport_LoadBalancedTran
 
         return $sent;
     }
+
+    // -- Protected methods
 
     protected function _getNextTransport()
     {

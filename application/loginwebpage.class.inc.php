@@ -42,7 +42,6 @@ class LoginWebPage extends NiceWebPage
 	const EXIT_CODE_WRONGCREDENTIALS = 3;
 	const EXIT_CODE_MUSTBEADMIN = 4;
 	const EXIT_CODE_PORTALUSERNOTAUTHORIZED = 5;
-	const EXIT_CODE_NOTAUTHORIZED = 6;
 	
 	protected static $sHandlerClass = __class__;
 	public static function RegisterHandler($sClass)
@@ -98,10 +97,10 @@ class LoginWebPage extends NiceWebPage
 		}
 		$sVersionShort = Dict::Format('UI:iTopVersion:Short', ITOP_APPLICATION, ITOP_VERSION);
 		$sIconUrl = Utils::GetConfig()->Get('app_icon_url');
-		$sDisplayIcon = utils::GetAbsoluteUrlAppRoot().'images/'.$sLogo.'?t='.utils::GetCacheBusterTimestamp();
+		$sDisplayIcon = utils::GetAbsoluteUrlAppRoot().'images/'.$sLogo.'?itopversion='.ITOP_VERSION;
 		if (file_exists(MODULESROOT.'branding/'.$sBrandingLogo))
 		{
-			$sDisplayIcon = utils::GetAbsoluteUrlModulesRoot().'branding/'.$sBrandingLogo.'?t='.utils::GetCacheBusterTimestamp();
+			$sDisplayIcon = utils::GetAbsoluteUrlModulesRoot().'branding/'.$sBrandingLogo.'?itopversion='.ITOP_VERSION;
 		}
 		$this->add("<div id=\"login-logo\"><a href=\"".htmlentities($sIconUrl, ENT_QUOTES, 'UTF-8')."\"><img title=\"$sVersionShort\" src=\"$sDisplayIcon\"></a></div>\n");
 	}
@@ -195,7 +194,7 @@ class LoginWebPage extends NiceWebPage
 	 */	
 	public function ForgotPwdLink()
 	{
-		$sUrl = utils::GetAbsoluteUrlAppRoot() . 'pages/UI.php?loginop=forgot_pwd';
+		$sUrl = '?loginop=forgot_pwd';
 		$sHtml = "<a href=\"$sUrl\" target=\"_blank\">".Dict::S('UI:Login:ForgotPwd')."</a>";
 		return $sHtml;
 	}
@@ -259,6 +258,10 @@ class LoginWebPage extends NiceWebPage
 			$oEmail = new Email();
 			$oEmail->SetRecipientTO($sTo);
 			$sFrom = MetaModel::GetConfig()->Get('forgot_password_from');
+			if ($sFrom == '')
+			{
+				$sFrom = $sTo;
+			}
 			$oEmail->SetRecipientFrom($sFrom);
 			$oEmail->SetSubject(Dict::S('UI:ResetPwd-EmailSubject'));
 			$sResetUrl = utils::GetAbsoluteUrlAppRoot().'pages/UI.php?loginop=reset_pwd&auth_user='.urlencode($oUser->Get('login')).'&token='.urlencode($sToken);
@@ -700,36 +703,26 @@ EOF
 			}
 		}
 	}
-
+	
 	/**
 	 * Check if the user is already authentified, if yes, then performs some additional validations:
 	 * - if $bMustBeAdmin is true, then the user must be an administrator, otherwise an error is displayed
-	 * - if $bIsAllowedToPortalUsers is false and the user has only access to the portal, then the user is redirected
-	 * to the portal
-	 *
+	 * - if $bIsAllowedToPortalUsers is false and the user has only access to the portal, then the user is redirected to the portal
 	 * @param bool $bMustBeAdmin Whether or not the user must be an admin to access the current page
 	 * @param bool $bIsAllowedToPortalUsers Whether or not the current page is considered as part of the portal
 	 * @param int iOnExit What action to take if the user is not logged on (one of the class constants EXIT_...)
-	 *
-	 * @return int|mixed|string
-	 * @throws \Exception
 	 */
 	static function DoLogin($bMustBeAdmin = false, $bIsAllowedToPortalUsers = false, $iOnExit = self::EXIT_PROMPT)
 	{
 		$sRequestedPortalId = $bIsAllowedToPortalUsers ? 'legacy_portal' : 'backoffice';
 		return self::DoLoginEx($sRequestedPortalId, $bMustBeAdmin, $iOnExit);
 	}
-
+	
 	/**
-	 * Check if the user is already authentified, if yes, then performs some additional validations to redirect towards
-	 * the desired "portal"
-	 *
+	 * Check if the user is already authentified, if yes, then performs some additional validations to redirect towards the desired "portal"
 	 * @param string|null $sRequestedPortalId The requested "portal" interface, null for any
 	 * @param bool $bMustBeAdmin Whether or not the user must be an admin to access the current page
 	 * @param int iOnExit What action to take if the user is not logged on (one of the class constants EXIT_...)
-	 *
-	 * @return int|mixed|string
-	 * @throws \Exception
 	 */
 	static function DoLoginEx($sRequestedPortalId = null, $bMustBeAdmin = false, $iOnExit = self::EXIT_PROMPT)
 	{

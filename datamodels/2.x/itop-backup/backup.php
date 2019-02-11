@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2014-2018 Combodo SARL
+// Copyright (C) 2014-2017 Combodo SARL
 //
 //   This program is free software; you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License as published by
@@ -28,9 +28,6 @@ require_once(APPROOT.'application/startup.inc.php');
 
 class MyDBBackup extends DBBackup
 {
-	/** @var Page used to send log */
-	protected $oPage;
-
 	protected function LogInfo($sMsg)
 	{
 		$this->oPage->p($sMsg);
@@ -42,6 +39,7 @@ class MyDBBackup extends DBBackup
 		ToolsLog::Error($sMsg);
 	}
 
+	protected $oPage;
 	public function __construct($oPage)
 	{
 		$this->oPage = $oPage;

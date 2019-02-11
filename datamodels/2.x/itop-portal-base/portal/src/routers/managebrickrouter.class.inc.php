@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -19,50 +19,29 @@
 
 namespace Combodo\iTop\Portal\Router;
 
+use Silex\Application;
+
 class ManageBrickRouter extends AbstractRouter
 {
 	static $aRoutes = array(
-        array(
-            'pattern' => '/manage/{sBrickId}/{sGroupingTab}',
-            'callback' => 'Combodo\\iTop\\Portal\\Controller\\ManageBrickController::DisplayAction',
-            'bind' => 'p_manage_brick',
-            'asserts' => array(),
-            'values' => array(
-                'sGroupingTab' => null,
-            )
-        ),
-        array(
-            'pattern' => '/manage/{sBrickId}/display-as/{sDisplayMode}/{sGroupingTab}',
-            'callback' => 'Combodo\\iTop\\Portal\\Controller\\ManageBrickController::DisplayAction',
-            'bind' => 'p_manage_brick_display_as',
-            'asserts' => array(
-                'sDisplayMode' => 'list|pie-chart|bar-chart'
-            ),
-            'values' => array(
-                'sGroupingTab' => null,
-            )
-        ),
-        array(
-			'pattern' => '/manage/{sBrickId}/{sGroupingTab}/{sGroupingArea}/page/{iPageNumber}/show/{iListLength}',
+		array('pattern' => '/manage/{sBrickId}/{sGroupingTab}',
+			'callback' => 'Combodo\\iTop\\Portal\\Controller\\ManageBrickController::DisplayAction',
+			'bind' => 'p_manage_brick',
+			'values' => array('sGroupingTab' => null)
+		),
+		array('pattern' => '/manage/{sBrickId}/{sGroupingTab}/{sGroupingArea}/page/{iPageNumber}/show/{iListLength}',
 			'callback' => 'Combodo\\iTop\\Portal\\Controller\\ManageBrickController::DisplayAction',
 			'bind' => 'p_manage_brick_lazy',
 			'asserts' => array(
 				'iPageNumber' => '\d+',
-				'iListLength' => '\d+',
+				'iListLength' => '\d+'
 			),
 			'values' => array(
 				'sDataLoading' => 'lazy',
 				'iPageNumber' => '1',
-				'iListLength' => '20',
+				'iListLength' => '20'
 			)
-		),
-		array(
-			'pattern' => '/manage/export/excel/start/{sBrickId}/{sGroupingTab}/{sGroupingArea}',
-			'callback' => 'Combodo\\iTop\\Portal\\Controller\\ManageBrickController::ExcelExportStartAction',
-			'bind' => 'p_manage_brick_excel_export_start',
-			'asserts' => array(),
-			'values' => array(),
-		),
+		)
 	);
 
 }

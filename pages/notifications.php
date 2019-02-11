@@ -31,8 +31,9 @@ require_once(APPROOT.'/application/itopwebpage.class.inc.php');
 require_once(APPROOT.'/application/startup.inc.php');
 
 require_once(APPROOT.'/application/loginwebpage.class.inc.php');
-LoginWebPage::DoLogin(); // Check user rights and prompt if needed
-ApplicationMenu::CheckMenuIdEnabled("NotificationsMenu");
+LoginWebPage::DoLogin(true); // Check user rights and prompt if needed (must be admin)
+
+
 
 // Main program
 //
@@ -44,7 +45,7 @@ $oP->add('</div>');
 
 $oP->SetBreadCrumbEntry('ui-tool-notifications', Dict::S('Menu:NotificationsMenu'), Dict::S('Menu:NotificationsMenu+'), '', '../images/bell.png');
 
-$oP->StartCollapsibleSection(Dict::S('UI:NotificationsMenu:Help'), true, 'notifications-home');
+$oP->StartCollapsibleSection(Dict::S('UI:NotificationsMenu:Help'), true);
 $oP->add('<div style="padding: 1em; font-size:10pt;background:#E8F3CF;margin-top: 0.25em;">');
 $oP->add('<img src="../images/bell.png" style="margin-top: -60px; margin-right: 10px; float: right;">');
 $oP->add(Dict::S('UI:NotificationsMenu:HelpContent'));

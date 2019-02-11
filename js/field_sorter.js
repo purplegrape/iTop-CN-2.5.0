@@ -249,12 +249,12 @@ $(function()
 				
 				var oCheckbox = oItem.find('input[type=checkbox]');
 				var bChecked = false;
-				if (oCheckbox.prop('checked'))
+				if (oCheckbox.attr('checked'))
 				{
 					bChecked = true;
 				}
 				var bDisabled = false;
-				if (oCheckbox.prop('disabled'))
+				if (oCheckbox.attr('disabled'))
 				{
 					bDisabled = true;
 				}

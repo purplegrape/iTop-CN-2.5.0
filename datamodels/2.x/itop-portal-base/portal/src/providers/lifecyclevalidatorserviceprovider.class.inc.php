@@ -19,8 +19,8 @@
 
 namespace Combodo\iTop\Portal\Provider;
 
-use Pimple\Container;
-use Pimple\ServiceProviderInterface;
+use Silex\Application;
+use Silex\ServiceProviderInterface;
 use Combodo\iTop\Portal\Helper\LifecycleValidatorHelper;
 
 /**
@@ -31,9 +31,9 @@ use Combodo\iTop\Portal\Helper\LifecycleValidatorHelper;
 class LifecycleValidatorServiceProvider implements ServiceProviderInterface
 {
 
-	public function register(Container $oApp)
+	public function register(Application $oApp)
 	{
-		$oApp['lifecycle_validator'] = function ($oApp)
+		$oApp['lifecycle_validator'] = $oApp->share(function ($oApp)
 		{
 			$oApp->flush();
 
@@ -44,10 +44,10 @@ class LifecycleValidatorServiceProvider implements ServiceProviderInterface
 			}
 
 			return $oLifecycleValidatorHelper;
-		};
+		});
 	}
 
-	public function boot(Container $oApp)
+	public function boot(Application $oApp)
 	{
 
 	}

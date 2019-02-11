@@ -1,9 +1,9 @@
 Services
 ========
 
-Silex is not only a framework, it is also a service container. It does this by
-extending `Pimple <http://pimple.sensiolabs.org>`_ which provides a very simple
-service container.
+Silex is not only a microframework. It is also a micro service container. It
+does this by extending `Pimple <http://pimple.sensiolabs.org>`_ which provides
+service goodness in just 44 NCLOC.
 
 Dependency Injection
 --------------------
@@ -43,20 +43,30 @@ passed to the constructor. This means you can create several independent
 instances with different base paths. Of course dependencies do not have to be
 simple strings. More often they are in fact other services.
 
-A service container is responsible for creating and storing services. It can
-recursively create dependencies of the requested services and inject them. It
-does so lazily, which means a service is only created when you actually need it.
+Container
+~~~~~~~~~
+
+A DIC or service container is responsible for creating and storing services.
+It can recursively create dependencies of the requested services and inject
+them. It does so lazily, which means a service is only created when you
+actually need it.
+
+Most containers are quite complex and are configured through XML or YAML
+files.
+
+Pimple is different.
 
 Pimple
 ------
 
-Pimple makes strong use of closures and implements the ArrayAccess interface.
+Pimple is probably the simplest service container out there. It makes strong
+use of closures and implements the ArrayAccess interface.
 
 We will start off by creating a new instance of Pimple -- and because
-``Silex\Application`` extends ``Pimple\Container`` all of this applies to Silex
-as well::
+``Silex\Application`` extends ``Pimple`` all of this applies to Silex as
+well::
 
-    $container = new Pimple\Container();
+    $container = new Pimple();
 
 or::
 
@@ -70,7 +80,8 @@ the container::
 
     $app['some_parameter'] = 'value';
 
-The array key can be any value. By convention dots are used for namespacing::
+The array key can be anything, by convention periods are used for
+namespacing::
 
     $app['asset.host'] = 'http://cdn.mysite.com/';
 
@@ -93,21 +104,21 @@ And to retrieve the service, use::
 
     $service = $app['some_service'];
 
-On first invocation, this will create the service; the same instance will then
-be returned on any subsequent access.
+Every time you call ``$app['some_service']``, a new instance of the service is
+created.
 
-Factory services
-~~~~~~~~~~~~~~~~
+Shared services
+~~~~~~~~~~~~~~~
 
-If you want a different instance to be returned for each service access, wrap
-the service definition with the ``factory()`` method::
+You may want to use the same instance of a service across all of your code. In
+order to do that you can make a *shared* service::
 
-    $app['some_service'] = $app->factory(function () {
+    $app['some_service'] = $app->share(function () {
         return new Service();
     });
 
-Every time you call ``$app['some_service']``, a new instance of the service is
-created.
+This will create the service on first invocation, and then return the existing
+instance on any subsequent access.
 
 Access container from closure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -128,13 +139,17 @@ options. The dependency is only created when ``some_service`` is accessed, and
 it is possible to replace either of the dependencies by simply overriding
 those definitions.
 
+.. note::
+
+    This also works for shared services.
+
 Going back to our initial example, here's how we could use the container
 to manage its dependencies::
 
     $app['user.persist_path'] = '/tmp/users';
-    $app['user.persister'] = function ($app) {
+    $app['user.persister'] = $app->share(function ($app) {
         return new JsonUserPersister($app['user.persist_path']);
-    };
+    });
 
 
 Protected closures
@@ -159,48 +174,37 @@ using the ``protect`` method::
     // calling it now
     echo $add(2, 3);
 
-Note that the container is not provided as an argument to protected closures.
-However, you can inject it via `use($app)`::
-
-    $app['closure_parameter'] = $app->protect(function ($a, $b) use ($app) {
-        // ...
-    });
+Note that protected closures do not get access to the container.
 
 Core services
 -------------
 
-Silex defines a range of services.
+Silex defines a range of services which can be used or replaced. You probably
+don't want to mess with most of them.
 
-* **request_stack**: Controls the lifecycle of requests, an instance of
-  `RequestStack <http://api.symfony.com/master/Symfony/Component/HttpFoundation/RequestStack.html>`_.
+* **request**: Contains the current request object, which is an instance of
+  `Request
+  <http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html>`_.
   It gives you access to ``GET``, ``POST`` parameters and lots more!
 
   Example usage::
 
-    $id = $app['request_stack']->getCurrentRequest()->get('id');
+    $id = $app['request']->get('id');
 
-  A request is only available when a request is being served; you can only
-  access it from within a controller, an application before/after middlewares,
-  or an error handler.
+  This is only available when a request is being served, you can only access
+  it from within a controller, an application before/after middlewares, or an
+  error handler.
 
 * **routes**: The `RouteCollection
   <http://api.symfony.com/master/Symfony/Component/Routing/RouteCollection.html>`_
   that is used internally. You can add, modify, read routes.
 
-* **url_generator**: An instance of `UrlGenerator
-  <http://api.symfony.com/master/Symfony/Component/Routing/Generator/UrlGenerator.html>`_,
-  using the `RouteCollection
-  <http://api.symfony.com/master/Symfony/Component/Routing/RouteCollection.html>`_
-  that is provided through the ``routes`` service. It has a ``generate``
-  method, which takes the route name as an argument, followed by an array of
-  route parameters.
-
 * **controllers**: The ``Silex\ControllerCollection`` that is used internally.
-  Check the :doc:`Internals chapter <internals>` for more information.
+  Check the *Internals* chapter for more information.
 
 * **dispatcher**: The `EventDispatcher
   <http://api.symfony.com/master/Symfony/Component/EventDispatcher/EventDispatcher.html>`_
-  that is used internally. It is the core of the Symfony system and is used
+  that is used internally. It is the core of the Symfony2 system and is used
   quite a bit by Silex.
 
 * **resolver**: The `ControllerResolver
@@ -210,35 +214,28 @@ Silex defines a range of services.
 
 * **kernel**: The `HttpKernel
   <http://api.symfony.com/master/Symfony/Component/HttpKernel/HttpKernel.html>`_
-  that is used internally. The HttpKernel is the heart of Symfony, it takes a
+  that is used internally. The HttpKernel is the heart of Symfony2, it takes a
   Request as input and returns a Response as output.
 
 * **request_context**: The request context is a simplified representation of
-  the request that is used by the router and the URL generator.
+  the request that is used by the Router and the UrlGenerator.
 
 * **exception_handler**: The Exception handler is the default handler that is
-  used when you don't register one via the ``error()`` method or if your
-  handler does not return a Response. Disable it with
-  ``unset($app['exception_handler'])``.
+  used when you don't register one via the ``error()`` method or if your handler
+  does not return a Response. Disable it with
+  ``$app['exception_handler']->disable()``.
 
-* **logger**: A `LoggerInterface <https://github.com/php-fig/log/blob/master/Psr/Log/LoggerInterface.php>`_ instance. By default, logging is
+* **logger**: A ``Psr\Log\LoggerInterface`` instance. By default, logging is
   disabled as the value is set to ``null``. To enable logging you can either use
-  the :doc:`MonologServiceProvider <providers/monolog>` or define your own ``logger`` service that
+  the ``MonologServiceProvider`` or define your own ``logger`` service that
   conforms to the PSR logger interface.
 
-Core traits
------------
+  In versions of Silex before 1.1 this must be a
+  ``Symfony\Component\HttpKernel\Log\LoggerInterface``.
 
-* ``Silex\Application\UrlGeneratorTrait`` adds the following shortcuts:
+.. note::
 
-  * **path**: Generates a path.
-
-  * **url**: Generates an absolute URL.
-
-  .. code-block:: php
-
-      $app->path('homepage');
-      $app->url('homepage');
+    All of these Silex core services are shared.
 
 Core parameters
 ---------------
@@ -249,7 +246,7 @@ Core parameters
 
   Defaults to 80.
 
-  This parameter can be used when generating URLs.
+  This parameter can be used by the ``UrlGeneratorProvider``.
 
 * **request.https_port** (optional): Allows you to override the default port
   for HTTPS URLs. If the current request is HTTPS, it will always use the
@@ -257,7 +254,12 @@ Core parameters
 
   Defaults to 443.
 
-  This parameter can be used when generating URLs.
+  This parameter can be used by the ``UrlGeneratorProvider``.
+
+* **locale** (optional): The locale of the user. When set before any request
+  handling, it defines the default locale (``en`` by default). When a request
+  is being handled, it is automatically set according to the ``_locale``
+  request attribute of the current route.
 
 * **debug** (optional): Returns whether or not the application is running in
   debug mode.

@@ -38,7 +38,7 @@ abstract class Trigger extends cmdbAbstractObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb",
+			"category" => "core/cmdb",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -97,7 +97,7 @@ abstract class TriggerOnObject extends Trigger
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb",
+			"category" => "core/cmdb",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -116,8 +116,8 @@ abstract class TriggerOnObject extends Trigger
 		MetaModel::Init_SetZListItems('details', array('description', 'target_class', 'filter', 'action_list')); // Attributes to be displayed for the complete details
 		MetaModel::Init_SetZListItems('list', array('finalclass', 'target_class', 'description')); // Attributes to be displayed for a list
 		// Search criteria
-		MetaModel::Init_SetZListItems('default_search', array('description', 'target_class'));  // Default criteria of the search banner
-//		MetaModel::Init_SetZListItems('standard_search', array('name', 'target_class', 'description')); // Criteria of the search form
+//		MetaModel::Init_SetZListItems('standard_search', array('name')); // Criteria of the std search form
+//		MetaModel::Init_SetZListItems('advanced_search', array('name')); // Criteria of the advanced search form
 	}
 
 	public function DoCheckToWrite()
@@ -194,7 +194,7 @@ class TriggerOnPortalUpdate extends TriggerOnObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -220,7 +220,7 @@ abstract class TriggerOnStateChange extends TriggerOnObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb",
+			"category" => "core/cmdb",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -249,7 +249,7 @@ class TriggerOnStateEnter extends TriggerOnStateChange
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -277,7 +277,7 @@ class TriggerOnStateLeave extends TriggerOnStateChange
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -305,7 +305,7 @@ class TriggerOnObjectCreate extends TriggerOnObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",
@@ -333,7 +333,7 @@ class lnkTriggerAction extends cmdbAbstractObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "",
 			"state_attcode" => "",
@@ -366,7 +366,7 @@ class TriggerOnThresholdReached extends TriggerOnObject
 	{
 		$aParams = array
 		(
-			"category" => "grant_by_profile,core/cmdb,application",
+			"category" => "core/cmdb,application",
 			"key_type" => "autoincrement",
 			"name_attcode" => "description",
 			"state_attcode" => "",

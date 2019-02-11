@@ -497,10 +497,10 @@ EOF
  */
 class InlineImageGC implements iBackgroundProcess
 {
-    public function GetPeriodicity()
-    {
-        return 3600; // Runs every hour
-    }
+	public function GetPeriodicity()
+	{
+		return 3600; // Runs every 3600 seconds
+	}
 
 	public function Process($iTimeLimit)
 	{

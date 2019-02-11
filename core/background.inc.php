@@ -50,6 +50,6 @@ class ObsolescenceDateUpdater implements iBackgroundProcess
 			$oObsoletedToday->AddCondition('obsolescence_date', null, '!=');
 			$iCountReset += MetaModel::BulkUpdate($oObsoletedToday, array('obsolescence_date' => null));
 		}
-		return "Obsolescence date updated (classes: $iClasses ; set: $iCountSet ; reset: $iCountReset)\n";
+		echo "Obsolescence date updated (classes: $iClasses ; set: $iCountSet ; reset: $iCountReset)\n";
 	}
 }

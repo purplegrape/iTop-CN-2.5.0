@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2018 Combodo SARL
+// Copyright (C) 2010-2017 Combodo SARL
 //
 //   This file is part of iTop.
 //
@@ -20,7 +20,7 @@
 /**
  * Typology for the attributes
  *
- * @copyright   Copyright (C) 2010-2018 Combodo SARL
+ * @copyright   Copyright (C) 2010-2017 Combodo SARL
  * @license	 http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -111,20 +111,6 @@ define('LINKSET_EDITMODE_ADDREMOVE', 4); // The "linked" objects can be added/re
  */
 abstract class AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE_RAW = 'raw';
-	const SEARCH_WIDGET_TYPE_STRING = 'string';
-	const SEARCH_WIDGET_TYPE_NUMERIC = 'numeric';
-	const SEARCH_WIDGET_TYPE_ENUM = 'enum';
-	const SEARCH_WIDGET_TYPE_EXTERNAL_KEY = 'external_key';
-	const SEARCH_WIDGET_TYPE_HIERARCHICAL_KEY = 'hierarchical_key';
-	const SEARCH_WIDGET_TYPE_EXTERNAL_FIELD = 'external_field';
-	const SEARCH_WIDGET_TYPE_DATE_TIME = 'date_time';
-	const SEARCH_WIDGET_TYPE_DATE = 'date';
-
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
-	const INDEX_LENGTH = 95;
-
 	public function GetType()
 	{
 		return Dict::S('Core:'.get_class($this));
@@ -136,43 +122,11 @@ abstract class AttributeDefinition
 
 	abstract public function GetEditClass();
 
-	/**
-	 * Return the search widget type corresponding to this attribute
-	 *
-	 * @return string
-	 */
-	public function GetSearchType()
-	{
-		return static::SEARCH_WIDGET_TYPE;
-	}
-
-	/**
-	 * @return bool
-	 */
-	public function IsSearchable()
-	{
-		return static::SEARCH_WIDGET_TYPE != static::SEARCH_WIDGET_TYPE_RAW;
-	}
-
 	protected $m_sCode;
 	private $m_aParams = array();
 	protected $m_sHostClass = '!undefined!';
 	public function Get($sParamName) {return $this->m_aParams[$sParamName];}
-
-	public function GetIndexLength() {
-		$iMaxLength = $this->GetMaxSize();
-		if (is_null($iMaxLength))
-		{
-			return null;
-		}
-		if ($iMaxLength > static::INDEX_LENGTH)
-		{
-			return static::INDEX_LENGTH;
-		}
-		return $iMaxLength;
-	}
-
-	public function IsParam($sParamName) {return (array_key_exists($sParamName, $this->m_aParams));}
+	protected function IsParam($sParamName) {return (array_key_exists($sParamName, $this->m_aParams));}
 
 	protected function GetOptional($sParamName, $default)
 	{
@@ -254,11 +208,8 @@ abstract class AttributeDefinition
 
 	/**
 	 * Check the validity of the given value
-	 *
 	 * @param DBObject $oHostObject
 	 * @param string An error if any, null otherwise
-	 *
-	 * @return bool
 	 */
 	public function CheckValue(DBObject $oHostObject, $value)
 	{
@@ -271,8 +222,7 @@ abstract class AttributeDefinition
 	{
 		return "";
 		// e.g: return array("Site", "infrid", "name");
-	}
-
+	} 
 	public function GetFinalAttDef()
 	{
 		return $this;
@@ -320,10 +270,8 @@ abstract class AttributeDefinition
 	 */
 	static public function IsExternalField() {return false;}
 	/**
-	 * Returns true if the attribute can be written (by essence : metamodel field option)
-	 *
+	 * Returns true if the attribute can be written (by essence)
 	 * @return bool
-	 * @see \DBObject::IsAttributeReadOnlyForCurrentState() for a specific object instance (depending on its workflow)
 	 */
 	public function IsWritable() {return false;}
 	/**
@@ -523,18 +471,7 @@ abstract class AttributeDefinition
 
 	public function GetSQLExpressions($sPrefix = '') {return array();} // returns suffix/expression pairs (1 in most of the cases), for READING (Select)
 	public function FromSQLToValue($aCols, $sPrefix = '') {return null;} // returns a value out of suffix/value pairs, for SELECT result interpretation
-
-	/**
-	 * @param bool $bFullSpec
-	 *
-	 * @return array column/spec pairs (1 in most of the cases), for STRUCTURING (DB creation)
-	 * @see \CMDBSource::GetFieldSpec()
-	 */
-	public function GetSQLColumns($bFullSpec = false)
-	{
-		return array();
-	}
-
+	public function GetSQLColumns($bFullSpec = false) {return array();} // returns column/spec pairs (1 in most of the cases), for STRUCTURING (DB creation)
 	public function GetSQLValues($value) {return array();} // returns column/value pairs (1 in most of the cases), for WRITING (Insert, Update)
 	public function RequiresIndex() {return false;}
 	public function CopyOnAllTables() {return false;}
@@ -740,14 +677,10 @@ abstract class AttributeDefinition
 
 	/**
 	 * Get various representations of the value, for insertion into a template (e.g. in Notifications)
-	 *
 	 * @param $value mixed The current value of the field
 	 * @param $sVerb string The verb specifying the representation of the value
 	 * @param $oHostObject DBObject The object
 	 * @param $bLocalize bool Whether or not to localize the value
-	 *
-	 * @return mixed|null|string
-	 * @throws \Exception
 	 */
 	public function GetForTemplate($value, $sVerb, $oHostObject = null, $bLocalize = true)
 	{
@@ -856,7 +789,7 @@ abstract class AttributeDefinition
 	 * does nothing special, and just calls the default (loose) operator
 	 * @param string $sSearchText The search string to analyze for smart patterns
 	 * @param FieldExpression The FieldExpression representing the atttribute code in this OQL query
-	 * @param array $aParams Values of the query parameters
+	 * @param Hash $aParams Values of the query parameters
 	 * @return Expression The search condition to be added (AND) to the current search
 	 */
 	public function GetSmartConditionExpression($sSearchText, FieldExpression $oField, &$aParams)
@@ -892,7 +825,7 @@ abstract class AttributeDefinition
 	
 	/**
 	 * The part of the current attribute in the object's signature, for the supplied value
-	 * @param mixed $value The value of this attribute for the object
+	 * @param unknown $value The value of this attribute for the object
 	 * @return string The "signature" for this field/attribute
 	 */
 	public function Fingerprint($value)
@@ -1012,6 +945,7 @@ class AttributeLinkedSet extends AttributeDefinition
 				$sObjClass = get_class($oObj);
 				$sRes .= "<$sObjClass id=\"".$oObj->GetKey()."\">\n";
 				// Show only relevant information (hide the external key to the current object)
+				$aAttributes = array();
 				foreach(MetaModel::ListAttributeDefs($sObjClass) as $sAttCode => $oAttDef)
 				{
 					if ($sAttCode == 'finalclass')
@@ -1108,14 +1042,10 @@ class AttributeLinkedSet extends AttributeDefinition
 
 	/**
 	 * Get various representations of the value, for insertion into a template (e.g. in Notifications)
-	 *
 	 * @param $value mixed The current value of the field
 	 * @param $sVerb string The verb specifying the representation of the value
 	 * @param $oHostObject DBObject The object
 	 * @param $bLocalize bool Whether or not to localize the value
-	 *
-	 * @return string
-	 * @throws \Exception
 	 */
 	public function GetForTemplate($value, $sVerb, $oHostObject = null, $bLocalize = true)
 	{
@@ -1146,7 +1076,7 @@ class AttributeLinkedSet extends AttributeDefinition
 			return '<ul><li>'.implode("</li><li>", $aNames).'</li></ul>';
 			
 			default:
-			throw new Exception("Unknown verb '$sVerb' for attribute ".$this->GetCode().' in class '.get_class($oHostObject));
+			throw new Exception("Unknown verb '$sVerb' for attribute ".$this->GetCode().' in class '.get_class($oHostObj));	
 		}
 	}
 
@@ -1412,13 +1342,12 @@ class AttributeLinkedSet extends AttributeDefinition
 		return $oSet;
 	}
 
-	/**
-	 * @param $proposedValue
-	 * @param $oHostObj
-	 *
-	 * @return mixed
-	 * @throws \Exception
-	 */
+    /**
+     * @param $proposedValue
+     * @param $oHostObj
+     *
+     * @return mixed
+     */
     public function MakeRealValue($proposedValue, $oHostObj){
         if($proposedValue === null)
         {
@@ -1456,9 +1385,7 @@ class AttributeLinkedSet extends AttributeDefinition
 
 	/**
 	 * Find the corresponding "link" attribute on the target class, if any
-	 *
 	 * @return null | AttributeDefinition
-	 * @throws \Exception
 	 */
 	public function GetMirrorLinkAttribute()
 	{
@@ -1542,7 +1469,6 @@ class AttributeLinkedSetIndirect extends AttributeLinkedSet
 	/**
 	 * Find the corresponding "link" attribute on the target class, if any
 	 * @return null | AttributeDefinition
-	 * @throws \CoreException
 	 */
 	public function GetMirrorLinkAttribute()
 	{
@@ -1577,9 +1503,7 @@ class AttributeDBFieldVoid extends AttributeDefinition
 	// To be overriden, used in GetSQLColumns
 	protected function GetSQLCol($bFullSpec = false)
 	{
-		return 'VARCHAR(255)'
-			.CMDBSource::GetSqlStringColumnDefinition()
-			.($bFullSpec ? $this->GetSQLColSpec() : '');
+		return "VARCHAR(255)".($bFullSpec ? $this->GetSQLColSpec() : '');
 	}
 	protected function GetSQLColSpec()
 	{
@@ -1701,8 +1625,6 @@ class AttributeDBField extends AttributeDBFieldVoid
  */
 class AttributeInteger extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_NUMERIC;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -1796,8 +1718,6 @@ class AttributeInteger extends AttributeDBField
  */
 class AttributeObjectKey extends AttributeDBFieldVoid
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_EXTERNAL_KEY;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array('class_attcode', 'is_null_allowed'));
@@ -1853,8 +1773,6 @@ class AttributeObjectKey extends AttributeDBFieldVoid
  */
 class AttributePercentage extends AttributeInteger
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_NUMERIC;
-
 	public function GetAsHTML($sValue, $oHostObject = null, $bLocalize = true)
 	{
 		$iWidth = 5; // Total width of the percentage bar graph, in em...
@@ -1894,8 +1812,6 @@ class AttributePercentage extends AttributeInteger
  */
 class AttributeDecimal extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_NUMERIC;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array('digits', 'decimals' /* including precision */));
@@ -1994,8 +1910,6 @@ class AttributeDecimal extends AttributeDBField
  */
 class AttributeBoolean extends AttributeInteger
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -2192,8 +2106,6 @@ class AttributeBoolean extends AttributeInteger
  */
 class AttributeString extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -2201,13 +2113,7 @@ class AttributeString extends AttributeDBField
 	}
 
 	public function GetEditClass() {return "String";}
-
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return 'VARCHAR(255)'
-			.CMDBSource::GetSqlStringColumnDefinition()
-			.($bFullSpec ? $this->GetSQLColSpec() : '');
-	}
+	protected function GetSQLCol($bFullSpec = false) {return "VARCHAR(255)".($bFullSpec ? $this->GetSQLColSpec() : '');}
 
 	public function GetValidationPattern()
 	{
@@ -2344,8 +2250,6 @@ class AttributeString extends AttributeDBField
  */
 class AttributeClass extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_ENUM;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("class_category", "more_values"));
@@ -2398,8 +2302,6 @@ class AttributeClass extends AttributeString
  */
 class AttributeApplicationLanguage extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -2436,9 +2338,6 @@ class AttributeApplicationLanguage extends AttributeString
  */
 class AttributeFinalClass extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-	public $m_sValue;
-
 	public function __construct($sCode, $aParams)
 	{
 		$this->m_sCode = $sCode;
@@ -2593,8 +2492,6 @@ class AttributeFinalClass extends AttributeString
  */
 class AttributePassword extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -2602,13 +2499,7 @@ class AttributePassword extends AttributeString
 	}
 
 	public function GetEditClass() {return "Password";}
-
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return "VARCHAR(64)"
-			.CMDBSource::GetSqlStringColumnDefinition()
-			.($bFullSpec ? $this->GetSQLColSpec() : '');
-	}
+	protected function GetSQLCol($bFullSpec = false) {return "VARCHAR(64)".($bFullSpec ? $this->GetSQLColSpec() : '');}
 
 	public function GetMaxSize()
 	{
@@ -2647,8 +2538,6 @@ class AttributePassword extends AttributeString
  */
 class AttributeEncryptedString extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static $sKey = null; // Encryption key used for all encrypted fields
 
 	public function __construct($sCode, $aParams)
@@ -2736,11 +2625,8 @@ define('WIKI_OBJECT_REGEXP', '/\[\[(.+):(.+)\]\]/U');
 class AttributeText extends AttributeString
 {
 	public function GetEditClass() {return ($this->GetFormat() == 'text') ? 'Text' : "HTML";}
-
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return "TEXT".CMDBSource::GetSqlStringColumnDefinition();
-	}
+	
+	protected function GetSQLCol($bFullSpec = false) {return "TEXT";}
 
 	public function GetSQLColumns($bFullSpec = false)
 	{
@@ -2749,7 +2635,7 @@ class AttributeText extends AttributeString
 		if ($this->GetOptional('format', null) != null )
 		{
 			// Add the extra column only if the property 'format' is specified for the attribute
-			$aColumns[$this->Get('sql').'_format'] = "ENUM('text','html')".CMDBSource::GetSqlStringColumnDefinition();
+			$aColumns[$this->Get('sql').'_format'] = "ENUM('text','html')";
 			if ($bFullSpec)
 			{
 				$aColumns[$this->Get('sql').'_format'].= " DEFAULT 'text'"; // default 'text' is for migrating old records
@@ -2789,6 +2675,7 @@ class AttributeText extends AttributeString
 			$sPattern = '/'.str_replace('/', '\/', utils::GetConfig()->Get('url_validation_pattern')).'/i';
 			if (preg_match_all($sPattern, $sText, $aAllMatches, PREG_SET_ORDER /* important !*/ |PREG_OFFSET_CAPTURE /* important ! */))
 			{
+				$aUrls = array();
 				$i = count($aAllMatches);
 				// Replace the URLs by an actual hyperlink <a href="...">...</a>
 				// Let's do it backwards so that the initial positions are not modified by the replacement
@@ -3070,10 +2957,7 @@ class AttributeText extends AttributeString
  */
 class AttributeLongText extends AttributeText
 {
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return "LONGTEXT".CMDBSource::GetSqlStringColumnDefinition();
-	}
+	protected function GetSQLCol($bFullSpec = false) {return "LONGTEXT";}
 
 	public function GetMaxSize()
 	{
@@ -3090,8 +2974,6 @@ class AttributeLongText extends AttributeText
  */
 class AttributeCaseLog extends AttributeLongText
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-
 	public function GetNullValue()
 	{
 		return '';
@@ -3131,6 +3013,7 @@ class AttributeCaseLog extends AttributeLongText
 	 */
 	public function GetAsPlainText($value, $oHostObj = null)
 	{
+		$value = $oObj->Get($sAttCode);
 		if ($value instanceOf ormCaseLog)
 		{
 
@@ -3253,8 +3136,7 @@ class AttributeCaseLog extends AttributeLongText
 	public function GetSQLColumns($bFullSpec = false)
 	{
 		$aColumns = array();
-		$aColumns[$this->GetCode()] = 'LONGTEXT' // 2^32 (4 Gb)
-			.CMDBSource::GetSqlStringColumnDefinition();
+		$aColumns[$this->GetCode()] = 'LONGTEXT'; // 2^32 (4 Gb)
 		$aColumns[$this->GetCode().'_index'] = 'BLOB';
 		return $aColumns;
 	}
@@ -3325,14 +3207,10 @@ class AttributeCaseLog extends AttributeLongText
 
 	/**
 	 * Get various representations of the value, for insertion into a template (e.g. in Notifications)
-	 *
 	 * @param $value mixed The current value of the field
 	 * @param $sVerb string The verb specifying the representation of the value
 	 * @param $oHostObject DBObject The object
 	 * @param $bLocalize bool Whether or not to localize the value
-	 *
-	 * @return mixed
-	 * @throws \Exception
 	 */
 	public function GetForTemplate($value, $sVerb, $oHostObject = null, $bLocalize = true)
 	{
@@ -3484,10 +3362,7 @@ class AttributeEmailAddress extends AttributeString
 	public function GetAsHTML($sValue, $oHostObject = null, $bLocalize = true)
 	{
 		if (empty($sValue)) return '';
-
-		$sUrlDecorationClass = utils::GetConfig()->Get('email_decoration_class');
-
-		return '<a class="mailto" href="mailto:'.$sValue.'"><span class="text_decoration '.$sUrlDecorationClass.'"></span>'.parent::GetAsHTML($sValue).'</a>';
+		return '<a class="mailto" href="mailto:'.$sValue.'">'.parent::GetAsHTML($sValue).'</a>';
 	}
 }
 
@@ -3512,43 +3387,12 @@ class AttributeIPAddress extends AttributeString
 }
 
 /**
- * Specialization of a string: phone number
- *
- * @package	 iTopORM
- */
-class AttributePhoneNumber extends AttributeString
-{
-    public function GetValidationPattern()
-    {
-        return $this->GetOptional('validation_pattern', '^'.utils::GetConfig()->Get('phone_number_validation_pattern').'$');
-    }
-
-    static public function GetFormFieldClass()
-    {
-        return '\\Combodo\\iTop\\Form\\Field\\PhoneField';
-    }
-
-    public function GetAsHTML($sValue, $oHostObject = null, $bLocalize = true)
-    {
-        if (empty($sValue)) return '';
-
-        $sUrlDecorationClass = utils::GetConfig()->Get('phone_number_decoration_class');
-        $sUrlPattern = utils::GetConfig()->Get('phone_number_url_pattern');
-        $sUrl = sprintf($sUrlPattern, $sValue);
-
-        return '<a class="tel" href="'.$sUrl.'"><span class="text_decoration '.$sUrlDecorationClass.'"></span>'.parent::GetAsHTML($sValue).'</a>';
-    }
-}
-
-/**
  * Specialization of a string: OQL expression 
  *
  * @package	 iTopORM
  */
 class AttributeOQL extends AttributeText
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-
 	public function GetEditClass() {return "OQLExpression";}
 }
 
@@ -3559,7 +3403,6 @@ class AttributeOQL extends AttributeText
  */
 class AttributeTemplateString extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
 }
 
 /**
@@ -3569,7 +3412,6 @@ class AttributeTemplateString extends AttributeString
  */
 class AttributeTemplateText extends AttributeText
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
 }
 
 /**
@@ -3579,8 +3421,6 @@ class AttributeTemplateText extends AttributeText
  */
 class AttributeTemplateHTML extends AttributeText
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-
 	public function GetSQLColumns($bFullSpec = false)
 	{
 		$aColumns = array();
@@ -3615,8 +3455,6 @@ class AttributeTemplateHTML extends AttributeText
  */
 class AttributeEnum extends AttributeString
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_ENUM;
-
 	static public function ListExpectedParams()
 	{
 		return parent::ListExpectedParams();
@@ -3641,15 +3479,11 @@ class AttributeEnum extends AttributeString
 			// In particular, I had to remove unnecessary spaces to
 			// make sure that this string will match the field type returned by the DB
 			// (used to perform a comparison between the current DB format and the data model)
-			return "ENUM(".implode(",", $aValues).")"
-				.CMDBSource::GetSqlStringColumnDefinition()
-				.($bFullSpec ? $this->GetSQLColSpec() : '');
+			return "ENUM(".implode(",", $aValues).")".($bFullSpec ? $this->GetSQLColSpec() : '');
 		}
 		else
 		{
-			return "VARCHAR(255)"
-				.CMDBSource::GetSqlStringColumnDefinition()
-				.($bFullSpec ? " DEFAULT ''" : ""); // ENUM() is not an allowed syntax!
+			return "VARCHAR(255)".($bFullSpec ? " DEFAULT ''" : ""); // ENUM() is not an allowed syntax!
 		}
 	}
 	
@@ -3850,16 +3684,11 @@ class AttributeEnum extends AttributeString
 		$aLocalizedValues = array();
 		foreach ($aRawValues as $sKey => $sValue)
 		{
-			$aLocalizedValues[$sKey] = $this->GetValueLabel($sKey);
+			$aLocalizedValues[$sKey] = Str::pure2html($this->GetValueLabel($sKey));
 		}
   		return $aLocalizedValues;
   	}
-
-  	public function GetMaxSize()
-    {
-	    return null;
-    }
-
+  	
 	/**
 	 * An enum can be localized
 	 */	 	
@@ -4049,14 +3878,8 @@ class AttributeMetaEnum extends AttributeEnum
  */
 class AttributeDateTime extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_DATE_TIME;
-
 	static $oFormat = null;
-
-	/**
-	 *
-	 * @return DateTimeFormat
-	 */
+	
 	static public function GetFormat()
 	{
 		if (self::$oFormat == null)
@@ -4196,6 +4019,7 @@ class AttributeDateTime extends AttributeDBField
                 return parent::GetForTemplate($value, $sVerb, $oHostObject, $bLocalize);
                 break;
         }
+        return null;
     }
 
 	static public function ListExpectedParams()
@@ -4316,7 +4140,7 @@ class AttributeDateTime extends AttributeDBField
 			try
 			{
 				$oFormat = new DateTimeFormat($this->GetInternalFormat());
-				$oFormat->Parse($proposedValue);
+				$oTrash = $oFormat->Parse($proposedValue);
 			}
 			catch (Exception $e)
 			{
@@ -4331,9 +4155,16 @@ class AttributeDateTime extends AttributeDBField
 
 	public function ScalarToSQL($value)
 	{
-		if (empty($value))
+		if (is_null($value))
 		{	
 			return null;
+		}
+		elseif (empty($value))
+		{
+			// Make a valid date for MySQL. TO DO: support NULL as a literal value for fields that can be null.
+			// todo: this is NOT valid in strict mode (default setting for MySQL 5.7)
+			// todo: if to be kept, this should be overloaded for AttributeDate (0000-00-00)
+			return '0000-00-00 00:00:00';
 		}
 		return $value;
 	}
@@ -4375,7 +4206,7 @@ class AttributeDateTime extends AttributeDBField
 	 * does nothing special, and just calls the default (loose) operator
 	 * @param string $sSearchText The search string to analyze for smart patterns
 	 * @param FieldExpression The FieldExpression representing the atttribute code in this OQL query
-	 * @param array $aParams Values of the query parameters
+	 * @param Hash $aParams Values of the query parameters
 	 * @return Expression The search condition to be added (AND) to the current search
 	 */
 	public function GetSmartConditionExpression($sSearchText, FieldExpression $oField, &$aParams, $bParseSearchString = false)
@@ -4418,6 +4249,7 @@ class AttributeDateTime extends AttributeDBField
 
 			$sParamName2 = $oField->GetParent().'_'.$oField->GetName().'_2';
 			$oRightExpr = new VariableExpression($sParamName2);
+			$sOperator = $this->GetBasicFilterLooseOperator();
 			if ($bParseSearchString)
 			{
 				$aParams[$sParamName2] = $this->ParseSearchString($aMatches[2]);
@@ -4451,7 +4283,7 @@ class AttributeDateTime extends AttributeDBField
 			break;
 						
 			default:
-			$oNewCondition = parent::GetSmartConditionExpression($sSearchText, $oField, $aParams);
+			$oNewCondition = parent::GetSmartConditionExpression($sSearchText, $oField, $aParams, $bParseSearchString);
 
 		}
 
@@ -4507,7 +4339,8 @@ class AttributeDuration extends AttributeInteger
 	public static function FormatDuration($duration)
 	{
 		$aDuration = self::SplitDuration($duration);
-
+		$sResult = '';
+		
 		if ($duration < 60)
 		{
 			// Less than 1 min
@@ -4571,8 +4404,6 @@ class AttributeDuration extends AttributeInteger
  */
 class AttributeDate extends AttributeDateTime
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_DATE;
-
 	static $oDateFormat = null;
 	
 	static public function GetFormat()
@@ -4669,7 +4500,7 @@ class AttributeDeadline extends AttributeDateTime
 			{
 				$sDifference = Dict::Format('UI:DeadlineMissedBy_duration', self::FormatDuration(-$difference));
 			}
-			$sFormat = MetaModel::GetConfig()->Get('deadline_format');
+			$sFormat = MetaModel::GetConfig()->Get('deadline_format', '$difference$');
 			$sResult = str_replace(array('$date$', '$difference$'), array($sDate, $sDifference), $sFormat);
 		}
 
@@ -4681,7 +4512,8 @@ class AttributeDeadline extends AttributeDateTime
 		$days = floor($duration / 86400);
 		$hours = floor(($duration - (86400*$days)) / 3600);
 		$minutes = floor(($duration - (86400*$days + 3600*$hours)) / 60);
-
+		$sResult = '';
+		
 		if ($duration < 60)
 		{
 			// Less than 1 min
@@ -4716,33 +4548,6 @@ class AttributeDeadline extends AttributeDateTime
  */
 class AttributeExternalKey extends AttributeDBFieldVoid
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_EXTERNAL_KEY;
-
-
-	/**
-	 * Return the search widget type corresponding to this attribute
-	 *
-	 * @return string
-	 */
-	public function GetSearchType()
-	{
-		try
-		{
-			$oRemoteAtt = $this->GetFinalAttDef();
-			$sTargetClass = $oRemoteAtt->GetTargetClass();
-			if (MetaModel::IsHierarchicalClass($sTargetClass))
-			{
-				return self::SEARCH_WIDGET_TYPE_HIERARCHICAL_KEY;
-			}
-			return self::SEARCH_WIDGET_TYPE_EXTERNAL_KEY;
-		}
-		catch (CoreException $e)
-		{
-		}
-
-		return self::SEARCH_WIDGET_TYPE_RAW;
-	}
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("targetclass", "is_null_allowed", "on_target_delete"));
@@ -4822,11 +4627,6 @@ class AttributeExternalKey extends AttributeDBFieldVoid
 		return $oSet;
 	}
 
-	public function GetAllowedValuesAsFilter($aArgs = array(), $sContains = '', $iAdditionalValue = null)
-	{
-		return DBObjectSearch::FromOQL($this->GetValuesDef()->GetFilterExpression());
-	}
-
 	public function GetDeletionPropagationOption()
 	{
 		return $this->Get("on_target_delete");
@@ -4868,7 +4668,6 @@ class AttributeExternalKey extends AttributeDBFieldVoid
 	/**
 	 * Find the corresponding "link" attribute on the target class, if any
 	 * @return null | AttributeDefinition
-	 * @throws \CoreException
 	 */
 	public function GetMirrorLinkAttribute()
 	{
@@ -4949,8 +4748,6 @@ class AttributeExternalKey extends AttributeDBFieldVoid
  */
 class AttributeHierarchicalKey extends AttributeExternalKey
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_HIERARCHICAL_KEY;
-
 	protected $m_sTargetClass;
 
 	static public function ListExpectedParams()
@@ -5030,12 +4827,18 @@ class AttributeHierarchicalKey extends AttributeExternalKey
 
 	public function GetAllowedValues($aArgs = array(), $sContains = '')
 	{
-		$oFilter = $this->GetHierachicalFilter($aArgs, $sContains);
-		if ($oFilter)
+		if (array_key_exists('this', $aArgs))
 		{
-			$oValSetDef = $this->GetValuesDef();
-			$oValSetDef->AddCondition($oFilter);
-			return $oValSetDef->GetValues($aArgs, $sContains);
+			// Hierarchical keys have one more constraint: the "parent value" cannot be
+			// "under" themselves
+			$iRootId = $aArgs['this']->GetKey();
+			if ($iRootId > 0) // ignore objects that do no exist in the database...
+			{
+				$oValSetDef = $this->GetValuesDef();
+				$sClass = $this->m_sTargetClass;
+				$oFilter = DBObjectSearch::FromOQL("SELECT $sClass AS node JOIN $sClass AS root ON node.".$this->GetCode()." NOT BELOW root.id WHERE root.id = $iRootId");
+				$oValSetDef->AddCondition($oFilter);
+			}
 		}
 		else
 		{
@@ -5046,27 +4849,6 @@ class AttributeHierarchicalKey extends AttributeExternalKey
 	public function GetAllowedValuesAsObjectSet($aArgs = array(), $sContains = '', $iAdditionalValue = null)
 	{
 		$oValSetDef = $this->GetValuesDef();
-		$oFilter = $this->GetHierachicalFilter($aArgs, $sContains, $iAdditionalValue);
-		if ($oFilter)
-		{
-			$oValSetDef->AddCondition($oFilter);
-		}
-		$oSet = $oValSetDef->ToObjectSet($aArgs, $sContains, $iAdditionalValue);
-		return $oSet;
-	}
-
-	public function GetAllowedValuesAsFilter($aArgs = array(), $sContains = '', $iAdditionalValue = null)
-	{
-		$oFilter = $this->GetHierachicalFilter($aArgs, $sContains, $iAdditionalValue);
-		if ($oFilter)
-		{
-			return $oFilter;
-		}
-		return parent::GetAllowedValuesAsFilter($aArgs, $sContains, $iAdditionalValue);
-	}
-
-	private function GetHierachicalFilter($aArgs = array(), $sContains = '', $iAdditionalValue = null)
-	{
 		if (array_key_exists('this', $aArgs))
 		{
 			// Hierarchical keys have one more constraint: the "parent value" cannot be
@@ -5074,11 +4856,14 @@ class AttributeHierarchicalKey extends AttributeExternalKey
 			$iRootId = $aArgs['this']->GetKey();
 			if ($iRootId > 0) // ignore objects that do no exist in the database...
 			{
+				$aValuesSetDef = $this->GetValuesDef();
 				$sClass = $this->m_sTargetClass;
-				return DBObjectSearch::FromOQL("SELECT $sClass AS node JOIN $sClass AS root ON node.".$this->GetCode()." NOT BELOW root.id WHERE root.id = $iRootId");
+				$oFilter = DBObjectSearch::FromOQL("SELECT $sClass AS node JOIN $sClass AS root ON node.".$this->GetCode()." NOT BELOW root.id WHERE root.id = $iRootId");
+				$oValSetDef->AddCondition($oFilter);
 			}
 		}
-		return false;
+		$oSet = $oValSetDef->ToObjectSet($aArgs, $sContains, $iAdditionalValue);
+		return $oSet;
 	}
 
 	/**
@@ -5098,38 +4883,6 @@ class AttributeHierarchicalKey extends AttributeExternalKey
  */
 class AttributeExternalField extends AttributeDefinition
 {
-	/**
-	 * Return the search widget type corresponding to this attribute
-	 *
-	 * @return string
-	 */
-	public function GetSearchType()
-	{
-		// Not necessary the external key is already present
-		if ($this->IsFriendlyName())
-		{
-			return self::SEARCH_WIDGET_TYPE_RAW;
-		}
-
-		try
-		{
-			$oRemoteAtt = $this->GetFinalAttDef();
-			switch (true)
-			{
-				case ($oRemoteAtt instanceof AttributeString):
-					return self::SEARCH_WIDGET_TYPE_EXTERNAL_FIELD;
-				case ($oRemoteAtt instanceof AttributeExternalKey):
-					return self::SEARCH_WIDGET_TYPE_EXTERNAL_KEY;
-			}
-		}
-		catch (CoreException $e)
-		{
-		}
-
-		return self::SEARCH_WIDGET_TYPE_RAW;
-	}
-
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("extkey_attcode", "target_attcode"));
@@ -5181,23 +4934,6 @@ class AttributeExternalField extends AttributeDefinition
 		}
 		return $sLabel;
 	}
-
-	public function GetLabelForSearchField()
-	{
-		$sLabel = parent::GetLabel('');
-		if (strlen($sLabel) == 0)
-		{
-			$sKeyAttCode = $this->Get("extkey_attcode");
-			$oExtKeyAttDef = MetaModel::GetAttributeDef($this->GetHostClass(), $sKeyAttCode);
-			$sLabel = $oExtKeyAttDef->GetLabel($this->m_sCode);
-
-			$oRemoteAtt = $this->GetExtAttDef();
-			$sLabel .= '->'.$oRemoteAtt->GetLabel($this->m_sCode);
-		}
-
-		return $sLabel;
-	}
-
 	public function GetDescription($sDefault = null)
 	{
 		$sLabel = parent::GetDescription('');
@@ -5238,7 +4974,6 @@ class AttributeExternalField extends AttributeDefinition
 
 	/**
 	 * @return bool
-	 * @throws \CoreException
 	 */
 	public function IsFriendlyName()
 	{
@@ -5460,12 +5195,7 @@ class AttributeURL extends AttributeString
 		return array_merge(parent::ListExpectedParams(), array("target"));
 	}
 
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return "VARCHAR(2048)"
-			.CMDBSource::GetSqlStringColumnDefinition()
-			.($bFullSpec ? $this->GetSQLColSpec() : '');
-	}
+	protected function GetSQLCol($bFullSpec = false) {return "VARCHAR(2048)".($bFullSpec ? $this->GetSQLColSpec() : '');}
 
 	public function GetMaxSize()
 	{
@@ -5519,8 +5249,6 @@ class AttributeURL extends AttributeString
  */
 class AttributeBlob extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("depends_on"));
@@ -5640,14 +5368,20 @@ class AttributeBlob extends AttributeDefinition
 	{
 		$aColumns = array();
 		$aColumns[$this->GetCode().'_data'] = 'LONGBLOB'; // 2^32 (4 Gb)
-		$aColumns[$this->GetCode().'_mimetype'] = 'VARCHAR(255)'.CMDBSource::GetSqlStringColumnDefinition();
-		$aColumns[$this->GetCode().'_filename'] = 'VARCHAR(255)'.CMDBSource::GetSqlStringColumnDefinition();
+		$aColumns[$this->GetCode().'_mimetype'] = 'VARCHAR(255)';
+		$aColumns[$this->GetCode().'_filename'] = 'VARCHAR(255)';
 		return $aColumns;
 	}
 
 	public function GetFilterDefinitions()
 	{
 		return array();
+		// still not working... see later...
+		return array(
+			$this->GetCode().'->filename' => new FilterFromAttribute($this, '_filename'),
+			$this->GetCode().'_mimetype' => new FilterFromAttribute($this, '_mimetype'),
+			$this->GetCode().'_mimetype' => new FilterFromAttribute($this, '_mimetype')
+		);
 	}
 
 	public function GetBasicFilterOperators()
@@ -5670,7 +5404,6 @@ class AttributeBlob extends AttributeDefinition
 		{
 			return $value->GetAsHTML();
 		}
-		return '';
 	}
 
 	public function GetAsCSV($sValue, $sSeparator = ',', $sTextQualifier = '"', $oHostObject = null, $bLocalize = true, $bConvertToPlainText = false)
@@ -5810,10 +5543,10 @@ class AttributeImage extends AttributeBlob
 	
 	public function GetAsHTML($value, $oHostObject = null, $bLocalize = true)
 	{
-		$iMaxWidthPx = $this->Get('display_max_width').'px';
-		$iMaxHeightPx = $this->Get('display_max_height').'px';
+		$iMaxWidthPx = $this->Get('display_max_width');
+		$iMaxHeightPx = $this->Get('display_max_height');
 		$sUrl = $this->Get('default_image');
-		$sRet = ($sUrl !== null) ? '<img src="'.$sUrl.'" style="max-width: '.$iMaxWidthPx.'; max-height: '.$iMaxHeightPx.'">' : '';
+		$sRet = ($sUrl !== null) ? '<img src="'.$sUrl.'" style="max-width: '.$iMaxWidthPx.'px; max-height: '.$iMaxHeightPx.'px">' : '';
 		if (is_object($value) && !$value->IsEmpty())
 		{
 			if ($oHostObject->IsNew() || ($oHostObject->IsModified() && (array_key_exists($this->GetCode(), $oHostObject->ListChanges()))))
@@ -5826,9 +5559,9 @@ class AttributeImage extends AttributeBlob
 			{
 				$sUrl = $value->GetDownloadURL(get_class($oHostObject), $oHostObject->GetKey(), $this->GetCode());
 			}
-			$sRet = '<img src="'.$sUrl.'" style="max-width: '.$iMaxWidthPx.'; max-height: '.$iMaxHeightPx.'">';
+			$sRet = '<img src="'.$sUrl.'" style="max-width: '.$iMaxWidthPx.'px; max-height: '.$iMaxHeightPx.'px">';
 		}
-		return '<div class="view-image" style="width: '.$iMaxWidthPx.'; height: '.$iMaxHeightPx.';"><span class="helper-middle"></span>'.$sRet.'</div>';
+		return '<div class="view-image" style="width: '.$iMaxWidthPx.'px; height: '.$iMaxHeightPx.'px;"><span class="helper-middle"></span>'.$sRet.'</div>';
 	}
 
     static public function GetFormFieldClass()
@@ -5843,8 +5576,6 @@ class AttributeImage extends AttributeBlob
  */
 class AttributeStopWatch extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		// The list of thresholds must be an array of iPercent => array of 'option' => value
@@ -5967,6 +5698,7 @@ class AttributeStopWatch extends AttributeDefinition
 			self::DateToSeconds($aCols[$sPrefix.'_stopped'])
 		);
 
+		$aThresholds = array();
 		foreach ($this->ListThresholds() as $iThreshold => $aDefinition)
 		{
 			$sThPrefix = '_'.$iThreshold;
@@ -6070,7 +5802,6 @@ class AttributeStopWatch extends AttributeDefinition
 		{
 			return $value->GetAsHTML($this, $oHostObject);
 		}
-		return '';
 	}
 
 	public function GetAsCSV($value, $sSeparator = ',', $sTextQualifier = '"', $oHostObject = null, $bLocalize = true, $bConvertToPlainText = false)
@@ -6513,8 +6244,6 @@ class AttributeStopWatch extends AttributeDefinition
  */
 class AttributeSubItem extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array('target_attcode', 'item_code'));
@@ -6681,8 +6410,6 @@ class AttributeSubItem extends AttributeDefinition
  */
 class AttributeOneWayPassword extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("depends_on"));
@@ -6779,7 +6506,7 @@ class AttributeOneWayPassword extends AttributeDefinition
 	public function GetImportColumns()
 	{
 		$aColumns = array();
-		$aColumns[$this->GetCode()] = 'TINYTEXT'.CMDBSource::GetSqlStringColumnDefinition();
+		$aColumns[$this->GetCode()] = 'TINYTEXT';
 		return $aColumns;
 	}
 
@@ -6823,7 +6550,6 @@ class AttributeOneWayPassword extends AttributeDefinition
 		{
 			return $value->GetAsHTML();
 		}
-		return '';
 	}
 
 	public function GetAsCSV($sValue, $sSeparator = ',', $sTextQualifier = '"', $oHostObject = null, $bLocalize = true, $bConvertToPlainText = false)
@@ -6847,14 +6573,8 @@ class AttributeOneWayPassword extends AttributeDefinition
 // Indexed array having two dimensions
 class AttributeTable extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	public function GetEditClass() {return "Table";}
-
-	protected function GetSQLCol($bFullSpec = false)
-	{
-		return "LONGTEXT".CMDBSource::GetSqlStringColumnDefinition();
-	}
+	protected function GetSQLCol($bFullSpec = false) {return "LONGTEXT";}
 
 	public function GetMaxSize()
 	{
@@ -7078,9 +6798,6 @@ class AttributePropertySet extends AttributeTable
  */
 class AttributeFriendlyName extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_STRING;
-	public $m_sValue;
-
 	public function __construct($sCode)
 	{
 		$this->m_sCode = $sCode;
@@ -7247,8 +6964,6 @@ class AttributeFriendlyName extends AttributeDefinition
  */
 class AttributeRedundancySettings extends AttributeDBField
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return array('sql', 'relation_code', 'from_class', 'neighbour_id', 'enabled', 'enabled_mode', 'min_up', 'min_up_type', 'min_up_mode');
@@ -7260,9 +6975,7 @@ class AttributeRedundancySettings extends AttributeDBField
 	public function GetEditClass() {return "RedundancySetting";}
 	protected function GetSQLCol($bFullSpec = false)
 	{
-		return "VARCHAR(20)"
-			.CMDBSource::GetSqlStringColumnDefinition()
-			.($bFullSpec ? $this->GetSQLColSpec() : '');
+		return "VARCHAR(20)".($bFullSpec ? $this->GetSQLColSpec() : '');
 	}
 
 
@@ -7335,16 +7048,12 @@ class AttributeRedundancySettings extends AttributeDBField
 				}
 			}
 		}
-		return array();
 	}
 
 	/**
 	 * Find the user option label
-	 *
-	 * @param user option : disabled|cout|percent
-	 *
-	 * @return string
-	 */
+	 * @param user option : disabled|cout|percent	 	
+	 */	
 	public function GetUserOptionFormat($sUserOption, $sDefault = null)
 	{
 		$sLabel = $this->SearchLabel('/Attribute:'.$this->m_sCode.'/'.$sUserOption, null, true /*user lang*/);
@@ -7594,7 +7303,7 @@ class AttributeRedundancySettings extends AttributeDBField
 			$sOptionName = $sHtmlNamesPrefix.'_user_option';
 			$sOptionId = $sOptionName.'_'.$sUserOption;
 			$sChecked = $bSelected ? 'checked' : '';
-			$sRet = '<input type="radio" name="'.$sOptionName.'" id="'.$sOptionId.'" value="'.$sUserOption.'" '.$sChecked.'> <label for="'.$sOptionId.'">'.$sLabel.'</label>';
+			$sRet = '<input type="radio" name="'.$sOptionName.'" id="'.$sOptionId.'" value="'.$sUserOption.'"'.$sChecked.'> <label for="'.$sOptionId.'">'.$sLabel.'</label>';
 		}
 		else
 		{
@@ -7643,8 +7352,6 @@ class AttributeRedundancySettings extends AttributeDBField
  */
 class AttributeCustomFields extends AttributeDefinition
 {
-	const SEARCH_WIDGET_TYPE = self::SEARCH_WIDGET_TYPE_RAW;
-
 	static public function ListExpectedParams()
 	{
 		return array_merge(parent::ListExpectedParams(), array("handler_class"));
@@ -7746,9 +7453,7 @@ class AttributeCustomFields extends AttributeDefinition
 
 	/**
 	 * @param DBObject $oHostObject
-	 * @param null $sFormPrefix
 	 * @return Combodo\iTop\Form\Form
-	 * @throws \Exception
 	 */
 	public function GetForm(DBObject $oHostObject, $sFormPrefix = null)
 	{
@@ -7817,7 +7522,7 @@ class AttributeCustomFields extends AttributeDefinition
 
 	/**
 	 * The part of the current attribute in the object's signature, for the supplied value
-	 * @param ormCustomFieldsValue $value The value of this attribute for the object
+	 * @param $value The value of this attribute for the object
 	 * @return string The "signature" for this field/attribute
 	 */
 	public function Fingerprint($value)
@@ -7864,8 +7569,6 @@ class AttributeCustomFields extends AttributeDefinition
 	/**
 	 * Cleanup data upon object deletion (object id still available here)
 	 * @param DBObject $oHostObject
-	 * @return
-	 * @throws \CoreException
 	 */
 	public function DeleteValue(DBObject $oHostObject)
 	{
@@ -7927,13 +7630,10 @@ class AttributeCustomFields extends AttributeDefinition
 
 	/**
 	 * Get various representations of the value, for insertion into a template (e.g. in Notifications)
-	 *
 	 * @param $value mixed The current value of the field
 	 * @param $sVerb string The verb specifying the representation of the value
 	 * @param $oHostObject DBObject The object
 	 * @param $bLocalize bool Whether or not to localize the value
-	 *
-	 * @return string
 	 */
 	public function GetForTemplate($value, $sVerb, $oHostObject = null, $bLocalize = true)
 	{
@@ -8061,6 +7761,11 @@ class AttributeObsolescenceFlag extends AttributeBoolean
 	public function GetSQLExpressions($sPrefix = '')
 	{
 		return array();
+		if ($sPrefix == '')
+		{
+			$sPrefix = $this->GetCode(); // Warning AttributeComputedFieldVoid does not have any sql property
+		}
+		return array('' => $sPrefix);
 	}
 	public function GetSQLColumns($bFullSpec = false) {return array();} // returns column/spec pairs (1 in most of the cases), for STRUCTURING (DB creation)
 	public function GetSQLValues($value) {return array();} // returns column/value pairs (1 in most of the cases), for WRITING (Insert, Update)

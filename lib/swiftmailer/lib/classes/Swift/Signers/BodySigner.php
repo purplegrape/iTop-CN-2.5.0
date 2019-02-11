@@ -9,9 +9,11 @@
  */
 
 /**
- * Body Signer Interface used to apply Body-Based Signature to a message.
+ * Body Signer Interface used to apply Body-Based Signature to a message
  *
- * @author Xavier De Cock <xdecock@gmail.com>
+ * @package    Swift
+ * @subpackage Signatures
+ * @author     Xavier De Cock <xdecock@gmail.com>
  */
 interface Swift_Signers_BodySigner extends Swift_Signer
 {
@@ -20,12 +22,12 @@ interface Swift_Signers_BodySigner extends Swift_Signer
      *
      * @param Swift_Message $message
      *
-     * @return self
+     * @return Swift_Signers_BodySigner
      */
     public function signMessage(Swift_Message $message);
 
     /**
-     * Return the list of header a signer might tamper.
+     * Return the list of header a signer might tamper
      *
      * @return array
      */

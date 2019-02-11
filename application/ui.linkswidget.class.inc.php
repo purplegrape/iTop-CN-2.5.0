@@ -24,8 +24,8 @@
  * @license     http://opensource.org/licenses/AGPL-3.0
  */
 
-require_once(APPROOT.'application/webpage.class.inc.php');
-require_once(APPROOT.'application/displayblock.class.inc.php');
+require_once(APPROOT.'/application/webpage.class.inc.php');
+require_once(APPROOT.'/application/displayblock.class.inc.php');
 
 class UILinksWidget 
 {
@@ -39,21 +39,14 @@ class UILinksWidget
 	protected $m_sLinkedClass;
 	protected $m_sRemoteClass;
 	protected $m_bDuplicatesAllowed;
-	protected $m_aEditableFields;
-	protected $m_aTableConfig;
 
 	/**
 	 * UILinksWidget constructor.
-	 *
 	 * @param string $sClass
 	 * @param string $sAttCode
 	 * @param int $iInputId
 	 * @param string $sNameSuffix
 	 * @param bool $bDuplicatesAllowed
-	 *
-	 * @throws \CoreException
-	 * @throws \DictExceptionMissingString
-	 * @throws \Exception
 	 */
 	public function __construct($sClass, $sAttCode, $iInputId, $sNameSuffix = '', $bDuplicatesAllowed = false)
 	{
@@ -63,15 +56,12 @@ class UILinksWidget
 		$this->m_iInputId = $iInputId;
 		$this->m_bDuplicatesAllowed = $bDuplicatesAllowed;
 		$this->m_aEditableFields = array();
-
-		/** @var AttributeLinkedSetIndirect $oAttDef */
+			
 		$oAttDef = MetaModel::GetAttributeDef($this->m_sClass, $this->m_sAttCode);
 		$this->m_sLinkedClass = $oAttDef->GetLinkedClass();
 		$this->m_sExtKeyToRemote = $oAttDef->GetExtKeyToRemote();
 		$this->m_sExtKeyToMe = $oAttDef->GetExtKeyToMe();
-
-		/** @var AttributeExternalKey $oLinkingAttDef */
-		$oLinkingAttDef = MetaModel::GetAttributeDef($this->m_sLinkedClass, $this->m_sExtKeyToRemote);
+		$oLinkingAttDef = 	MetaModel::GetAttributeDef($this->m_sLinkedClass, $this->m_sExtKeyToRemote);
 		$this->m_sRemoteClass = $oLinkingAttDef->GetTargetClass();
 		$sExtKeyToMe = $oAttDef->GetExtKeyToMe();
 		$sStateAttCode = MetaModel::GetStateAttributeCode($this->m_sClass);
@@ -113,7 +103,6 @@ class UILinksWidget
 
 	/**
 	 * A one-row form for editing a link record
-	 *
 	 * @param WebPage $oP Web page used for the ouput
 	 * @param DBObject $oLinkedObj Remote object
 	 * @param mixed $linkObjOrId Either the object linked or a unique number for new link records to add
@@ -121,12 +110,7 @@ class UILinksWidget
 	 * @param DBObject $oCurrentObj The object to which all the elements of the linked set refer to
 	 * @param int $iUniqueId A unique identifier of new links
 	 * @param boolean $bReadOnly Display link as editable or read-only. Default is false (editable)
-	 *
 	 * @return array The HTML fragment of the one-row form
-	 * @throws \ArchivedObjectException
-	 * @throws \CoreException
-	 * @throws \CoreUnexpectedValue
-	 * @throws \Exception
 	 */
 	protected function GetFormRow(WebPage $oP, DBObject $oLinkedObj, $linkObjOrId, $aArgs, $oCurrentObj, $iUniqueId, $bReadOnly = false)
 	{
@@ -317,17 +301,12 @@ EOF
 
 	/**
 	 * Get the HTML fragment corresponding to the linkset editing widget
-	 *
 	 * @param WebPage $oPage
 	 * @param DBObject|ormLinkSet $oValue
 	 * @param array $aArgs Extra context arguments
 	 * @param string $sFormPrefix prefix of the fields in the current form
 	 * @param DBObject $oCurrentObj the current object to which the linkset is related
-	 *
 	 * @return string The HTML fragment to be inserted into the page
-	 * @throws \ArchivedObjectException
-	 * @throws \CoreException
-	 * @throws \DictExceptionMissingString
 	 */
 	public function Display(WebPage $oPage, $oValue, $aArgs = array(), $sFormPrefix, $oCurrentObj)
 	{
@@ -385,21 +364,16 @@ EOF
 	/**
 	 * @param string $sClass
 	 * @param string $sAttCode
-	 *
 	 * @return string
-	 * @throws \Exception
 	 */
 	protected static function GetTargetClass($sClass, $sAttCode)
 	{
-		/** @var AttributeLinkedSet $oAttDef */
 		$oAttDef = MetaModel::GetAttributeDef($sClass, $sAttCode);
 		$sLinkedClass = $oAttDef->GetLinkedClass();
 		$sTargetClass = '';
 		switch(get_class($oAttDef))
 		{
 			case 'AttributeLinkedSetIndirect':
-			/** @var AttributeExternalKey $oLinkingAttDef */
-			/** @var AttributeLinkedSetIndirect $oAttDef */
 			$oLinkingAttDef = 	MetaModel::GetAttributeDef($sLinkedClass, $oAttDef->GetExtKeyToRemote());
 			$sTargetClass = $oLinkingAttDef->GetTargetClass();
 			break;
@@ -415,56 +389,21 @@ EOF
 	/**
 	 * @param WebPage $oPage
 	 * @param DBObject $oCurrentObj
-	 * @param $sJson
-	 * @param array $aAlreadyLinkedIds
-	 *
-	 * @throws DictExceptionMissingString
-	 * @throws Exception
 	 */
-	public function GetObjectPickerDialog($oPage, $oCurrentObj, $sJson, $aAlreadyLinkedIds = array(), $aPrefillFormParam = array())
+	public function GetObjectPickerDialog($oPage, $oCurrentObj)
 	{
+		$bOpen = MetaModel::GetConfig()->Get('legacy_search_drawer_open') || utils::IsHighCardinality($this->m_sRemoteClass);
 		$sHtml = "<div class=\"wizContainer\" style=\"vertical-align:top;\">\n";
-
-		$oAlreadyLinkedFilter = new DBObjectSearch($this->m_sRemoteClass);
-		if (!$this->m_bDuplicatesAllowed && count($aAlreadyLinkedIds) > 0)
-		{
-			$oAlreadyLinkedFilter->AddCondition('id', $aAlreadyLinkedIds, 'NOTIN');
-			$oAlreadyLinkedExpression = $oAlreadyLinkedFilter->GetCriteria();
-			$sAlreadyLinkedExpression = $oAlreadyLinkedExpression->Render();
-		}
-		else
-		{
-			$sAlreadyLinkedExpression = '';
-		}
-
 		$oFilter = new DBObjectSearch($this->m_sRemoteClass);
-
-		if(!empty($oCurrentObj))
-		{
-			$this->SetSearchDefaultFromContext($oCurrentObj, $oFilter);
-			$aPrefillFormParam['filter'] = $oFilter;
-			$aPrefillFormParam['dest_class'] = $this->m_sRemoteClass;
-			$oCurrentObj->PrefillForm('search', $aPrefillFormParam);
-		}
+		$this->SetSearchDefaultFromContext($oCurrentObj, $oFilter);
 		$oBlock = new DisplayBlock($oFilter, 'search', false);
-		$sHtml .= $oBlock->GetDisplay($oPage, "SearchFormToAdd_{$this->m_sAttCode}{$this->m_sNameSuffix}",
-			array(
-				'menu' => false,
-				'result_list_outer_selector' => "SearchResultsToAdd_{$this->m_sAttCode}{$this->m_sNameSuffix}",
-				'table_id' => 'add_'.$this->m_sAttCode,
-				'table_inner_id' => "ResultsToAdd_{$this->m_sAttCode}{$this->m_sNameSuffix}",
-				'selection_mode' => true,
-				'json' => $sJson,
-				'cssCount' => '#count_'.$this->m_sAttCode.$this->m_sNameSuffix,
-				'query_params' => $oFilter->GetInternalParams(),
-				'hidden_criteria' => $sAlreadyLinkedExpression,
-			));
-		$sHtml .= "<form id=\"ObjectsAddForm_{$this->m_sAttCode}{$this->m_sNameSuffix}\">\n";
+		$sHtml .= $oBlock->GetDisplay($oPage, "SearchFormToAdd_{$this->m_sAttCode}{$this->m_sNameSuffix}", array('open' => $bOpen));
+		$sHtml .= "<form id=\"ObjectsAddForm_{$this->m_sAttCode}{$this->m_sNameSuffix}\" OnSubmit=\"return oWidget{$this->m_iInputId}.DoAddObjects(this.id);\">\n";
 		$sHtml .= "<div id=\"SearchResultsToAdd_{$this->m_sAttCode}{$this->m_sNameSuffix}\" style=\"vertical-align:top;background: #fff;height:100%;overflow:auto;padding:0;border:0;\">\n";
 		$sHtml .= "<div style=\"background: #fff; border:0; text-align:center; vertical-align:middle;\"><p>".Dict::S('UI:Message:EmptyList:UseSearchForm')."</p></div>\n";
 		$sHtml .= "</div>\n";
 		$sHtml .= "<input type=\"hidden\" id=\"count_{$this->m_sAttCode}{$this->m_sNameSuffix}\" value=\"0\"/>";
-		$sHtml .= "<input type=\"button\" value=\"".Dict::S('UI:Button:Cancel')."\" onClick=\"$('#dlg_{$this->m_sAttCode}{$this->m_sNameSuffix}').dialog('close');\">&nbsp;&nbsp;<input id=\"btn_ok_{$this->m_sAttCode}{$this->m_sNameSuffix}\" disabled=\"disabled\" type=\"button\" onclick=\"return oWidget{$this->m_iInputId}.DoAddObjects(this.id);\" value=\"".Dict::S('UI:Button:Add')."\">";
+		$sHtml .= "<input type=\"button\" value=\"".Dict::S('UI:Button:Cancel')."\" onClick=\"$('#dlg_{$this->m_sAttCode}{$this->m_sNameSuffix}').dialog('close');\">&nbsp;&nbsp;<input id=\"btn_ok_{$this->m_sAttCode}{$this->m_sNameSuffix}\" disabled=\"disabled\" type=\"submit\" value=\"".Dict::S('UI:Button:Add')."\">";
 		$sHtml .= "</div>\n";
 		$sHtml .= "</form>\n";
 		$oPage->add($sHtml);
@@ -476,17 +415,11 @@ EOF
 
 	/**
 	 * Search for objects to be linked to the current object (i.e "remote" objects)
-	 *
 	 * @param WebPage $oP The page used for the output (usually an AjaxWebPage)
-	 * @param string $sRemoteClass Name of the "remote" class to perform the search on, must be a derived class of
-	 *     m_sRemoteClass
-	 * @param array $aAlreadyLinkedIds List of IDs of objects of "remote" class already linked, to be filtered out of
-	 *     the search
-	 *
-	 * @throws \CoreException
-	 * @throws \Exception
+	 * @param string $sRemoteClass Name of the "remote" class to perform the search on, must be a derived class of m_sRemoteClass
+	 * @param Array $aAlreadyLinkedIds List of IDs of objects of "remote" class already linked, to be filtered out of the search
 	 */
-	public function SearchObjectsToAdd(WebPage $oP, $sRemoteClass = '', $aAlreadyLinkedIds = array(), $oCurrentObj = null)
+	public function SearchObjectsToAdd(WebPage $oP, $sRemoteClass = '', $aAlreadyLinkedIds = array())
 	{
 		if ($sRemoteClass != '')
 		{
@@ -502,7 +435,6 @@ EOF
 		{
 			$oFilter->AddCondition('id', $aAlreadyLinkedIds, 'NOTIN');
 		}
-		$this->SetSearchDefaultFromContext($oCurrentObj, $oFilter);
 		$oBlock = new DisplayBlock($oFilter, 'list', false);
 		$oBlock->Display($oP, "ResultsToAdd_{$this->m_sAttCode}", array('menu' => false, 'cssCount'=> '#count_'.$this->m_sAttCode.$this->m_sNameSuffix , 'selection_mode' => true, 'table_id' => 'add_'.$this->m_sAttCode)); // Don't display the 'Actions' menu on the results
 	}
@@ -512,9 +444,6 @@ EOF
 	 * @param int $iMaxAddedId
 	 * @param $oFullSetFilter
 	 * @param DBObject $oCurrentObj
-	 *
-	 * @throws \ArchivedObjectException
-	 * @throws \CoreException
 	 */
 	public function DoAddObjects(WebPage $oP, $iMaxAddedId, $oFullSetFilter, $oCurrentObj)
 	{
@@ -536,15 +465,11 @@ EOF
 			}
 		}
 	}
-
+	
 	/**
 	 * Initializes the default search parameters based on 1) a 'current' object and 2) the silos defined by the context
-	 *
 	 * @param DBObject $oSourceObj
 	 * @param DBSearch|DBObjectSearch $oSearch
-	 *
-	 * @throws \CoreException
-	 * @throws \Exception
 	 */
 	protected function SetSearchDefaultFromContext($oSourceObj, &$oSearch)
 	{
@@ -576,31 +501,7 @@ EOF
 	
 				if (MetaModel::IsValidAttCode($sDestClass, $sAttCode) && !empty($defaultValue))
 				{
-					// Add Hierarchical condition if hierarchical key
-					$oAttDef = MetaModel::GetAttributeDef($sDestClass, $sAttCode);
-					if (isset($oAttDef) && ($oAttDef->IsExternalKey()))
-					{
-						try
-						{
-							/** @var AttributeExternalKey $oAttDef */
-							$sTargetClass = $oAttDef->GetTargetClass();
-							$sHierarchicalKeyCode = MetaModel::IsHierarchicalClass($sTargetClass);
-							if ($sHierarchicalKeyCode !== false)
-							{
-								$oFilter = new DBObjectSearch($sTargetClass);
-								$oFilter->AddCondition('id', $defaultValue);
-								$oHKFilter = new DBObjectSearch($sTargetClass);
-								$oHKFilter->AddCondition_PointingTo($oFilter, $sHierarchicalKeyCode, TREE_OPERATOR_BELOW);
-								$oSearch->AddCondition_PointingTo($oHKFilter, $sAttCode);
-							}
-						} catch (Exception $e)
-						{
-						}
-					}
-					else
-					{
-						$oSearch->AddCondition($sAttCode, $defaultValue);
-					}
+					$oSearch->AddCondition($sAttCode, $defaultValue);
 				}
 			}
 		}

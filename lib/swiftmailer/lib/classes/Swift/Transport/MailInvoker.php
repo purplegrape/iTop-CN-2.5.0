@@ -11,6 +11,8 @@
 /**
  * This interface intercepts calls to the mail() function.
  *
+ * @package    Swift
+ * @subpackage Transport
  * @author     Chris Corbyn
  */
 interface Swift_Transport_MailInvoker

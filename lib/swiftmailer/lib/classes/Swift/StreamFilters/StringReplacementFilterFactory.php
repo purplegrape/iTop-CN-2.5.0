@@ -11,7 +11,8 @@
 /**
  * Creates filters for replacing needles in a string buffer.
  *
- * @author Chris Corbyn
+ * @package Swift
+ * @author  Chris Corbyn
  */
 class Swift_StreamFilters_StringReplacementFilterFactory implements Swift_ReplacementFilterFactory
 {

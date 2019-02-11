@@ -144,17 +144,12 @@ footer{
 		text-align: center;
 	}
 	#sidebar .logo img{
-		width: 40%;
-		max-width: 100%;
-	}
-
-	/* Main content */
-	#main-wrapper{
-		margin-top: 20px;
-	}
+	width: 40%;
+	max-width: 100%;
+}
 }
 @media (min-width: 992px){
-
+	
 }
 /* Warning : Not a offical BS breakpoint */
 @media (min-width: 1600px){
@@ -167,18 +162,24 @@ footer{
 	}
 }
 
+/* Main content */
+@media (min-width: 768px) {
+	#main-wrapper{
+		margin-top: 20px;
+	}
+}
 
 /* Overlays*/
 .global_overlay{
 	z-index: 9999;
-	display: none;
-	position: fixed;
-	top: 0px;
-	left: 0px;
-	width: 100%;
-	height: 100%;
-	background-color: black;
-	opacity: 0.5;
+    display: none;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.5;
 }
 #page_overlay .overlay_content{
 	margin-top: 20em;
@@ -219,15 +220,15 @@ footer{
 	display: -moz-box;
 	display: -ms-flexbox;
 	display: -webkit-flex;
-	display: flex;
-
+	display: flex; 
+  
 	/* Align the bootstrap's container vertically */
 	-webkit-box-align : center;
 	-webkit-align-items : center;
 	-moz-box-align : center;
 	-ms-flex-align : center;
 	align-items : center;
-
+  
 	/* Also 'margin: 0 auto' doesn't have any effect on flex items in such web browsers
 	hence the bootstrap's container won't be aligned to the center anymore.
   
@@ -336,10 +337,10 @@ footer{
 	padding: 0em 1em;
 	min-height: 4em;
 	background-color: $white;
-	background-image: none;
-	border: none;
+    background-image: none;
+    border: none;
 	border-radius: 0px;
-	text-align: center;
+    text-align: center;
 	text-decoration: none;
 	white-space: normal;
 	line-height: 4em;
@@ -352,46 +353,11 @@ footer{
 }
 .home .tile .tile_title{
 	font-weight: bold;
-	color: $gray;
+	color: #333;
 }
-
-.home .tile .tile_title > span.icon {
-	color: $combodo-orange;
-}
-
 .home .tile .tile_description{
 	display: none;
 	color: #555555;
-}
-
-
-/**********************************/
-/* ManageBrick badge tile display */
-/**********************************/
-.home a.tile.tile_badge > div {
-	display: table;
-	width: 100%;
-}
-
-.home a.tile.tile_badge > div > div {
-	display: table-row;
-}
-
-.home a.tile.tile_badge > div > div > div {
-	display: table-cell;
-}
-
-@media (max-width: 768px) {
-	.home a.tile.tile_badge > div > div > div.tile_body div.tile_count {
-		position: absolute;
-		top: 0em;
-		right: 2em;
-		text-align: right;
-		font-size: 1.2em;
-	}
-	.home a.tile.tile_badge > div.tile_description {
-		display: none;
-	}
 }
 @media (min-width: 768px) {
 	.home .tile{
@@ -427,42 +393,6 @@ footer{
 		display: block;
 		text-align: left;
 	}
-
-	.home a.tile.tile_badge{
-		height: 10em;
-		overflow: hidden;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_decoration{
-		top: unset;
-		vertical-align: middle;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_decoration > span.icon {
-		font-size: 4em;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_body{
-		position: relative;
-		padding: 0;
-		margin: 0;
-		vertical-align: middle;
-		text-align: right;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_body .tile_title{
-		margin-top: 1em;
-		margin-bottom: 0;
-		font-size: 1em;
-		font-weight: normal;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_body .tile_count{
-		position: absolute;
-		top: 0;
-		right: 0;
-		font-size: 2em;
-		font-weight: bold;
-		color: $gray;
-	}
-	.home a.tile.tile_badge .tile_description{
-		display: none;
-	}
 }
 @media (min-width: 992px) {
 	.home .tile{
@@ -480,21 +410,6 @@ footer{
 	}
 	.home .tile .tile_description{
 		font-size: 1.2em;
-	}
-
-	.home a.tile.tile_badge > div > div > div.tile_body .tile_title{
-		font-size: 1.2em;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_body .tile_count{
-		font-size: 3em;
-	}
-	.home a.tile.tile_badge > div > div > div.tile_decoration > span.icon {
-		font-size: 4em;
-	}
-	.home a.tile.tile_badge .tile_description{
-		display: block;
-		font-size: 1em;
-		text-align: center;
 	}
 }
 @media (min-width: 1200px) {
@@ -518,10 +433,6 @@ footer{
 	}
 	.home .tile .tile_description{
 		font-size: 1.2em;
-	}
-
-	.home a.tile.tile_badge > div > div > div.tile_decoration > span.icon {
-		font-size: 6em;
 	}
 }
 
@@ -589,7 +500,7 @@ footer{
 /***********************/
 /* Home tile */
 .home .tile.tile_communication{
-	padding: 20px;
+    padding: 20px;
 	background-color: #EDEDED;
 	border: none;
 	font-weight: initial;
@@ -606,15 +517,15 @@ footer{
 #user-profile-wrapper .user_profile_picture .content_loader{
 	position: absolute;
 	z-index: 1;
-	top: 0;
-	left: 0;
-	padding-top: 4em;
-	width: 100%;
-	height: 100%;
+    top: 0;
+    left: 0;
+    padding-top: 4em;
+    width: 100%;
+    height: 100%;
 	text-align: center;
 	color: white;
-	background-color: black;
-	opacity: 0.5;
+    background-color: black;
+    opacity: 0.5;
 }
 #user-profile-wrapper .user_profile_picture .preview{
 	display: inline-block;
@@ -752,9 +663,9 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 
 #brick_content_empty{
 	display: none;
-	padding: 40px;
+    padding: 40px;
 	font-size: 1.3em;
-	font-style: italic;
+    font-style: italic;
 }
 
 /* Loader */
@@ -780,7 +691,7 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 /*   eg. .mosaic-item-layout-5 when just name and image         */
 /****************************************************************/
 #brick_content_mosaic{
-	position: relative;
+  	position: relative;
 	padding: 10px 10px 1px 10px;
 }
 /* Breadcrumb */
@@ -850,12 +761,12 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	right: 5px;
 }
 .mosaic-group-item-actions > a{
-	color: $white;
-	text-decoration: none;
+  color: $white;
+  text-decoration: none;
 }
 .mosaic-group-item-actions > a:hover,
 .mosaic-group-item-actions > a:focus{
-	color: #EEEEEE;
+  color: #EEEEEE;
 }
 
 @media (max-width: 768px) {
@@ -908,7 +819,7 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	}
 	.mosaic-item:hover,
 	.mosaic-item:focus{
-		background-color: $brand-primary;
+		background-color: $combodo-orange;
 		box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.20);
 	}
 
@@ -927,7 +838,6 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	}
 	.mosaic-item-description{
 		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 	/* Layout 1 */
 	.mosaic-item-layout-1 .mosaic-item-name{
@@ -944,19 +854,6 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 		max-height: 40px;
 		font-size: 10px;
 	}
-	/* Layout 5 & 7 */
-	.mosaic-item-layout-5 .mosaic-item-image,
-	.mosaic-item-layout-7 .mosaic-item-image{
-		display: table-cell;
-		width: 65px;
-		padding-left: 5px;
-		padding-right: 10px;
-	}
-	.mosaic-item-layout-5 .mosaic-item-image > img,
-	.mosaic-item-layout-7 .mosaic-item-image > img{
-		max-width: 65px; /* Equals parent element width */
-		max-height: 100px; /* Equals parent element height */
-	}
 }
 @media (min-width: 992px) {
 	.mosaic-item{
@@ -969,13 +866,14 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	/* Layout 5 & 7 */
 	.mosaic-item-layout-5 .mosaic-item-image,
 	.mosaic-item-layout-7 .mosaic-item-image{
+		display: table-cell;
 		width: 105px;
+		padding-left: 5px;
 		padding-right: 18px;
 	}
 	.mosaic-item-layout-5 .mosaic-item-image > img,
 	.mosaic-item-layout-7 .mosaic-item-image > img{
 		max-width: 105px; /* Equals parent element width */
-		max-height: 100px; /* Equals parent element height */
 	}
 	.mosaic-item-layout-5 .mosaic-item-name,
 	.mosaic-item-layout-7 .mosaic-item-name{
@@ -993,11 +891,6 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	.mosaic-item-text .mosaic-item-text-wrapper{
 		max-height: 120px; /* Must be .mosaic-item absolute height (in px) */
 		/* overflow hidden inherited */
-	}
-
-	.mosaic-item-layout-5 .mosaic-item-image > img,
-	.mosaic-item-layout-7 .mosaic-item-image > img{
-		max-height: 120px; /* Equals parent element height */
 	}
 }
 
@@ -1064,11 +957,6 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 	color: $brand-primary;
 	font-size: 0.9em;
 }
-.form_field .form_field_decoration,
-.form_field_control .form_field_decoration{
-	vertical-align: baseline;
-	margin-right: 8px;
-}
 /* ExternalKey */
 .selectobject .input-group-addon{
 	cursor: pointer;
@@ -1092,12 +980,12 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 .caselog_field_entry_button{
 	display: block;
 	width: 15px;
-	height: 15px;
-	text-align: center;
+    height: 15px;
+    text-align: center;
 	line-height: 15px;
 	font-size: 16px;
-	border: 1px solid #a6a6a6;
-	border-bottom-color: #979797;
+    border: 1px solid #a6a6a6;
+    border-bottom-color: #979797;
 	cursor: pointer;
 }
 .caselog_field_entry_button:hover{
@@ -1201,8 +1089,8 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 }
 #drag_overlay .overlay_content{
 	margin-top: 5em;
-	width: 100%;
-	color: white;
+    width: 100%;
+    color: white;
 }
 #drag_overlay .overlay_content .icon{
 	font-size: 3em;
@@ -1342,7 +1230,7 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 
 /* CKEditor : Adding BS error feedback */
 .form_field div.cke{
-	border: 1px solid $gray-lighter;
+    border: 1px solid $gray-lighter;
 }
 .form_field.has-error div.cke{
 	border: 1px solid $state-danger-text;
@@ -1351,11 +1239,11 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 }
 /* CKEditor : Styling notifications based on BS alerts */
 .cke_notification{
-	position: relative;
+    position: relative;
 	padding: 15px;
-	margin-bottom: 18px;
-	border: 1px solid transparent;
-	border-radius: 4px;
+    margin-bottom: 18px;
+    border: 1px solid transparent;
+    border-radius: 4px;
 	background-color: $white
 }
 .cke_notification_close{
@@ -1371,13 +1259,13 @@ table .group-actions .item-action-wrapper .panel-body > p:last-child{
 .cke_notification_success{
 	display: none;
 	background-color: $alert-success-bg;
-	border-color: $alert-success-border;
-	color: $alert-success-text;
+    border-color: $alert-success-border;
+    color: $alert-success-text;
 }
 .cke_notification_warning{
-	background-color: $alert-warning-bg;
-	border-color: $alert-warning-border;
-	color: $alert-warning-text;
+    background-color: $alert-warning-bg;
+    border-color: $alert-warning-border;
+    color: $alert-warning-text;
 }
 /* CKEditor : Misc */
 .cke_toolbox_collapser,

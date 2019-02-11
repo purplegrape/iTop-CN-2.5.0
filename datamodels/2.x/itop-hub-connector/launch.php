@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2017-2018 Combodo SARL
+// Copyright (C) 2017 Combodo SARL
 //
 // This file is part of iTop.
 //
@@ -21,7 +21,7 @@
  * iTop Hub Launch Page
  * Collect the information to be posted to iTopHub
  *
- * @copyright Copyright (c) 2017-2018 Combodo SARL
+ * @copyright Copyright (c) 2017 Combodo SARL
  * @license http://opensource.org/licenses/AGPL-3.0
  */
 
@@ -87,7 +87,7 @@
  * 		},
  * 		"php_version": "7.1",
  * 		"php_settings":{
- * 			"timezone": "Asia/Shanghai",
+ * 			"timezone": "Europe/Paris",
  * 			"memory_limit": "128M"
  * 		},
  * 		"php_extensions":{
@@ -127,7 +127,11 @@ function collect_configuration()
 	);
 	
 	// Database information
-	$m_oMysqli = CMDBSource::GetMysqli();
+	$class = new ReflectionClass('CMDBSource');
+	$m_oMysqli_property = $class->getProperty('m_oMysqli');
+	$m_oMysqli_property->setAccessible(true);
+	$m_oMysqli = $m_oMysqli_property->getValue();
+	
 	$aConfiguration['database_settings']['server'] = (string) $m_oMysqli->server_version;
 	$aConfiguration['database_settings']['client'] = (string) $m_oMysqli->client_version;
 	
@@ -158,17 +162,8 @@ function collect_configuration()
 	}
 	else
 	{
-		// The format of the variable $_SERVER["SERVER_SOFTWARE"] seems to be the following:
-		// PHP 7 FPM with Apache on Ubuntu: "Apache/2.4.18 (Ubuntu)"
-		// IIS 7.5 on Windows 7:            "Microsoft-IIS/7.5"
-		// Nginx with PHP FPM on Ubuntu:    "nginx/1.10.0"
 		$aConfiguration['web_server_name'] = substr($_SERVER["SERVER_SOFTWARE"], 0, strpos($_SERVER["SERVER_SOFTWARE"], '/'));
-		$sWebServerVersion = trim(substr($_SERVER["SERVER_SOFTWARE"], 1+strpos($_SERVER["SERVER_SOFTWARE"], '/')));
-		if ($sWebServerVersion == '')
-		{
-			$sWebServerVersion = 'Unknown';
-		}
-		$aConfiguration['web_server_version'] = $sWebServerVersion;
+		$aConfiguration['web_server_version'] = substr($_SERVER["SERVER_SOFTWARE"], strpos($_SERVER["SERVER_SOFTWARE"], '/'), strpos($_SERVER["SERVER_SOFTWARE"], 'PHP'));
 	}
 	
 	// PHP extensions
@@ -194,9 +189,9 @@ function collect_configuration()
 	
 	// iTop modules
 	$oConfig = MetaModel::GetConfig();
-	$sLatestInstallationDate = CMDBSource::QueryToScalar("SELECT max(installed) FROM ".$oConfig->Get('db_subname')."priv_module_install");
+	$sLatestInstallationDate = CMDBSource::QueryToScalar("SELECT max(installed) FROM ".$oConfig->GetDBSubname()."priv_module_install");
 	// Get the latest installed modules, without the "root" ones (iTop version and datamodel version)
-	$aInstalledModules = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->Get('db_subname')."priv_module_install WHERE installed = '".$sLatestInstallationDate."' AND parent_id != 0");
+	$aInstalledModules = CMDBSource::QueryToArray("SELECT * FROM ".$oConfig->GetDBSubname()."priv_module_install WHERE installed = '".$sLatestInstallationDate."' AND parent_id != 0");
 	
 	foreach ($aInstalledModules as $aDBInfo)
 	{
@@ -231,44 +226,36 @@ function collect_configuration()
 
 function MakeDataToPost($sTargetRoute)
 {
-	if (MetaModel::GetConfig()->Get('demo_mode'))
-	{
-		// Don't expose such information in demo mode
-		$aDataToPost = array();
-	}
-	else
-	{
-		$aConfiguration = collect_configuration();
-		
-		$aDataToPost = array(
-			'itop_hub_target_route' => $sTargetRoute,
-			'itop_stack' => array(
-				"uuidBdd" => (string) trim(DBProperty::GetProperty('database_uuid', ''), '{}'), // TODO check if empty and... regenerate a new UUID ??
-				"uuidFile" => (string) trim(@file_get_contents(APPROOT."data/instance.txt"), "{} \n"), // TODO check if empty and... regenerate a new UUID ??
-				'instance_friendly_name' => (string) $_SERVER['SERVER_NAME'],
-				'instance_host' => (string) utils::GetAbsoluteUrlAppRoot(),
-				'application_name' => (string) ITOP_APPLICATION,
-				'application_version' => (string) ITOP_VERSION,
-				'application_version_full' => (string) Dict::Format('UI:iTopVersion:Long', ITOP_APPLICATION, ITOP_VERSION, ITOP_REVISION, ITOP_BUILD_DATE),
-				'itop_user_id' => (string) (UserRights::GetUserId()===null) ? "1" : UserRights::GetUserId(),
-				'itop_user_lang' => (string) UserRights::GetUserLanguage(),
-				'itop_modules' => (object) $aConfiguration['itop_modules'],
-				'itop_extensions' => (object) $aConfiguration['itop_extensions'],
-				'itop_installation_options' => (object) $aConfiguration['itop_installation_options']
-			),
-			'server_stack' => array(
-				'os_name' => (string) PHP_OS,
-				'web_server_name' => (string) $aConfiguration['web_server_name'],
-				'web_server_version' => (string) $aConfiguration['web_server_version'],
-				'database_name' => (string) isset($aConfiguration['database_name']) ? $aConfiguration['database_name'] : 'MySQL', // if we do not detect MariaDB, we assume this is mysql
-				'database_version' => (string) CMDBSource::GetDBVersion(),
-				'database_settings' => (object) $aConfiguration['database_settings'],
-				'php_version' => (string) CleanVersionNumber(phpversion()),
-				'php_settings' => (object) $aConfiguration['php_settings'],
-				'php_extensions' => (object) $aConfiguration['php_extensions']
-			)
-		);
-	}
+	$aConfiguration = collect_configuration();
+	
+	$aDataToPost = array(
+		'itop_hub_target_route' => $sTargetRoute,
+		'itop_stack' => array(
+			"uuidBdd" => (string) trim(DBProperty::GetProperty('database_uuid', ''), '{}'), // TODO check if empty and... regenerate a new UUID ??
+			"uuidFile" => (string) trim(@file_get_contents(APPROOT."data/instance.txt"), "{} \n"), // TODO check if empty and... regenerate a new UUID ??
+			'instance_friendly_name' => (string) $_SERVER['SERVER_NAME'],
+			'instance_host' => (string) utils::GetAbsoluteUrlAppRoot(),
+			'application_name' => (string) ITOP_APPLICATION,
+			'application_version' => (string) ITOP_VERSION,
+			'application_version_full' => (string) Dict::Format('UI:iTopVersion:Long', ITOP_APPLICATION, ITOP_VERSION, ITOP_REVISION, ITOP_BUILD_DATE),
+			'itop_user_id' => (string) (UserRights::GetUserId()===null) ? "1" : UserRights::GetUserId(),
+			'itop_user_lang' => (string) UserRights::GetUserLanguage(),
+			'itop_modules' => (object) $aConfiguration['itop_modules'],
+			'itop_extensions' => (object) $aConfiguration['itop_extensions'],
+			'itop_installation_options' => (object) $aConfiguration['itop_installation_options']
+		),
+		'server_stack' => array(
+			'os_name' => (string) PHP_OS,
+			'web_server_name' => (string) $aConfiguration['web_server_name'],
+			'web_server_version' => (string) $aConfiguration['web_server_version'],
+			'database_name' => (string) isset($aConfiguration['database_name']) ? $aConfiguration['database_name'] : 'MySQL', // if we do not detect MariaDB, we assume this is mysql
+			'database_version' => (string) CMDBSource::GetDBVersion(),
+			'database_settings' => (object) $aConfiguration['database_settings'],
+			'php_version' => (string) CleanVersionNumber(phpversion()),
+			'php_settings' => (object) $aConfiguration['php_settings'],
+			'php_extensions' => (object) $aConfiguration['php_extensions']
+		)
+	);
 	return $aDataToPost;
 }
 
@@ -331,11 +318,6 @@ try
 		
 		$aDataToPost = MakeDataToPost($sTargetRoute);
 		
-		if (MetaModel::GetConfig()->Get('demo_mode'))
-		{
-			$oPage->add("<div class=\"header_message message_info\">Sorry, iTop is in <b>demonstration mode</b>: the connection to iTop Hub is disabled.</div>");
-		}
-		
 		$oPage->add('<div id="hub_top_banner"></div>');
 		$oPage->add('<div id="hub_launch_content">');
 		$oPage->add('<div id="hub_launch_container">');
@@ -361,21 +343,7 @@ try
 		$oPage->add('</div>');
 		
 		$oPage->add_ready_script('$(".userpref").on("click", function() { var value = $(this).prop("checked") ? 1 : 0; var code = $(this).attr("id"); SetUserPreference(code, value, true); });');
-		if (MetaModel::GetConfig()->Get('demo_mode'))
-		{
-			$oPage->add_ready_script(
-<<<EOF
-			$("#GoToHubBtn").prop('disabled', true);
-			$("#itophub_auto_submit").prop('disabled', true).prop('checked', false);
-			$("#CancelBtn").on("click", function() {
-			    window.history.back();
-			});
-EOF
-			);
-		}
-		else
-		{
-			$oPage->add_ready_script(
+		$oPage->add_ready_script(
 <<<EOF
 $("#GoToHubBtn").on("click", function() {
 	$(this).prop('disabled', true);
@@ -394,9 +362,7 @@ $("#CancelBtn").on("click", function() {
     window.history.back();
 });
 EOF
-			);
-		}
-		
+);
 		if (appUserPreferences::GetPref('itophub_auto_submit', 0) == 1)
 		{
 			$oPage->add_ready_script('$("#GoToHubBtn").trigger("click");');

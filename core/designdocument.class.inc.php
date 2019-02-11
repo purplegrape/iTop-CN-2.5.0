@@ -1,23 +1,20 @@
 <?php
-/**
- * Copyright (c) 2010-2018 Combodo SARL
- *
- * This file is part of iTop.
- *
- * iTop is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * iTop is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with iTop. If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2016 Combodo SARL
+//
+//   This file is part of iTop.
+//
+//   iTop is free software; you can redistribute it and/or modify
+//   it under the terms of the GNU Affero General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+//   iTop is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU Affero General Public License for more details.
+//
+//   You should have received a copy of the GNU Affero General Public License
+//   along with iTop. If not, see <http://www.gnu.org/licenses/>
 
 /**
  * Design document and associated nodes
@@ -60,9 +57,6 @@ class DesignDocument extends DOMDocument
 
 	/**
 	 * Overload of the standard API
-	 *
-	 * @param $filename
-	 * @param int $options
 	 */
 	public function load($filename, $options = 0)
 	{
@@ -71,11 +65,6 @@ class DesignDocument extends DOMDocument
 
 	/**
 	 * Overload of the standard API
-	 *
-	 * @param $filename
-	 * @param int $options
-	 *
-	 * @return int
 	 */
 	public function save($filename, $options = 0)
 	{
@@ -95,18 +84,18 @@ class DesignDocument extends DOMDocument
 		{
 			return $sXml;
 		}
-
-		echo "<pre>\n";
-		echo htmlentities($sXml);
-		echo "</pre>\n";
-
-		return '';
+		else
+		{
+			echo "<pre>\n";
+			echo htmlentities($sXml);
+			echo "</pre>\n";
+		}
 	}
 
 	/**
 	 * Quote and escape strings for use within an XPath expression
 	 * Usage: DesignDocument::GetNodes('class[@id='.DesignDocument::XPathQuote($sId).']');
-	 * @param string $sValue The value to be quoted
+	 * @param $sValue The value to be quoted
 	 * @return string to be used within an XPath
 	 */
 	public static function XPathQuote($sValue)
@@ -126,7 +115,7 @@ class DesignDocument extends DOMDocument
 	/**
 	 * Extracts some nodes from the DOM
 	 * @param string $sXPath A XPath expression
-	 * @param DesignElement $oContextNode The node to start the search from
+	 * @param DesignNode|null $oContextNode The node to start the search from
 	 * @return \DOMNodeList
 	 */
 	public function GetNodes($sXPath, $oContextNode = null)
@@ -145,7 +134,7 @@ class DesignDocument extends DOMDocument
 
 	/**
 	 * An alternative to getNodePath, that gives the id of nodes instead of the position within the children
-	 * @param DesignElement $oNode The node to describe
+	 * @param $oNode The node to describe
 	 * @return string
 	 */
 	public static function GetItopNodePath($oNode)
@@ -177,11 +166,8 @@ class DesignElement extends \DOMElement
 
 	/**
 	 * Create an HTML representation of the DOM, for debugging purposes
-	 *
 	 * @param bool|false $bReturnRes Echoes or returns the HTML representation
-	 *
 	 * @return mixed void or the HTML representation of the DOM
-	 * @throws \Exception
 	 */
 	public function Dump($bReturnRes = false)
 	{
@@ -194,16 +180,19 @@ class DesignElement extends \DOMElement
 		{
 			return $sXml;
 		}
-		echo "<pre>\n";
-		echo htmlentities($sXml);
-		echo "</pre>\n";
-		return '';
+		else
+		{
+			echo "<pre>\n";
+			echo htmlentities($sXml);
+			echo "</pre>\n";
+		}
 	}
+
 	/**
 	 * Returns the node directly under the given node
 	 * @param $sTagName
 	 * @param bool|true $bMustExist
-	 * @return \MFElement
+	 * @return MFElement
 	 * @throws DOMFormatException
 	 */
 	public function GetUniqueElement($sTagName, $bMustExist = true)
@@ -227,7 +216,7 @@ class DesignElement extends \DOMElement
 	/**
 	 * Returns the node directly under the current node, or null if missing
 	 * @param $sTagName
-	 * @return \MFElement
+	 * @return MFElement
 	 * @throws DOMFormatException
 	 */
 	public function GetOptionalElement($sTagName)
@@ -263,12 +252,9 @@ class DesignElement extends \DOMElement
 
 	/**
 	 * Get the TEXT value from a child node
-	 *
 	 * @param string $sTagName
 	 * @param string|null $sDefault
-	 *
 	 * @return string
-	 * @throws \DOMFormatException
 	 */
 	public function GetChildText($sTagName, $sDefault = null)
 	{

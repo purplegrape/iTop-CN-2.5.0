@@ -980,7 +980,7 @@ EOF
 			$('#mapping').block();
 			// Re-enable all search_xxx checkboxes so that their value gets posted
 			$('input[name^=search]').each(function() {
-				$(this).prop('disabled', false);
+				$(this).attr('disabled', false);
 			});
 		}
 		return bResult;
@@ -1009,32 +1009,32 @@ EOF
 			if ((sMappingValue == '') || (sMappingValue == ':none:'))
 			{
 				// Non-mapped field, uncheck and disabled
-				$('#search_'+index).prop('checked', false);
-				$('#search_'+index).prop('disabled', true);
+				$('#search_'+index).attr('checked', false);
+				$('#search_'+index).attr('disabled', true);
 			}
 			else if (aReadOnlyKeys.indexOf(sMappingValue) >= 0)
 			{
 				// Read-only attribute forced to reconciliation key
-				$('#search_'+index).prop('checked', true);
-				$('#search_'+index).prop('disabled', true);
+				$('#search_'+index).attr('checked', true);
+				$('#search_'+index).attr('disabled', true);
 			}
 			else if (index == idSelected)
 			{
 				// The 'id' field was mapped, it's the only possible reconciliation key
-				$('#search_'+index).prop('checked', true);
-				$('#search_'+index).prop('disabled', true);
+				$('#search_'+index).attr('checked', true);
+				$('#search_'+index).attr('disabled', true);
 			}
 			else
 			{
 				if (idSelected > 0)
 				{
 					// The 'id' field was mapped, it's the only possible reconciliation key
-					$('#search_'+index).prop('checked', false);
-					$('#search_'+index).prop('disabled', true);
+					$('#search_'+index).attr('checked', false);
+					$('#search_'+index).attr('disabled', true);
 				}
 				else
 				{
-					$('#search_'+index).prop('disabled', false);
+					$('#search_'+index).attr('disabled', false);
 					if (nbSearchKeys == 0)
 					{
 						// No search key was selected, select the default ones
@@ -1042,7 +1042,7 @@ EOF
 						{
 							if (sMappingValue == aDefaultKeys[j])
 							{
-								$('#search_'+index).prop('checked', true);
+								$('#search_'+index).attr('checked', true);
 							}
 						}
 					}

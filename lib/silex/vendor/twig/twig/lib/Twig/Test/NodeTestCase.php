@@ -8,31 +8,24 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-use PHPUnit\Framework\TestCase;
-
-abstract class Twig_Test_NodeTestCase extends TestCase
+abstract class Twig_Test_NodeTestCase extends PHPUnit_Framework_TestCase
 {
     abstract public function getTests();
 
     /**
      * @dataProvider getTests
      */
-    public function testCompile($node, $source, $environment = null, $isPattern = false)
+    public function testCompile($node, $source, $environment = null)
     {
-        $this->assertNodeCompilation($source, $node, $environment, $isPattern);
+        $this->assertNodeCompilation($source, $node, $environment);
     }
 
-    public function assertNodeCompilation($source, Twig_Node $node, Twig_Environment $environment = null, $isPattern = false)
+    public function assertNodeCompilation($source, Twig_Node $node, Twig_Environment $environment = null)
     {
         $compiler = $this->getCompiler($environment);
         $compiler->compile($node);
 
-        if ($isPattern) {
-            $this->assertStringMatchesFormat($source, trim($compiler->getSource()));
-        } else {
-            $this->assertEquals($source, trim($compiler->getSource()));
-        }
+        $this->assertEquals($source, trim($compiler->getSource()));
     }
 
     protected function getCompiler(Twig_Environment $environment = null)
@@ -48,10 +41,6 @@ abstract class Twig_Test_NodeTestCase extends TestCase
     protected function getVariableGetter($name, $line = false)
     {
         $line = $line > 0 ? "// line {$line}\n" : '';
-
-        if (PHP_VERSION_ID >= 70000) {
-            return sprintf('%s($context["%s"] ?? null)', $line, $name, $name);
-        }
 
         if (PHP_VERSION_ID >= 50400) {
             return sprintf('%s(isset($context["%s"]) ? $context["%s"] : null)', $line, $name, $name);
@@ -69,7 +58,3 @@ abstract class Twig_Test_NodeTestCase extends TestCase
         return '$this->getAttribute(';
     }
 }
-
-class_alias('Twig_Test_NodeTestCase', 'Twig\Test\NodeTestCase', false);
-class_exists('Twig_Environment');
-class_exists('Twig_Node');

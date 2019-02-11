@@ -174,7 +174,6 @@ class DataTable
 		}
 		$sJSOptions = json_encode($aOptions);
 		$oPage->add_ready_script("$('#datatable_{$this->iListId}').datatable($sJSOptions);");
-
 		return $sHtml;
 	}
 	
@@ -298,7 +297,7 @@ EOF;
 		if (!$oPage->IsPrintableVersion())
 		{
 			$sMenuTitle = Dict::S('UI:ConfigureThisList');
-			$sHtml = '<div class="itop_popup toolkit_menu" id="tk_'.$this->iListId.'"><ul><li><img src="../images/toolkit_menu.png?t='.utils::GetCacheBusterTimestamp().'"><ul>';
+			$sHtml = '<div class="itop_popup toolkit_menu" id="tk_'.$this->iListId.'"><ul><li><img src="../images/toolkit_menu.png?itopversion='.ITOP_VERSION.'"><ul>';
 	
 			$oMenuItem1 = new JSPopupMenuItem('iTop::ConfigureList', $sMenuTitle, "$('#datatable_dlg_".$this->iListId."').dialog('open');");
 			$aActions = array(
@@ -572,6 +571,33 @@ EOF
 		{
 			$oPage->add_ready_script("oTable.trigger(\"fakesorton\", [$sFakeSortList]);");
 		}
+		//if ($iNbPages == 1)
+		if (false)
+		{
+			if (isset($aExtraParams['cssCount']))
+			{
+				$sCssCount = $aExtraParams['cssCount'];
+				if ($sSelectMode == 'single')
+				{
+					$sSelectSelector = ":radio[name^=selectObj]";
+				}
+				else if ($sSelectMode == 'multiple')
+				{
+					$sSelectSelector = ":checkbox[name^=selectObj]";
+				}
+				$oPage->add_ready_script(
+<<<EOF
+	$('#{$this->iListId} table.listResults $sSelectSelector').change(function() {
+		var c = $('{$sCssCount}');							
+		var v = $('#{$this->iListId} table.listResults $sSelectSelector:checked').length;
+		c.val(v);
+		$('#{$this->iListId} .selectedCount').text(v);
+		c.trigger('change');	
+	});
+EOF
+				);
+			}
+		}
 		return $sHtml;
 	}
 	
@@ -580,7 +606,7 @@ EOF
 		$iPageSize = ($iDefaultPageSize < 1) ? 1 : $iDefaultPageSize;
 		$iPageIndex = 1 + floor($iStart / $iPageSize);
 		$sHtml = $this->GetPager($oPage, $iPageSize, $iDefaultPageSize, $iPageIndex);
-		$oPage->add_ready_script("$('#pager{$this->iListId}').html('".json_encode($sHtml)."');");
+		$oPage->add_ready_script("$('#pager{$this->iListId}').html('".str_replace("\n", ' ', addslashes($sHtml))."');");
 		if ($iDefaultPageSize < 1)
 		{
 			$oPage->add_ready_script("$('#pager{$this->iListId}').parent().hide()");

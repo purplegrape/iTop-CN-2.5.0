@@ -11,7 +11,8 @@
 /**
  * Stores Messages in a queue.
  *
- * @author Fabien Potencier
+ * @package Swift
+ * @author  Fabien Potencier
  */
 class Swift_Transport_SpoolTransport implements Swift_Transport
 {
@@ -35,7 +36,7 @@ class Swift_Transport_SpoolTransport implements Swift_Transport
      *
      * @param Swift_Spool $spool
      *
-     * @return $this
+     * @return Swift_Transport_SpoolTransport
      */
     public function setSpool(Swift_Spool $spool)
     {
@@ -84,7 +85,7 @@ class Swift_Transport_SpoolTransport implements Swift_Transport
      * @param Swift_Mime_Message $message
      * @param string[]           $failedRecipients An array of failures by-reference
      *
-     * @return int The number of sent e-mail's
+     * @return int     The number of sent e-mail's
      */
     public function send(Swift_Mime_Message $message, &$failedRecipients = null)
     {
@@ -98,7 +99,7 @@ class Swift_Transport_SpoolTransport implements Swift_Transport
         $success = $this->_spool->queueMessage($message);
 
         if ($evt) {
-            $evt->setResult($success ? Swift_Events_SendEvent::RESULT_SPOOLED : Swift_Events_SendEvent::RESULT_FAILED);
+            $evt->setResult($success ? Swift_Events_SendEvent::RESULT_SUCCESS : Swift_Events_SendEvent::RESULT_FAILED);
             $this->_eventDispatcher->dispatchEvent($evt, 'sendPerformed');
         }
 

@@ -40,8 +40,7 @@ class ApplicationInstaller
 	const ERROR = 2;
 	const WARNING = 3;
 	const INFO = 4;
-
-	/** @var \PHPParameters */
+	
 	protected $oParams;
 	protected static $bMetaModelStarted = false;
 	
@@ -107,239 +106,260 @@ class ApplicationInstaller
 	/**
 	 * Executes the next step of the installation and reports about the progress
 	 * and the next step to perform
-	 *
 	 * @param string $sStep The identifier of the step to execute
-	 *
-	 * @return array (status => , message => , percentage-completed => , next-step => , next-step-label => )
+	 * @return hash An array of (status => , message => , percentage-completed => , next-step => , next-step-label => )
 	 */
 	public function ExecuteStep($sStep = '')
 	{
 		try
 		{
-			switch ($sStep)
+			switch($sStep)
 			{
-				case '':
-					$aResult = array(
-						'status' => self::OK,
-						'message' => '',
-						'percentage-completed' => 0,
-						'next-step' => 'copy',
-						'next-step-label' => 'Copying data model files',
-					);
-
-					// Log the parameters...
-					$oDoc = new DOMDocument('1.0', 'UTF-8');
-					$oDoc->preserveWhiteSpace = false;
-					$oDoc->formatOutput = true;
-					$this->oParams->ToXML($oDoc, null, 'installation');
-					$sXML = $oDoc->saveXML();
-					$sSafeXml = preg_replace("|<pwd>([^<]*)</pwd>|", "<pwd>**removed**</pwd>", $sXML);
-					SetupPage::log_info("======= Installation starts =======\nParameters:\n$sSafeXml\n");
-
-					// Save the response file as a stand-alone file as well
-					$sFileName = 'install-'.date('Y-m-d');
-					$index = 0;
-					while (file_exists(APPROOT.'log/'.$sFileName.'.xml'))
-					{
-						$index++;
-						$sFileName = 'install-'.date('Y-m-d').'-'.$index;
-					}
-					file_put_contents(APPROOT.'log/'.$sFileName.'.xml', $sSafeXml);
-
-					break;
-
+				case '':	
+				$aResult = array(
+					'status' => self::OK,
+					'message' => '',
+					'percentage-completed' => 0,
+					'next-step' => 'copy',
+					'next-step-label' => 'Copying data model files',
+				);
+				
+				// Log the parameters...
+				$oDoc = new DOMDocument('1.0', 'UTF-8');
+				$oDoc->preserveWhiteSpace = false;
+				$oDoc->formatOutput = true;
+				$this->oParams->ToXML($oDoc, null, 'installation');
+				$sXML = $oDoc->saveXML();
+				$sSafeXml = preg_replace("|<pwd>([^<]*)</pwd>|", "<pwd>**removed**</pwd>", $sXML);
+				SetupPage::log_info("======= Installation starts =======\nParameters:\n$sSafeXml\n");
+				
+				// Save the response file as a stand-alone file as well
+				$sFileName = 'install-'.date('Y-m-d');
+				$index = 0;
+				while(file_exists(APPROOT.'log/'.$sFileName.'.xml'))
+				{
+					$index++;
+					$sFileName = 'install-'.date('Y-m-d').'-'.$index;
+				}
+				file_put_contents(APPROOT.'log/'.$sFileName.'.xml', $sSafeXml);
+				
+				break;
+				
 				case 'copy':
-					$aPreinstall = $this->oParams->Get('preinstall');
-					$aCopies = $aPreinstall['copies'];
+				$aPreinstall = $this->oParams->Get('preinstall');
+				$aCopies = $aPreinstall['copies'];
 
-					self::DoCopy($aCopies);
-					$sReport = "Copying...";
+				$sReport = self::DoCopy($aCopies);
+				$sReport = "Copying...";
 
-					$aResult = array(
-						'status' => self::OK,
-						'message' => $sReport,
-					);
-					if (isset($aPreinstall['backup']))
+				$aResult = array(
+					'status' => self::OK,
+					'message' => $sReport,
+				);
+				if (isset($aPreinstall['backup']))
+				{
+					$aResult['next-step'] = 'backup';
+					$aResult['next-step-label'] = 'Performing a backup of the database';
+					$aResult['percentage-completed'] = 20;
+				}
+				else
+				{
+					$aResult['next-step'] = 'compile';
+					$aResult['next-step-label'] = 'Compiling the data model';
+					$aResult['percentage-completed'] = 20;
+				}
+				break;
+				
+				case 'backup':
+				$aPreinstall = $this->oParams->Get('preinstall');
+				// __DB__-%Y-%m-%d
+				$sDestination = $aPreinstall['backup']['destination'];
+				$sSourceConfigFile = $aPreinstall['backup']['configuration_file'];
+				$aDBParams = $this->oParams->Get('database');
+
+				self::DoBackup($aDBParams['server'], $aDBParams['user'], $aDBParams['pwd'], $aDBParams['name'], $aDBParams['prefix'], $sDestination, $sSourceConfigFile);
+
+				$aResult = array(
+					'status' => self::OK,
+					'message' => "Created backup",
+					'next-step' => 'compile',
+					'next-step-label' => 'Compiling the data model',
+					'percentage-completed' => 20,
+				);
+				break;
+				
+				case 'compile':
+				$aSelectedModules = $this->oParams->Get('selected_modules');
+				$sSourceDir = $this->oParams->Get('source_dir', 'datamodels/latest');
+				$sExtensionDir = $this->oParams->Get('extensions_dir', 'extensions');
+				$sTargetEnvironment = $this->oParams->Get('target_env', '');
+				if ($sTargetEnvironment == '')
+				{
+					$sTargetEnvironment = 'production';
+				}
+				$sTargetDir = 'env-'.$sTargetEnvironment;
+				$bUseSymbolicLinks = false;
+				$aMiscOptions = $this->oParams->Get('options', array());
+				if (isset($aMiscOptions['symlinks']) && $aMiscOptions['symlinks'] )
+				{
+					if (function_exists('symlink'))
 					{
-						$aResult['next-step'] = 'backup';
-						$aResult['next-step-label'] = 'Performing a backup of the database';
-						$aResult['percentage-completed'] = 20;
+						$bUseSymbolicLinks = true;
+						SetupPage::log_info("Using symbolic links instead of copying data model files (for developers only!)");
 					}
 					else
 					{
-						$aResult['next-step'] = 'compile';
-						$aResult['next-step-label'] = 'Compiling the data model';
-						$aResult['percentage-completed'] = 20;
+						SetupPage::log_info("Symbolic links (function symlinks) does not seem to be supported on this platform (OS/PHP version).");
 					}
-					break;
-
-				case 'backup':
-					$aPreinstall = $this->oParams->Get('preinstall');
-					// __DB__-%Y-%m-%d
-					$sDestination = $aPreinstall['backup']['destination'];
-					$sSourceConfigFile = $aPreinstall['backup']['configuration_file'];
-					$aDBParams = $this->GetParamValues($this->oParams);
-					$oTempConfig = new Config();
-					$oTempConfig->UpdateFromParams($aDBParams);
-					$sMySQLBinDir = $this->oParams->Get('mysql_bindir', null);
-					self::DoBackup($oTempConfig, $sDestination, $sSourceConfigFile, $sMySQLBinDir);
-
-					$aResult = array(
-						'status' => self::OK,
-						'message' => "Created backup",
-						'next-step' => 'compile',
-						'next-step-label' => 'Compiling the data model',
-						'percentage-completed' => 20,
-					);
-					break;
-
-				case 'compile':
-					$aSelectedModules = $this->oParams->Get('selected_modules');
-					$sSourceDir = $this->oParams->Get('source_dir', 'datamodels/latest');
-					$sExtensionDir = $this->oParams->Get('extensions_dir', 'extensions');
-					$sTargetEnvironment = $this->oParams->Get('target_env', '');
-					if ($sTargetEnvironment == '')
-					{
-						$sTargetEnvironment = 'production';
-					}
-					$sTargetDir = 'env-'.$sTargetEnvironment;
-					$bUseSymbolicLinks = false;
-					$aMiscOptions = $this->oParams->Get('options', array());
-					if (isset($aMiscOptions['symlinks']) && $aMiscOptions['symlinks'])
-					{
-						if (function_exists('symlink'))
-						{
-							$bUseSymbolicLinks = true;
-							SetupPage::log_info("Using symbolic links instead of copying data model files (for developers only!)");
-						}
-						else
-						{
-							SetupPage::log_info("Symbolic links (function symlinks) does not seem to be supported on this platform (OS/PHP version).");
-						}
-					}
-
-					self::DoCompile($aSelectedModules, $sSourceDir, $sExtensionDir, $sTargetDir, $sTargetEnvironment,
-						$bUseSymbolicLinks);
-
-					$aResult = array(
-						'status' => self::OK,
-						'message' => '',
-						'next-step' => 'db-schema',
-						'next-step-label' => 'Updating database schema',
-						'percentage-completed' => 40,
-					);
-					break;
-
+				}
+						
+				self::DoCompile($aSelectedModules, $sSourceDir, $sExtensionDir, $sTargetDir, $sTargetEnvironment, $bUseSymbolicLinks);
+				
+				$aResult = array(
+					'status' => self::OK,
+					'message' => '',
+					'next-step' => 'db-schema',
+					'next-step-label' => 'Updating database schema',
+					'percentage-completed' => 40,
+				);
+				break;
+				
 				case 'db-schema':
-					$aSelectedModules = $this->oParams->Get('selected_modules', array());
-					$sTargetEnvironment = $this->oParams->Get('target_env', '');
-					if ($sTargetEnvironment == '')
-					{
-						$sTargetEnvironment = 'production';
-					}
-					$sTargetDir = 'env-'.$sTargetEnvironment;
-					$aParamValues = $this->GetParamValues($this->oParams);
-					$bOldAddon = $this->oParams->Get('old_addon', false);
-					$sUrl = $this->oParams->Get('url', '');
-
-					self::DoUpdateDBSchema($aSelectedModules, $sTargetDir, $aParamValues, $sTargetEnvironment,
-						$bOldAddon, $sUrl);
-
-					$aResult = array(
-						'status' => self::OK,
-						'message' => '',
-						'next-step' => 'after-db-create',
-						'next-step-label' => 'Creating profiles',
-						'percentage-completed' => 60,
-					);
-					break;
-
+				$sMode = $this->oParams->Get('mode');
+				$aSelectedModules = $this->oParams->Get('selected_modules', array());
+				$sTargetEnvironment = $this->oParams->Get('target_env', '');
+				if ($sTargetEnvironment == '')
+				{
+					$sTargetEnvironment = 'production';
+				}
+				$sTargetDir = 'env-'.$sTargetEnvironment;
+				$aDBParams = $this->oParams->Get('database');
+				$sDBServer = $aDBParams['server'];
+				$sDBUser = $aDBParams['user'];
+				$sDBPwd = $aDBParams['pwd'];
+				$sDBName = $aDBParams['name'];
+				$sDBPrefix = $aDBParams['prefix'];
+				$bOldAddon = $this->oParams->Get('old_addon', false);
+				$sUrl = $this->oParams->Get('url', '');
+				
+				self::DoUpdateDBSchema($sMode, $aSelectedModules, $sTargetDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sTargetEnvironment, $bOldAddon, $sUrl);
+				
+				$aResult = array(
+					'status' => self::OK,
+					'message' => '',
+					'next-step' => 'after-db-create',
+					'next-step-label' => 'Creating profiles',
+					'percentage-completed' => 60,
+				);
+				break;
+				
 				case 'after-db-create':
-					$sTargetEnvironment = $this->oParams->Get('target_env', '');
-					if ($sTargetEnvironment == '')
-					{
-						$sTargetEnvironment = 'production';
-					}
-					$sTargetDir = 'env-'.$sTargetEnvironment;
-					$aParamValues = $this->GetParamValues($this->oParams);
-					$aAdminParams = $this->oParams->Get('admin_account');
-					$sAdminUser = $aAdminParams['user'];
-					$sAdminPwd = $aAdminParams['pwd'];
-					$sAdminLanguage = $aAdminParams['language'];
-					$aSelectedModules = $this->oParams->Get('selected_modules', array());
-					$bOldAddon = $this->oParams->Get('old_addon', false);
-
-					self::AfterDBCreate($sTargetDir, $aParamValues, $sAdminUser, $sAdminPwd, $sAdminLanguage,
-						$aSelectedModules, $sTargetEnvironment, $bOldAddon);
-
-					$aResult = array(
-						'status' => self::OK,
-						'message' => '',
-						'next-step' => 'load-data',
-						'next-step-label' => 'Loading data',
-						'percentage-completed' => 80,
-					);
-					break;
-
+				$sMode = $this->oParams->Get('mode');
+				$sTargetEnvironment = $this->oParams->Get('target_env', '');
+				if ($sTargetEnvironment == '')
+				{
+					$sTargetEnvironment = 'production';
+				}
+				$sTargetDir = 'env-'.$sTargetEnvironment;
+				$aDBParams = $this->oParams->Get('database');
+				$sDBServer = $aDBParams['server'];
+				$sDBUser = $aDBParams['user'];
+				$sDBPwd = $aDBParams['pwd'];
+				$sDBName = $aDBParams['name'];
+				$sDBPrefix = $aDBParams['prefix'];
+				$aAdminParams = $this->oParams->Get('admin_account');
+				$sAdminUser = $aAdminParams['user'];
+				$sAdminPwd = $aAdminParams['pwd'];
+				$sAdminLanguage = $aAdminParams['language'];
+				$sLanguage = $this->oParams->Get('language');
+				$aSelectedModules = $this->oParams->Get('selected_modules', array());
+				$sDataModelVersion = $this->oParams->Get('datamodel_version', '0.0.0');
+				$bOldAddon = $this->oParams->Get('old_addon', false);
+				$sSourceDir = $this->oParams->Get('source_dir', '');
+				
+				self::AfterDBCreate($sMode, $sTargetDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sAdminUser,
+									$sAdminPwd, $sAdminLanguage, $sLanguage, $aSelectedModules, $sTargetEnvironment, $bOldAddon, $sDataModelVersion, $sSourceDir);
+				
+				$aResult = array(
+					'status' => self::OK,
+					'message' => '',
+					'next-step' => 'load-data',
+					'next-step-label' => 'Loading data',
+					'percentage-completed' => 80,
+				);
+				break;
+				
 				case 'load-data':
-					$aSelectedModules = $this->oParams->Get('selected_modules');
-					$sTargetEnvironment = $this->oParams->Get('target_env', '');
-					$sTargetDir = 'env-'.(($sTargetEnvironment == '') ? 'production' : $sTargetEnvironment);
-					$aParamValues = $this->GetParamValues($this->oParams);
-					$bOldAddon = $this->oParams->Get('old_addon', false);
-					$bSampleData = ($this->oParams->Get('sample_data', 0) == 1);
-
-					self::DoLoadFiles($aSelectedModules, $sTargetDir, $aParamValues, $sTargetEnvironment, $bOldAddon,
-						$bSampleData);
-
-					$aResult = array(
-						'status' => self::INFO,
-						'message' => 'All data loaded',
-						'next-step' => 'create-config',
-						'next-step-label' => 'Creating the configuration File',
-						'percentage-completed' => 99,
-					);
-					break;
-
+				$aSelectedModules = $this->oParams->Get('selected_modules');
+				$sTargetEnvironment = $this->oParams->Get('target_env', '');
+				$sTargetDir = 'env-'.(($sTargetEnvironment == '') ? 'production' : $sTargetEnvironment);
+				$aDBParams = $this->oParams->Get('database');
+				$sDBServer = $aDBParams['server'];
+				$sDBUser = $aDBParams['user'];
+				$sDBPwd = $aDBParams['pwd'];
+				$sDBName = $aDBParams['name'];
+				$sDBPrefix = $aDBParams['prefix'];
+				$bOldAddon = $this->oParams->Get('old_addon', false);
+				$bSampleData = ($this->oParams->Get('sample_data', 0) == 1);
+				
+				self::DoLoadFiles($aSelectedModules, $sTargetDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sTargetEnvironment, $bOldAddon, $bSampleData);
+				
+				$aResult = array(
+					'status' => self::INFO,
+					'message' => 'All data loaded',
+					'next-step' => 'create-config',
+					'next-step-label' => 'Creating the configuration File',
+					'percentage-completed' => 99,
+				);
+				break;
+				
 				case 'create-config':
-					$sTargetEnvironment = $this->oParams->Get('target_env', '');
-					if ($sTargetEnvironment == '')
-					{
-						$sTargetEnvironment = 'production';
-					}
-
-					$sTargetDir = 'env-'.$sTargetEnvironment;
-					$sPreviousConfigFile = $this->oParams->Get('previous_configuration_file', '');
-					$sDataModelVersion = $this->oParams->Get('datamodel_version', '0.0.0');
-					$bOldAddon = $this->oParams->Get('old_addon', false);
-					$aSelectedModuleCodes = $this->oParams->Get('selected_modules', array());
-					$aSelectedExtensionCodes = $this->oParams->Get('selected_extensions', array());
-					$aParamValues = $this->GetParamValues($this->oParams);
-
-					self::DoCreateConfig($sTargetDir, $sPreviousConfigFile, $sTargetEnvironment, $sDataModelVersion,
-						$bOldAddon, $aSelectedModuleCodes, $aSelectedExtensionCodes, $aParamValues);
-
-					$aResult = array(
-						'status' => self::INFO,
-						'message' => 'Configuration file created',
-						'next-step' => '',
-						'next-step-label' => 'Completed',
-						'percentage-completed' => 100,
-					);
-					break;
-
-
+				$sMode = $this->oParams->Get('mode');
+				$sTargetEnvironment = $this->oParams->Get('target_env', '');
+				if ($sTargetEnvironment == '')
+				{
+					$sTargetEnvironment = 'production';
+				}
+				$sTargetDir = 'env-'.$sTargetEnvironment;
+				$aDBParams = $this->oParams->Get('database');
+				$sDBServer = $aDBParams['server'];
+				$sDBUser = $aDBParams['user'];
+				$sDBPwd = $aDBParams['pwd'];
+				$sDBName = $aDBParams['name'];
+				$sDBPrefix = $aDBParams['prefix'];
+				$sUrl = $this->oParams->Get('url', '');
+				$sGraphvizPath = $this->oParams->Get('graphviz_path', '');
+				$sLanguage = $this->oParams->Get('language', '');
+				$aSelectedModuleCodes = $this->oParams->Get('selected_modules', array());
+				$aSelectedExtensionCodes = $this->oParams->Get('selected_extensions', array());
+				$bOldAddon = $this->oParams->Get('old_addon', false);
+				$sSourceDir = $this->oParams->Get('source_dir', '');
+				$sPreviousConfigFile = $this->oParams->Get('previous_configuration_file', '');
+				$sDataModelVersion = $this->oParams->Get('datamodel_version', '0.0.0');
+								
+				self::DoCreateConfig($sMode, $sTargetDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sUrl, $sLanguage, $aSelectedModuleCodes, $aSelectedExtensionCodes, $sTargetEnvironment, $bOldAddon, $sSourceDir, $sPreviousConfigFile, $sDataModelVersion, $sGraphvizPath);
+				
+				$aResult = array(
+					'status' => self::INFO,
+					'message' => 'Configuration file created',
+					'next-step' => '',
+					'next-step-label' => 'Completed',
+					'percentage-completed' => 100,
+				);
+				break;
+				
+				
 				default:
-					$aResult = array(
-						'status' => self::ERROR,
-						'message' => '',
-						'next-step' => '',
-						'next-step-label' => "Unknown setup step '$sStep'.",
-						'percentage-completed' => 100,
-					);
+				$aResult = array(
+					'status' => self::ERROR,
+					'message' => '',
+					'next-step' => '',
+					'next-step-label' => "Unknown setup step '$sStep'.",
+					'percentage-completed' => 100,
+				);
 			}
 		}
-		catch (Exception $e)
+		catch(Exception $e)
 		{
 			$aResult = array(
 				'status' => self::ERROR,
@@ -348,12 +368,12 @@ class ApplicationInstaller
 				'next-step-label' => '',
 				'percentage-completed' => 100,
 			);
-
+			
 			SetupPage::log_error('An exception occurred: '.$e->getMessage().' at line '.$e->getLine().' in file '.$e->getFile());
 			$idx = 0;
 			// Log the call stack, but not the parameters since they may contain passwords or other sensitive data
 			SetupPage::log("Call stack:");
-			foreach ($e->getTrace() as $aTrace)
+			foreach($e->getTrace() as $aTrace)
 			{
 				$sLine = empty($aTrace['line']) ? "" : $aTrace['line'];
 				$sFile = empty($aTrace['file']) ? "" : $aTrace['file'];
@@ -365,35 +385,7 @@ class ApplicationInstaller
 				$idx++;
 			}
 		}
-
 		return $aResult;
-	}
-
-	/**
-	 * @param array $oParams
-	 *
-	 * @return array to use with {@see Config::UpdateFromParams}
-	 */
-	private function GetParamValues($oParams)
-	{
-		$aDBParams = $oParams->Get('database');
-		$aParamValues = array(
-			'mode' => $oParams->Get('mode'),
-			'db_server' => $aDBParams['server'],
-			'db_user' => $aDBParams['user'],
-			'db_pwd' => $aDBParams['pwd'],
-			'db_name' => $aDBParams['name'],
-			'new_db_name' => $aDBParams['name'],
-			'db_prefix' => $aDBParams['prefix'],
-			'db_tls_enabled' => $aDBParams['db_tls_enabled'],
-			'db_tls_ca' => $aDBParams['db_tls_ca'],
-			'application_path' => $oParams->Get('url', ''),
-			'language' => $oParams->Get('language', ''),
-			'graphviz_path' => $oParams->Get('graphviz_path', ''),
-			'source_dir' => $oParams->Get('source_dir', ''),
-		);
-
-		return $aParamValues;
 	}
 
 	protected static function DoCopy($aCopies)
@@ -420,23 +412,10 @@ class ApplicationInstaller
 		return $sReport;
 	}
 
-	/**
-	 * @param Config $oConfig
-	 * @param string $sBackupFileFormat
-	 * @param string $sSourceConfigFile
-	 *
-	 * @throws \Exception
-	 *
-	 * @since 2.5 uses a {@link Config} object to store DB parameters
-	 */
-	protected static function DoBackup($oConfig, $sBackupFileFormat, $sSourceConfigFile, $sMySQLBinDir = null)
+	protected static function DoBackup($sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sBackupFileFormat, $sSourceConfigFile)
 	{
-		$oBackup = new SetupDBBackup($oConfig);
+		$oBackup = new SetupDBBackup($sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix);
 		$sTargetFile = $oBackup->MakeName($sBackupFileFormat);
-		if (!empty($sMySQLBinDir))
-		{
-			$oBackup->SetMySQLBinDir($sMySQLBinDir);
-		}
 		$oBackup->CreateCompressedBackup($sTargetFile, $sSourceConfigFile);
 	}
 
@@ -530,17 +509,32 @@ class ApplicationInstaller
 			$oFactory->LoadModule($oDelta);
 			$oFactory->SaveToFile(APPROOT.'data/datamodel-'.$sEnvironment.'-with-delta.xml');
 		}
+		//$oFactory->Dump();
+		if ($oFactory->HasLoadErrors())
+		{
+			foreach($oFactory->GetLoadErrors() as $sModuleId => $aErrors)
+			{
+				SetupPage::log_error("Data model source file (xml) could not be loaded - found errors in module: $sModuleId");
+				foreach($aErrors as $oXmlError)
+				{
+					SetupPage::log_error("Load error: File: ".$oXmlError->file." Line:".$oXmlError->line." Message:".$oXmlError->message);
+				}
+			}
+			throw new Exception("The data model could not be compiled. Please check the setup error log");
+		}
+		else
+		{
+			$oMFCompiler = new MFCompiler($oFactory);
+			$oMFCompiler->Compile($sTargetPath, null, $bUseSymbolicLinks);
+			//$aCompilerLog = $oMFCompiler->GetLog();
+			//SetupPage::log_info(implode("\n", $aCompilerLog));
+			SetupPage::log_info("Data model successfully compiled to '$sTargetPath'.");
 
-		$oMFCompiler = new MFCompiler($oFactory);
-		$oMFCompiler->Compile($sTargetPath, null, $bUseSymbolicLinks);
-		//$aCompilerLog = $oMFCompiler->GetLog();
-		//SetupPage::log_info(implode("\n", $aCompilerLog));
-		SetupPage::log_info("Data model successfully compiled to '$sTargetPath'.");
-
-		$sCacheDir = APPROOT.'/data/cache-'.$sEnvironment.'/';
-		SetupUtils::builddir($sCacheDir);
-		SetupUtils::tidydir($sCacheDir);
-
+			$sCacheDir = APPROOT.'/data/cache-'.$sEnvironment.'/';
+			SetupUtils::builddir($sCacheDir);
+			SetupUtils::tidydir($sCacheDir);
+		}
+		
 		// Special case to patch a ugly patch in itop-config-mgmt
 		$sFileToPatch = $sTargetPath.'/itop-config-mgmt-1.0.0/model.itop-config-mgmt.php';
 		if (file_exists($sFileToPatch))
@@ -561,19 +555,23 @@ class ApplicationInstaller
 			file_put_contents($sInstanceUUIDFile, $sIntanceUUID);
 		}
 	}
-
-	protected static function DoUpdateDBSchema(
-		$aSelectedModules, $sModulesDir, $aParamValues, $sTargetEnvironment = '', $bOldAddon = false, $sAppRootUrl = ''
-	)
+	
+	protected static function DoUpdateDBSchema($sMode, $aSelectedModules, $sModulesDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sTargetEnvironment  = '', $bOldAddon = false, $sAppRootUrl = '')
 	{
 		SetupPage::log_info("Update Database Schema for environment '$sTargetEnvironment'.");
-		$sMode = $aParamValues['mode'];
-		$sDBPrefix = $aParamValues['db_prefix'];
-		$sDBName = $aParamValues['db_name'];
 
 		$oConfig = new Config();
-		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 
+		$aParamValues = array(
+			'mode' => $sMode, 
+			'db_server' => $sDBServer,
+			'db_user' => $sDBUser,
+			'db_pwd' => $sDBPwd,
+			'db_name' => $sDBName,
+			'db_prefix' => $sDBPrefix,
+			'application_path' => $sAppRootUrl,
+		);
+		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 		if ($bOldAddon)
 		{
 			// Old version of the add-on for backward compatibility with pre-2.0 data models
@@ -739,18 +737,23 @@ class ApplicationInstaller
 
 		SetupPage::log_info("Database Schema Successfully Updated for environment '$sTargetEnvironment'.");
 	}
-
-	protected static function AfterDBCreate(
-		$sModulesDir, $aParamValues, $sAdminUser, $sAdminPwd, $sAdminLanguage, $aSelectedModules, $sTargetEnvironment,
-		$bOldAddon
-	)
+	
+	protected static function AfterDBCreate($sMode, $sModulesDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sAdminUser, $sAdminPwd, $sAdminLanguage, $sLanguage, $aSelectedModules, $sTargetEnvironment, $bOldAddon, $sDataModelVersion, $sSourceDir)
 	{
+
 		SetupPage::log_info('After Database Creation');
 
-		$sMode = $aParamValues['mode'];
 		$oConfig = new Config();
-		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 
+		$aParamValues = array(
+			'mode' => $sMode, 
+			'db_server' => $sDBServer,
+			'db_user' => $sDBUser,
+			'db_pwd' => $sDBPwd,
+			'db_name' => $sDBName,
+			'db_prefix' => $sDBPrefix,
+		);
+		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 		if ($bOldAddon)
 		{
 			// Old version of the add-on for backward compatibility with pre-2.0 data models
@@ -758,7 +761,8 @@ class ApplicationInstaller
 				'user rights' => 'addons/userrights/userrightsprofile.db.class.inc.php',
 			));
 		}
-
+		$oConfig->Set('source_dir', $sSourceDir); // Needed by RecordInstallation below
+		
 		$oProductionEnv = new RunTimeEnvironment($sTargetEnvironment);
 		$oProductionEnv->InitDataModel($oConfig, true);  // load data model and connect to the database
 		self::$bMetaModelStarted = true; // No need to reload the final MetaModel in case the installer runs synchronously 
@@ -804,15 +808,20 @@ class ApplicationInstaller
 			return false;
 		}
 	}
-
-	protected static function DoLoadFiles(
-		$aSelectedModules, $sModulesDir, $aParamValues, $sTargetEnvironment = 'production', $bOldAddon = false,
-		$bSampleData = false
-	)
+	
+	protected static function DoLoadFiles($aSelectedModules, $sModulesDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sTargetEnvironment = 'production', $bOldAddon = false, $bSampleData = false)
 	{
+		$aParamValues = array(
+			'db_server' => $sDBServer,
+			'db_user' => $sDBUser,
+			'db_pwd' => $sDBPwd,
+			'db_name' => $sDBName,
+			'new_db_name' => $sDBName,
+			'db_prefix' => $sDBPrefix,
+		);
 		$oConfig = new Config();
-		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 
+		$oConfig->UpdateFromParams($aParamValues, $sModulesDir);
 		if ($bOldAddon)
 		{
 			// Old version of the add-on for backward compatibility with pre-2.0 data models
@@ -837,28 +846,23 @@ class ApplicationInstaller
 		//
 		$oProductionEnv->CallInstallerHandlers($aAvailableModules, $aSelectedModules, 'AfterDataLoad');
 	}
-
-	/**
-	 * @param string $sModulesDir
-	 * @param string $sPreviousConfigFile
-	 * @param string $sTargetEnvironment
-	 * @param string $sDataModelVersion
-	 * @param boolean $bOldAddon
-	 * @param array $aSelectedModuleCodes
-	 * @param array $aSelectedExtensionCodes
-	 * @param array $aParamValues parameters array used to create config file using {@see Config::UpdateFromParams}
-	 *
-	 * @throws \ConfigException
-	 * @throws \CoreException
-	 * @throws \Exception
-	 */
-	protected static function DoCreateConfig(
-		$sModulesDir, $sPreviousConfigFile, $sTargetEnvironment, $sDataModelVersion, $bOldAddon, $aSelectedModuleCodes,
-		$aSelectedExtensionCodes, $aParamValues
-	) {
-		$aParamValues['selected_modules'] = implode(',', $aSelectedModuleCodes);
-		$sMode = $aParamValues['mode'];
-
+	
+	protected static function DoCreateConfig($sMode, $sModulesDir, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sUrl, $sLanguage, $aSelectedModuleCodes, $aSelectedExtensionCodes, $sTargetEnvironment, $bOldAddon, $sSourceDir, $sPreviousConfigFile, $sDataModelVersion, $sGraphvizPath)
+	{	
+		$aParamValues = array(
+			'mode' => $sMode, 
+			'db_server' => $sDBServer,
+			'db_user' => $sDBUser,
+			'db_pwd' => $sDBPwd,
+			'db_name' => $sDBName,
+			'new_db_name' => $sDBName,
+			'db_prefix' => $sDBPrefix,
+			'application_path' => $sUrl,
+			'language' => $sLanguage,
+			'graphviz_path' => $sGraphvizPath,
+			'selected_modules' => implode(',', $aSelectedModuleCodes)
+		);
+		
 		$bPreserveModuleSettings = false;
 		if ($sMode == 'upgrade')
 		{
@@ -891,6 +895,7 @@ class ApplicationInstaller
 				'user rights' => 'addons/userrights/userrightsprofile.db.class.inc.php',
 			));
 		}
+		$oConfig->Set('source_dir', $sSourceDir);
 
 		// Record which modules are installed...
 		$oProductionEnv = new RunTimeEnvironment($sTargetEnvironment);

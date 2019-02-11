@@ -11,7 +11,9 @@
 /**
  * Generated when a response is received on a SMTP connection.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Events
+ * @author     Chris Corbyn
  */
 class Swift_Events_ResponseEvent extends Swift_Events_EventObject
 {
@@ -62,4 +64,5 @@ class Swift_Events_ResponseEvent extends Swift_Events_EventObject
     {
         return $this->_valid;
     }
+
 }

@@ -31,7 +31,7 @@ require_once(APPROOT.'application/utils.inc.php');
 if (array_key_exists('HTTP_IF_MODIFIED_SINCE', $_SERVER) && (strlen($_SERVER['HTTP_IF_MODIFIED_SINCE']) > 0))
 {
 	// The content is garanteed to be unmodified since the URL includes a signature based on the contents of the document
-	header('Last-Modified: Mon, 1 January 2018 00:00:00 GMT', true, 304); // Any date in the past
+	header('not modified', true, 304);
 	exit;
 }
 
@@ -94,16 +94,7 @@ try
 				$oPage->add_header("Last-Modified: Wed, 15 Jun 2016 13:21:15 GMT"); // An arbitrary date in the past is ok
 			}
 			break;
-			
-		case 'dict':
-			$sSignature = Utils::ReadParam('s', ''); // Sanitization prevents / and ..
-			$oPage = new ajax_page(""); // New page to cleanup the no_cache done above
-			$oPage->SetContentType('text/javascript');
-			$oPage->add_header('Cache-control: public, max-age=86400'); // Cache for 24 hours
-			$oPage->add_header("Pragma: cache"); // Reset the value set .... where ?
-			$oPage->add(file_get_contents(Utils::GetCachePath().$sSignature.'.js'));
-			break;
-			
+
 		default:
 		$oPage->p("Invalid query.");
 	}

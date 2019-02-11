@@ -85,7 +85,6 @@ class OqlInterpreter
 
 	/**
 	 * @return OqlQuery
-	 * @throws \OQLException
 	 */
 	public function ParseQuery()
 	{

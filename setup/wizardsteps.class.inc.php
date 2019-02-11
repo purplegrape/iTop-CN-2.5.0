@@ -177,9 +177,7 @@ class WizStepInstallOrUpgrade extends WizardStep
 		$this->oWizard->SaveParameter('db_prefix', '');
 		$this->oWizard->SaveParameter('db_backup', false);
 		$this->oWizard->SaveParameter('db_backup_path', '');
-		$this->oWizard->SaveParameter('db_tls_enabled', false);
-		$this->oWizard->SaveParameter('db_tls_ca', '');
-
+		
 		if ($sInstallMode == 'install')
 		{
 			$this->oWizard->SetParameter('install_mode', 'install');
@@ -207,9 +205,6 @@ class WizStepInstallOrUpgrade extends WizardStep
 		$sDBPrefix = $this->oWizard->GetParameter('db_prefix', '');
 		$bDBBackup = $this->oWizard->GetParameter('db_backup', false);
 		$sDBBackupPath = $this->oWizard->GetParameter('db_backup_path', '');
-		$sTlsEnabled = $this->oWizard->GetParameter('db_tls_enabled', false);
-		$sTlsCA = $this->oWizard->GetParameter('db_tls_ca', '');
-		$sMySQLBinDir = $this->oWizard->GetParameter('mysql_bindir', null);
 		$sPreviousVersionDir = '';
 		if ($sInstallMode == '')
 		{
@@ -219,16 +214,14 @@ class WizStepInstallOrUpgrade extends WizardStep
 			if ($aPreviousInstance['found'])
 			{
 				$sInstallMode = 'upgrade';
+				$sSourceDir = APPROOT;
 				$sDBServer = $aPreviousInstance['db_server'];
 				$sDBUser = $aPreviousInstance['db_user'];
 				$sDBPwd = $aPreviousInstance['db_pwd'];
 				$sDBName = $aPreviousInstance['db_name'];
 				$sDBPrefix = $aPreviousInstance['db_prefix'];
-				$sTlsEnabled = $aPreviousInstance['db_tls_enabled'];
-				$sTlsCA = $aPreviousInstance['db_tls_ca'];
 				$this->oWizard->SaveParameter('graphviz_path', $aPreviousInstance['graphviz_path']);
-				$sMySQLBinDir = $aPreviousInstance['mysql_bindir'];
-				$this->oWizard->SaveParameter('mysql_bindir', $aPreviousInstance['mysql_bindir']);
+				$sStyle = '';
 				$sPreviousVersionDir = APPROOT;
 			}
 			else
@@ -245,18 +238,16 @@ class WizStepInstallOrUpgrade extends WizardStep
 		}
 		$oPage->add('<h2>What do you want to do?</h2>');
 		$sChecked = ($sInstallMode == 'install') ? ' checked ' : '';
-        $oPage->p('<input id="radio_install" type="radio" name="install_mode" value="install" '.$sChecked.'/><label for="radio_install">&nbsp;Install a new '.ITOP_APPLICATION.'</label>');
+		$oPage->p('<input id="radio_install" type="radio" name="install_mode" value="install"'.$sChecked.'/><label for="radio_install">&nbsp;Install a new '.ITOP_APPLICATION.'</label>');
 		$sChecked = ($sInstallMode == 'upgrade') ? ' checked ' : '';
-        $oPage->p('<input id="radio_update" type="radio" name="install_mode" value="upgrade" '.$sChecked.'/><label for="radio_update">&nbsp;Upgrade an existing '.ITOP_APPLICATION.' instance</label>');
+		$oPage->p('<input id="radio_update" type="radio" name="install_mode" value="upgrade"'.$sChecked.'/><label for="radio_update">&nbsp;Upgrade an existing '.ITOP_APPLICATION.' instance</label>');
 		//$oPage->add('<fieldset  id="upgrade_info"'.$sUpgradeInfoStyle.'>');
 		//$oPage->add('<legend>Information about the previous instance:</legend>');
 		$oPage->add('<table id="upgrade_info"'.$sUpgradeInfoStyle.'>');
-		$oPage->add('<tr><td>Location on the disk:</td><td><input id="previous_version_dir" type="text" name="previous_version_dir" value="'.htmlentities($sPreviousVersionDir,
-				ENT_QUOTES, 'UTF-8').'" style="width: 98%;"/></td></tr>');
-		SetupUtils::DisplayDBParameters($oPage, false, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix,
-			$sTlsEnabled, $sTlsCA, null);
+		$oPage->add('<tr><td>Location on the disk:</td><td><input id="previous_version_dir" type="text" name="previous_version_dir" value="'.htmlentities($sPreviousVersionDir, ENT_QUOTES, 'UTF-8').'" size="25"/></td></tr>');
+		SetupUtils::DisplayDBParameters($oPage, false, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix);
 
-		$aBackupChecks = SetupUtils::CheckBackupPrerequisites($sDBBackupPath, $sMySQLBinDir);
+		$aBackupChecks = SetupUtils::CheckBackupPrerequisites($sDBBackupPath);
 		$bCanBackup = true;
 		$sMySQLDumpMessage = '';
 		foreach($aBackupChecks as $oCheck)
@@ -273,7 +264,7 @@ class WizStepInstallOrUpgrade extends WizardStep
 		}
 		$sChecked = ($bCanBackup && $bDBBackup) ? ' checked ' : '';
 		$sDisabled = $bCanBackup ? '' : ' disabled ';
-        $oPage->add('<tr><td colspan="2"><input id="db_backup" type="checkbox" name="db_backup" '.$sChecked.$sDisabled.' value="1"/><label for="db_backup">&nbsp;Backup the '.ITOP_APPLICATION.' database before upgrading</label></td></tr>');
+		$oPage->add('<tr><td colspan="2"><input id="db_backup" type="checkbox" name="db_backup"'.$sChecked.$sDisabled.' value="1"/><label for="db_backup">&nbsp;Backup the '.ITOP_APPLICATION.' database before upgrading</label></td></tr>');
 		$oPage->add('<tr><td colspan="2">Save the backup to: <input id="db_backup_path" type="text" name="db_backup_path" '.$sDisabled.'value="'.htmlentities($sDBBackupPath, ENT_QUOTES, 'UTF-8').'" size="25"/></td></tr>');
 		$fFreeSpace = SetupUtils::CheckDiskSpace($sDBBackupPath);
 		$sMessage = '';
@@ -536,8 +527,8 @@ EOF
 				$aErrors = SetupUtils::CheckWritableDirs($aWritableDirs);
 				$sChecked = ($this->oWizard->GetParameter('upgrade_type') == 'keep-previous') ? ' checked ' : '';
 				$sDisabled = (count($aErrors) > 0) ? ' disabled ' : '';
-
-                $oPage->p('<input id="radio_upgrade_keep" type="radio" name="upgrade_type" value="keep-previous" '.$sChecked.$sDisabled.'/><label for="radio_upgrade_keep">&nbsp;Preserve the modifications of the installed version (the dasboards inside '.ITOP_APPLICATION.' may not be editable).</label>');
+				
+				$oPage->p('<input id="radio_upgrade_keep" type="radio" name="upgrade_type" value="keep-previous"'.$sChecked.$sDisabled.'/><label for="radio_upgrade_keep">&nbsp;Preserve the modifications of the installed version (the dasboards inside '.ITOP_APPLICATION.' may not be editable).</label>');
 				$oPage->add('<input type="hidden" name="datamodel_previous_version" value="'.htmlentities($sInstalledDataModelVersion, ENT_QUOTES, 'UTF-8').'">');
 				
 				$oPage->add('<input type="hidden" name="relative_source_dir" value="'.htmlentities($sPreviousSourceDir, ENT_QUOTES, 'UTF-8').'">');
@@ -552,8 +543,8 @@ EOF
 				}
 						
 				$sChecked = ($this->oWizard->GetParameter('upgrade_type') == 'use-compatible') ? ' checked ' : '';
-
-                $oPage->p('<input id="radio_upgrade_convert" type="radio" name="upgrade_type" value="use-compatible" '.$sChecked.'/><label for="radio_upgrade_convert">&nbsp;Discard the modifications, use a standard '.$sUpgradeDMVersion.' data model.</label>');
+				
+				$oPage->p('<input id="radio_upgrade_convert" type="radio" name="upgrade_type" value="use-compatible"'.$sChecked.'/><label for="radio_upgrade_convert">&nbsp;Discard the modifications, use a standard '.$sUpgradeDMVersion.' data model.</label>');
 				
 				$oPage->add('<input type="hidden" name="datamodel_path" value="'.htmlentities($sCompatibleDMDir, ENT_QUOTES, 'UTF-8').'">');
 				$oPage->add('<input type="hidden" name="datamodel_version" value="'.htmlentities($sUpgradeDMVersion, ENT_QUOTES, 'UTF-8').'">');
@@ -632,10 +623,7 @@ EOF
 				'cron'.$this->oWizard->GetParameter('db_name', '').$this->oWizard->GetParameter('db_prefix', ''),
 				$this->oWizard->GetParameter('db_server', ''),
 				$this->oWizard->GetParameter('db_user', ''),
-				$this->oWizard->GetParameter('db_pwd', ''),
-				$this->oWizard->GetParameter('db_tls_enabled', ''),
-				$this->oWizard->GetParameter('db_tls_ca', ''),
-				false
+				$this->oWizard->GetParameter('db_pwd', '')
 			);
 			if ($oMutex->IsLocked())
 			{
@@ -687,12 +675,9 @@ class WizStepLicense extends WizardStep
 		return array('class' => 'WizStepDBParams', 'state' => '');
 	}
 
-    /**
-     * @param WebPage $oPage
-     */
-    public function Display(WebPage $oPage)
-    {
-        $aLicenses = SetupUtils::GetLicenses();
+	public function Display(WebPage $oPage)
+	{
+		$aLicenses = SetupUtils::GetLicenses();
 
 		$oPage->add('<h2>Licenses agreements for the components of '.ITOP_APPLICATION.'</h2>');
 		$oPage->add_style('div a.no-arrow { background:transparent; padding-left:0;}');
@@ -700,19 +685,17 @@ class WizStepLicense extends WizardStep
 		$oPage->add('<fieldset>');
 		$oPage->add('<legend>Components of '.ITOP_APPLICATION.'</legend>');
 		$oPage->add('<ul>');
-        $index = 0;
-        foreach ($aLicenses as $oLicense)
+		foreach($aLicenses as $index => $oLicense)
 		{
 			$oPage->add('<li><b>'.$oLicense->product.'</b>, &copy; '.$oLicense->author.' is licensed under the <b>'.$oLicense->license_type.' license</b>. (<span class="toggle" id="toggle_'.$index.'">Details</span>)');
 			$oPage->add('<div id="license_'.$index.'" class="license_text" style="display:none;overflow:auto;max-height:10em;font-size:small;border:1px #696969 solid;margin-bottom:1em; margin-top:0.5em;padding:0.5em;">'.$oLicense->text.'</div>');
 			$oPage->add_ready_script('$(".license_text a").attr("target", "_blank").addClass("no-arrow");');
 			$oPage->add_ready_script('$("#toggle_'.$index.'").click( function() { $("#license_'.$index.'").toggle(); } );');
-            $index++;
 		}
 		$oPage->add('</ul>');
 		$oPage->add('</fieldset>');
-        $sChecked = ($this->oWizard->GetParameter('accept_license', 'no') == 'yes') ? ' checked ' : '';
-        $oPage->p('<input type="checkbox" name="accept_license" id="accept" value="yes" '.$sChecked.'><label for="accept">&nbsp;I accept the terms of the licenses of the '.count($aLicenses).' components mentioned above.</label>');
+		$sChecked = ($this->oWizard->GetParameter('accept_license', 'no') == 'yes') ? ' checked ' : ''; 
+		$oPage->p('<input type="checkbox" name="accept_license" id="accept" value="yes"'.$sChecked.'><label for="accept">&nbsp;I accept the terms of the licenses of the '.count($aLicenses).' components mentioned above.</label>');
 		$oPage->add_ready_script('$("#accept").bind("click change", function() { WizardUpdateButtons(); });');
 	}
 	
@@ -724,8 +707,7 @@ class WizStepLicense extends WizardStep
 	{
 		return 'return ($("#accept").attr("checked") === "checked");';
 	}
-
-
+	
 }
 
 /**
@@ -769,9 +751,7 @@ class WizStepDBParams extends WizardStep
 		$this->oWizard->SaveParameter('new_db_name', '');
 		$this->oWizard->SaveParameter('create_db', '');
 		$this->oWizard->SaveParameter('db_new_name', '');
-		$this->oWizard->SaveParameter('db_tls_enabled', false);
-		$this->oWizard->SaveParameter('db_tls_ca', '');
-
+				
 		return array('class' => 'WizStepAdminAccount', 'state' => '');
 	}
 	
@@ -783,13 +763,10 @@ class WizStepDBParams extends WizardStep
 		$sDBPwd = $this->oWizard->GetParameter('db_pwd', '');
 		$sDBName = $this->oWizard->GetParameter('db_name', '');
 		$sDBPrefix = $this->oWizard->GetParameter('db_prefix', '');
-		$sTlsEnabled = $this->oWizard->GetParameter('db_tls_enabled', '');
-		$sTlsCA = $this->oWizard->GetParameter('db_tls_ca', '');
 		$sNewDBName = $this->oWizard->GetParameter('db_new_name', false);
-
+		
 		$oPage->add('<table>');
-		SetupUtils::DisplayDBParameters($oPage, true, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sTlsEnabled,
-			$sTlsCA, $sNewDBName);
+		SetupUtils::DisplayDBParameters($oPage, true, $sDBServer, $sDBUser, $sDBPwd, $sDBName, $sDBPrefix, $sNewDBName);
 		$oPage->add('</table>');
 		$sCreateDB = $this->oWizard->GetParameter('create_db', 'yes');
 		if ($sCreateDB == 'no')
@@ -826,7 +803,7 @@ class WizStepDBParams extends WizardStep
 	bRet = ValidateField("db_name", true) && bRet;
 	bRet = ValidateField("db_new_name", true) && bRet;
 	bRet = ValidateField("db_prefix", true) && bRet;
-
+	
 	return bRet;
 EOF
 		;
@@ -979,10 +956,10 @@ class WizStepMiscParams extends WizardStep
 		$oPage->add('</fieldset>');
 		$oPage->add('<fieldset>');
 		$oPage->add('<legend>Sample Data</legend>');
-        $sChecked = ($sSampleData == 'yes') ? 'checked ' : '';
-        $oPage->p('<input id="sample_data_yes" name="sample_data" type="radio" value="yes" '.$sChecked.'><label for="sample_data_yes">&nbsp;I am installing a <b>demo or test</b> instance, populate the database with some demo data.');
-        $sChecked = ($sSampleData == 'no') ? 'checked ' : '';
-        $oPage->p('<input id="sample_data_no" name="sample_data" type="radio" value="no" '.$sChecked.'><label for="sample_data_no">&nbsp;I am installing a <b>production</b> instance, create an empty database to start from.');
+		$sChecked = ($sSampleData == 'yes') ? ' checked ' : '';
+		$oPage->p('<input id="sample_data_yes" name="sample_data" type="radio" value="yes"'.$sChecked.'><label for="sample_data_yes">&nbsp;I am installing a <b>demo or test</b> instance, populate the database with some demo data.');
+		$sChecked = ($sSampleData == 'no') ? ' checked ' : '';
+		$oPage->p('<input id="sample_data_no" name="sample_data" type="radio" value="no"'.$sChecked.'><label for="sample_data_no">&nbsp;I am installing a <b>production</b> instance, create an empty database to start from.');
 		$oPage->add('</fieldset>');
 		$oPage->add_ready_script(
 <<<EOF
@@ -1225,14 +1202,14 @@ class WizStepModulesChoice extends WizardStep
 		{
 			$sConfigPath = utils::GetConfigFilePath('production');
 		}
-
-		if ($sConfigPath !== null) // only called if the config file exists : we are updating a previous installation !
+		if ($sConfigPath !== null)
 		{
 			$oConfig = new Config($sConfigPath);
 			$this->bChoicesFromDatabase = $this->oExtensionsMap->LoadChoicesFromDatabase($oConfig);
 		}
+		//echo '<div style="display:block;position:fixed;width:100px;height:20px;top:0;left:0;font-size:10pt;">Default: '.($this->bChoicesFromDatabase ? 'DB' : 'Guess').'</div>';
 	}
-
+	
 	public function GetTitle()
 	{
 		$aStepInfo = $this->GetStepInfo();
@@ -2329,8 +2306,6 @@ EOF
 				'user' => $this->oWizard->GetParameter('db_user'),
 				'pwd' => $this->oWizard->GetParameter('db_pwd'),
 				'name' => $sDBName,
-				'db_tls_enabled' => $this->oWizard->GetParameter('db_tls_enabled'),
-				'db_tls_ca' => $this->oWizard->GetParameter('db_tls_ca'),
 				'prefix' => $this->oWizard->GetParameter('db_prefix'),
 			),
 			'url' => $this->oWizard->GetParameter('application_url'),
@@ -2346,7 +2321,6 @@ EOF
 			'sample_data' => ($this->oWizard->GetParameter('sample_data', '') == 'yes') ? true : false ,
 			'old_addon' => $this->oWizard->GetParameter('old_addon', false), // whether or not to use the "old" userrights profile addon
 			'options' => json_decode($this->oWizard->GetParameter('misc_options', '[]'), true),
-			'mysql_bindir' => $this->oWizard->GetParameter('mysql_bindir'),
 		);
 
 		if ($sBackupDestination != '')
@@ -2400,7 +2374,6 @@ EOF
 		else
 		{
 			$sMessage = addslashes(htmlentities($aRes['message'], ENT_QUOTES, 'UTF-8'));
-			$sMessage = str_replace("\n", '<br>', $sMessage);
 			$oPage->add_ready_script(
 <<<EOF
 	$("#wiz_form").data("installation_status", "error");
@@ -2533,13 +2506,7 @@ class WizStepDone extends WizardStep
 		$sForm .= "<p style=\"text-align:center;width:100%\"><button id=\"enter_itop\" type=\"submit\">Enter ".ITOP_APPLICATION."</button></p>";
 		$sForm .= '</form>';
 		$sPHPVersion = phpversion();
-		$sMySQLVersion = SetupUtils::GetMySQLVersion(
-			$this->oWizard->GetParameter('db_server'),
-			$this->oWizard->GetParameter('db_user'),
-			$this->oWizard->GetParameter('db_pwd'),
-			$this->oWizard->GetParameter('db_tls_enabled'),
-			$this->oWizard->GetParameter('db_tls_ca')
-		);
+		$sMySQLVersion = SetupUtils::GetMySQLVersion($this->oWizard->GetParameter('db_server'), $this->oWizard->GetParameter('db_user'), $this->oWizard->GetParameter('db_pwd'));
 		$aParameters = json_decode($this->oWizard->GetParameter('selected_components', '{}'), true);
 		$sCompactWizChoices = array();
 		foreach($aParameters as $iStep => $aChoices)

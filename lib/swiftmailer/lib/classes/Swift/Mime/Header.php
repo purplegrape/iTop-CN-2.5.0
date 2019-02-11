@@ -11,7 +11,9 @@
 /**
  * A MIME Header.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 interface Swift_Mime_Header
 {

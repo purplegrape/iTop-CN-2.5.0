@@ -75,11 +75,9 @@ class DBBackupScheduled extends DBBackup
 	}
 
 	/**
-	 * List and order by date the backups in the given directory
+	 * List and order by date the backups in the given directory 	
 	 * Note: the algorithm is currently based on the file modification date... because there is no "creation date" in general
-	 * @param string $sBackupDir
-	 * @return array
-	 */
+	 */	
 	public function ListFiles($sBackupDir)
 	{
 		$aFiles = array();
@@ -132,11 +130,6 @@ class BackupExec implements iScheduledProcess
 		}
 	}
 
-	/**
-	 * @param int $iUnixTimeLimit
-	 * @return string
-	 * @throws Exception
-	 */
 	public function Process($iUnixTimeLimit)
 	{
 		$oMutex = new iTopMutex('backup.'.utils::GetCurrentEnvironment());
@@ -189,11 +182,10 @@ class BackupExec implements iScheduledProcess
 		return "Created the backup: $sBackupFile";
 	}
 
-	/**
-	 *    Interpret current setting for the week days
-	 * @returns array of int (monday = 1)
-	 * @throws Exception
-	 */
+	/*
+		Interpret current setting for the week days
+		@returns array of int (monday = 1)
+	*/
 	public function InterpretWeekDays()
 	{
 		static $aWEEKDAYTON = array('monday' => 1, 'tuesday' => 2, 'wednesday' => 3, 'thursday' => 4, 'friday' => 5, 'saturday' => 6, 'sunday' => 7);
@@ -224,10 +216,10 @@ class BackupExec implements iScheduledProcess
 		return $aDays;
 	}
 
-	/** Gives the exact time at which the process must be run next time
-	 * @return DateTime
-	 * @throws Exception
-	 */
+	/*
+		Gives the exact time at which the process must be run next time
+		@returns DateTime
+	*/
 	public function GetNextOccurrence()
 	{
 		$bEnabled = MetaModel::GetConfig()->GetModuleSetting('itop-backup', 'enabled', true);
@@ -285,5 +277,17 @@ class BackupExec implements iScheduledProcess
 			$oRet->setTime((int)$sHours, (int) $sMinutes);
 		}
 		return $oRet;
+	}
+}
+
+class ItopBackup extends ModuleHandlerAPI
+{
+	public static function OnMenuCreation()
+	{
+		if (UserRights::IsAdministrator())
+		{
+			$oAdminMenu = new MenuGroup('AdminTools', 80 /* fRank */);
+			new WebPageMenuNode('BackupStatus', utils::GetAbsoluteUrlModulePage('itop-backup', 'status.php'), $oAdminMenu->GetIndex(), 15 /* fRank */);
+		}
 	}
 }

@@ -69,18 +69,18 @@ abstract class SQLQuery
 	abstract public function RenderDelete($aArgs = array());
 	abstract public function RenderUpdate($aArgs = array());
 	abstract public function RenderSelect($aOrderBy = array(), $aArgs = array(), $iLimitCount = 0, $iLimitStart = 0, $bGetCount = false, $bBeautifulQuery = false);
-	abstract public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false,  $aOrderBy = array(), $iLimitCount = 0, $iLimitStart = 0);
+	abstract public function RenderGroupBy($aArgs = array(), $bBeautifulQuery = false);
 
 	abstract public function OptimizeJoins($aUsedTables, $bTopCall = true);
 
-	protected static function ClauseSelect($aFields, $sLineSep = '')
+	protected static function ClauseSelect($aFields)
 	{
 		$aSelect = array();
 		foreach ($aFields as $sFieldAlias => $sSQLExpr)
 		{
 			$aSelect[] = "$sSQLExpr AS $sFieldAlias";
 		}
-		$sSelect = implode(",$sLineSep ", $aSelect);
+		$sSelect = implode(', ', $aSelect);
 		return $sSelect;
 	}
 
@@ -101,13 +101,6 @@ abstract class SQLQuery
 		return $sDelTables;
 	}
 
-	/**
-	 * @param $aFrom
-	 * @param null $sIndent
-	 * @param int $iIndentLevel
-	 * @return string
-	 * @throws CoreException
-	 */
 	protected static function ClauseFrom($aFrom, $sIndent = null, $iIndentLevel = 0)
 	{
 		$sLineBreakLong = $sIndent ? "\n".str_repeat($sIndent, $iIndentLevel + 1) : '';
@@ -181,13 +174,7 @@ abstract class SQLQuery
 		}
 	}
 
-	/**
-	 * @param array $aOrderBy
-	 * @param array $aExistingFields
-	 * @return string
-	 * @throws CoreException
-	 */
-	protected static function ClauseOrderBy($aOrderBy, $aExistingFields)
+	protected static function ClauseOrderBy($aOrderBy)
 	{
 		$aOrderBySpec = array();
 		foreach($aOrderBy as $sFieldAlias => $bAscending)

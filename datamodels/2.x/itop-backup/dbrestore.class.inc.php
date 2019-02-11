@@ -19,24 +19,10 @@
 
 class DBRestore extends DBBackup
 {
-	/** @var string */
-	private $sDBPwd;
-	/** @var string */
-	private $sDBUser;
-
-	public function __construct(\Config $oConfig = null)
-	{
-		parent::__construct($oConfig);
-
-		$this->sDBUser = $oConfig->Get('db_user');
-		$this->sDBPwd = $oConfig->Get('db_pwd');
-	}
-
 	protected function LogInfo($sMsg)
 	{
 		//IssueLog::Info('non juste info: '.$sMsg);
 	}
-
 	protected function LogError($sMsg)
 	{
 		IssueLog::Error($sMsg);
@@ -71,8 +57,8 @@ class DBRestore extends DBBackup
 		}
 
 		$sDataFileEscaped = self::EscapeShellArg($sDataFile);
-		$sCommand = "$sMySQLExe --default-character-set=".DEFAULT_CHARACTER_SET." --host=$sHost $sPortOption --user=$sUser --password=$sPwd $sDBName <$sDataFileEscaped 2>&1";
-		$sCommandDisplay = "$sMySQLExe --default-character-set=".DEFAULT_CHARACTER_SET." --host=$sHost $sPortOption --user=xxxx --password=xxxx $sDBName <$sDataFileEscaped 2>&1";
+		$sCommand = "$sMySQLExe --default-character-set=utf8 --host=$sHost $sPortOption --user=$sUser --password=$sPwd $sDBName <$sDataFileEscaped 2>&1";
+		$sCommandDisplay = "$sMySQLExe --default-character-set=utf8 --host=$sHost $sPortOption --user=xxxx --password=xxxx $sDBName <$sDataFileEscaped 2>&1";
 
 		// Now run the command for real
 		$this->LogInfo("Executing command: $sCommandDisplay");
@@ -92,7 +78,7 @@ class DBRestore extends DBBackup
 			}
 			if (count($aOutput) == 1) 
 			{
-				$sMoreInfo = trim($aOutput[0]);
+				$sMoreInfo = trim($aOutput[0]); 
 			}
 			else
 			{
@@ -104,7 +90,6 @@ class DBRestore extends DBBackup
 
 	/**
 	 * @deprecated Use RestoreFromCompressedBackup instead
-	 *
 	 * @param $sZipFile
 	 * @param string $sEnvironment
 	 */
@@ -114,14 +99,10 @@ class DBRestore extends DBBackup
 	}
 
 	/**
-	 * <strong>Warning</strong> : can't be called with a loaded DataModel as we're compiling after restore
-	 *
 	 * @param string $sFile A file with the extension .zip or .tar.gz
 	 * @param string $sEnvironment Target environment
 	 *
-	 * @throws \BackupException
-	 *
-	 * @uses \RunTimeEnvironment::CompileFrom()
+	 * @throws \Exception
 	 */
 	public function RestoreFromCompressedBackup($sFile, $sEnvironment = 'production')
 	{
@@ -141,7 +122,7 @@ class DBRestore extends DBBackup
 		}
 		else
 		{
-			throw new BackupException('Unsupported format for a backup file: '.$sFile);
+			throw new Exception('Unsupported format for a backup file: '.$sFile);
 		}
 
 		// Load the database
@@ -169,14 +150,7 @@ class DBRestore extends DBBackup
 		}
 		if (is_dir(APPROOT.'data/production-modules/'))
 		{
-			try
-			{
-				SetupUtils::rrmdir(APPROOT.'data/production-modules/');
-			}
-			catch (Exception $e)
-			{
-				throw new BackupException("Can't remove production-modules dir", 0, $e);
-			}
+			SetupUtils::rrmdir(APPROOT.'data/production-modules/');
 		}
 		if (is_dir($sDataDir.'/production-modules'))
 		{
@@ -188,14 +162,7 @@ class DBRestore extends DBBackup
 		rename($sDataDir.'/config-itop.php', $sConfigFile);
 		@chmod($sConfigFile, 0444); // Read-only
 
-		try
-		{
-			SetupUtils::rrmdir($sDataDir);
-		}
-		catch (Exception $e)
-		{
-			throw new BackupException("Can't remove data dir", 0, $e);
-		}
+		SetupUtils::rrmdir($sDataDir);
 
 		$oEnvironment = new RunTimeEnvironment($sEnvironment);
 		$oEnvironment->CompileFrom($sEnvironment);

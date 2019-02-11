@@ -1,7 +1,7 @@
-HTTP Cache
-==========
+HttpCacheServiceProvider
+========================
 
-The *HttpCacheServiceProvider* provides support for the Symfony Reverse
+The *HttpCacheServiceProvider* provides support for the Symfony2 Reverse
 Proxy.
 
 Parameters
@@ -58,16 +58,20 @@ setting Response HTTP cache headers::
     in `Trusting Proxies
     <http://symfony.com/doc/current/components/http_foundation/trusting_proxies.html>`_.
 
-    If you would be running Varnish in front of your application on the same machine::
+    If you would be running Varnish in front of your application on the same machine:
+    
+    .. code-block:: php
 
         use Symfony\Component\HttpFoundation\Request;
         
         Request::setTrustedProxies(array('127.0.0.1', '::1'));
         $app->run();
 
-This provider allows you to use the Symfony reverse proxy natively with
-Silex applications by using the ``http_cache`` service. The Symfony reverse proxy
-acts much like any other proxy would, so you will want to whitelist it::
+This provider allows you to use the Symfony2 reverse proxy natively with
+Silex applications by using the ``http_cache`` service. The Symfony2 reverse proxy
+acts much like any other proxy would, so you will want to whitelist it:
+
+.. code-block:: php
 
     use Symfony\Component\HttpFoundation\Request;
         
@@ -124,5 +128,5 @@ overall performance::
 
     Finally, check that your Web server does not override your caching strategy.
 
-For more information, consult the `Symfony HTTP Cache documentation
+For more information, consult the `Symfony2 HTTP Cache documentation
 <http://symfony.com/doc/current/book/http_cache.html>`_.

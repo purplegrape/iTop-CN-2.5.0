@@ -19,8 +19,8 @@
 
 namespace Combodo\iTop\Portal\Provider;
 
-use Pimple\Container;
-use Pimple\ServiceProviderInterface;
+use Silex\Application;
+use Silex\ServiceProviderInterface;
 use Combodo\iTop\Portal\Helper\UrlGenerator;
 
 /**
@@ -31,17 +31,17 @@ use Combodo\iTop\Portal\Helper\UrlGenerator;
 class UrlGeneratorServiceProvider implements ServiceProviderInterface
 {
 
-	public function register(Container $oApp)
+	public function register(Application $oApp)
 	{
-		$oApp['url_generator'] = function ($oApp)
+		$oApp['url_generator'] = $oApp->share(function ($oApp)
 		{
 			$oApp->flush();
 
 			return new UrlGenerator($oApp['routes'], $oApp['request_context']);
-		};
+		});
 	}
 
-	public function boot(Container $oApp)
+	public function boot(Application $oApp)
 	{
 		
 	}

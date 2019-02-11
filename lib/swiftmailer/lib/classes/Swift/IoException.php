@@ -11,19 +11,18 @@
 /**
  * I/O Exception class.
  *
- * @author Chris Corbyn
+ * @package Swift
+ * @author  Chris Corbyn
  */
 class Swift_IoException extends Swift_SwiftException
 {
     /**
      * Create a new IoException with $message.
      *
-     * @param string    $message
-     * @param int       $code
-     * @param Exception $previous
+     * @param string $message
      */
-    public function __construct($message, $code = 0, Exception $previous = null)
+    public function __construct($message)
     {
-        parent::__construct($message, $code, $previous);
+        parent::__construct($message);
     }
 }

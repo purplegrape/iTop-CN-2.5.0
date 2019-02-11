@@ -11,14 +11,16 @@
 /**
  * Sleeps for a duration of time.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Plugins
+ * @author     Chris Corbyn
  */
 interface Swift_Plugins_Sleeper
 {
     /**
      * Sleep for $seconds.
      *
-     * @param int $seconds
+     * @param int     $seconds
      */
     public function sleep($seconds);
 }

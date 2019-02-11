@@ -12,8 +12,8 @@
 namespace Silex\EventListener;
 
 use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
@@ -24,27 +24,15 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
- * Logs request, response, and exceptions.
+ * Log request, response and exceptions.
  */
 class LogListener implements EventSubscriberInterface
 {
     protected $logger;
-    protected $exceptionLogFilter;
 
-    public function __construct(LoggerInterface $logger, $exceptionLogFilter = null)
+    public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-        if (null === $exceptionLogFilter) {
-            $exceptionLogFilter = function (\Exception $e) {
-                if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
-                    return LogLevel::ERROR;
-                }
-
-                return LogLevel::CRITICAL;
-            };
-        }
-
-        $this->exceptionLogFilter = $exceptionLogFilter;
     }
 
     /**
@@ -54,7 +42,7 @@ class LogListener implements EventSubscriberInterface
      */
     public function onKernelRequest(GetResponseEvent $event)
     {
-        if (!$event->isMasterRequest()) {
+        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
             return;
         }
 
@@ -68,7 +56,7 @@ class LogListener implements EventSubscriberInterface
      */
     public function onKernelResponse(FilterResponseEvent $event)
     {
-        if (!$event->isMasterRequest()) {
+        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
             return;
         }
 
@@ -92,7 +80,7 @@ class LogListener implements EventSubscriberInterface
      */
     protected function logRequest(Request $request)
     {
-        $this->logger->log(LogLevel::DEBUG, '> '.$request->getMethod().' '.$request->getRequestUri());
+        $this->logger->info('> '.$request->getMethod().' '.$request->getRequestUri());
     }
 
     /**
@@ -102,21 +90,27 @@ class LogListener implements EventSubscriberInterface
      */
     protected function logResponse(Response $response)
     {
-        $message = '< '.$response->getStatusCode();
-
         if ($response instanceof RedirectResponse) {
-            $message .= ' '.$response->getTargetUrl();
+            $this->logger->info('< '.$response->getStatusCode().' '.$response->getTargetUrl());
+        } else {
+            $this->logger->info('< '.$response->getStatusCode());
         }
-
-        $this->logger->log(LogLevel::DEBUG, $message);
     }
 
     /**
      * Logs an exception.
+     *
+     * @param \Exception $e
      */
     protected function logException(\Exception $e)
     {
-        $this->logger->log(call_user_func($this->exceptionLogFilter, $e), sprintf('%s: %s (uncaught exception) at %s line %s', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine()), array('exception' => $e));
+        $message = sprintf('%s: %s (uncaught exception) at %s line %s', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine());
+
+        if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
+            $this->logger->error($message, array('exception' => $e));
+        } else {
+            $this->logger->critical($message, array('exception' => $e));
+        }
     }
 
     public static function getSubscribedEvents()
