@@ -36,14 +36,14 @@
 // Class:<class_name>/Stimulus:<stimulus_code>+
 
 //
-// Class: UserLDAP
+// Class: UserLocal
 //
 
 Dict::Add('ZH CN', 'Chinese', '简体中文', array(
-	'Class:UserLDAP' => 'LDAP 用户',
-	'Class:UserLDAP+' => '用户由 LDAP 鉴别身份',
-	'Class:UserLDAP/Attribute:password' => '密码',
-	'Class:UserLDAP/Attribute:password+' => '用户身份验证串',
+	'Class:UserLocal' => 'iTop 用户',
+	'Class:UserLocal+' => '用户身份由iTop 验证',
+	'Class:UserLocal/Attribute:password' => '密码',
+	'Class:UserLocal/Attribute:password+' => '用户身份验证字符串',
 ));
 
 
