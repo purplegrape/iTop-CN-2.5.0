@@ -1,0 +1,197 @@
+{# Approval brick base layout #}
+{% extends 'itop-portal-base/portal/src/views/bricks/layout.html.twig' %}
+
+
+{% block pMainHeaderTitle %}
+	{{ 'Approval:Portal:Title'|dict_s }}
+{% endblock %}
+
+{% block pMainHeaderActions %}
+{% endblock %}
+
+{% block pMainContentHolder%}
+	{% if sMessage|length > 0 %}
+		<div id="approval-status" class="modal-body alert alert-success" role="alert">{{ sMessage }}</div>
+	{% endif %}
+	{% if iTotalCount > 0 %}
+		<p>{{ 'Approval:Portal:Title+'|dict_s }}</p>
+		<form method="post">
+			{% for aExpectedClassApprovals in aExpectedApprovals %}
+				<div class="panel panel-default">
+					{% if aExpectedApprovals|length > 1 %}
+					<div class="panel-heading">
+						<h3 class="panel-title">{{ aExpectedClassApprovals.sTitle }}</h3>
+					</div>
+					{% endif %}
+					<div class="panel-body">
+						{% if aExpectedClassApprovals.iItemsCount > 0 %}
+							<table id="table-{{ aExpectedClassApprovals.sId }}" class="table table-striped table-bordered responsive" width="100%"></table>
+						{% else %}
+							<div class="text-center">
+								{{ 'Brick:Portal:Manage:Table:NoData'|dict_s }}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			{% endfor %}
+			<div id="modal-for-approval" class="modal fade" tabindex="-1" role="dialog">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div id="approval-body" class="modal-body">
+							<p class="approval-confirmation-text">{{ 'Approval:Portal:Dlg:Approve'|dict_s|raw }}</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">{{ 'Portal:Button:Cancel'|dict_s }}</button>
+							<button id="do-approve" type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span>&nbsp;{{ 'Approval:Portal:Dlg:Btn:Approve'|dict_s }}</button>
+						</div>
+					</div><!-- /.modal-content -->
+				</div><!-- /.modal-dialog -->
+			</div><!-- /.modal -->
+			<div id="modal-for-rejection" class="modal fade" tabindex="-1" role="dialog">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div id="approval-body" class="modal-body">
+							<p class="approval-confirmation-text">{{ 'Approval:Portal:Dlg:Reject'|dict_s|raw }}</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">{{ 'Portal:Button:Cancel'|dict_s }}</button>
+							<button id="do-reject" type="submit" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span>&nbsp;{{ 'Approval:Portal:Dlg:Btn:Reject'|dict_s }}</button>
+						</div>
+					</div><!-- /.modal-content -->
+				</div><!-- /.modal-dialog -->
+			</div><!-- /.modal -->
+			<div>
+				<div class="form-group">
+					<p>{{ 'Approval:Portal:CommentTitle'|dict_s }}</p>
+					<textarea id="approval-comment" name="comment" class="form-control" rows="3" placeholder="{{ 'Approval:Portal:CommentPlaceholder'|dict_s }}"></textarea>
+					<input type="hidden" id="approval-operation" name="operation">
+				</div>
+				<div class="form-group text-right">
+					<button id="btn-approve" type="button" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span>&nbsp;{{ 'Approval:Portal:Btn:Approve'|dict_s }}</button>
+					<button id="btn-reject" type="button" class="btn btn-danger" disabled><span class="glyphicon glyphicon-remove"></span>&nbsp;{{ 'Approval:Portal:Btn:Reject'|dict_s }}</button>
+				</div>
+			</div>
+		</form>
+	{% else %}
+		<div class="panel panel-default">
+			<div class="panel-body">
+				<p class="text-center">{{ 'Approval:Portal:NoItem'|dict_s }}</p>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block pPageLiveScripts %}
+	{{ parent() }}
+	
+	<script type="text/javascript">
+
+		function EnableApprovalButtons()
+		{
+			var bHasSelection = ($('.approval-item-select:checked').length > 0);
+			if (bHasSelection)
+			{
+				$('#btn-approve').removeAttr('disabled');
+				var bHasComment = ($('#approval-comment').val().length > 0);
+				if (bHasComment)
+				{
+					$('#btn-reject').removeAttr('disabled');
+				}
+				else
+				{
+					$('#btn-reject').attr('disabled', 'disabled');
+				}
+			}
+			else
+			{
+				$('#btn-approve').attr('disabled', 'disabled');
+				$('#btn-reject').attr('disabled', 'disabled');
+			}
+		}
+
+		{% for aExpectedClassApprovals in aExpectedApprovals %}
+			{% if aExpectedClassApprovals.aItems|length > 0 %}
+				var rawData_{{ aExpectedClassApprovals.sId }} = {{ aExpectedClassApprovals.aItems|json_encode()|raw }};
+				for (var i = 0; i < rawData_{{ aExpectedClassApprovals.sId }}.length; i++)
+				{
+					var iKey = {{ aExpectedClassApprovals.aRowToKey|json_encode|raw }}[i];
+					rawData_{{ aExpectedClassApprovals.sId }}[i]['_checkbox_'] = '<input type="checkbox" checked class="approval-item-select" name="selected[{{ aExpectedClassApprovals.sClass }}][]" value="' + iKey + '">';
+				}
+				var columns_{{ aExpectedClassApprovals.sId }} = [];
+				columns_{{ aExpectedClassApprovals.sId }}.push({data: '_checkbox_', title: '<input type="checkbox" checked class="approval-item-select-all">', orderable: false});
+				{% for aColumnData in aExpectedClassApprovals.aColumns %}
+					columns_{{ aExpectedClassApprovals.sId }}.push({data: {{ aColumnData.sAttCode|json_encode|raw }}, title: {{ aColumnData.sLabel|json_encode|raw }}, });
+				{% endfor %}
+				$(document).ready(function(){
+					var oTable{{ aExpectedClassApprovals.sId }} = $('#table-{{ aExpectedClassApprovals.sId }}').DataTable( {
+						"language": {
+							"processing":	  "{{ 'Portal:Datatables:Language:Processing'|dict_s }}",
+							"search":		  "{{ 'Portal:Datatables:Language:Search'|dict_s }}",
+							"lengthMenu":	  "{{ 'Portal:Datatables:Language:LengthMenu'|dict_s }}",
+							"zeroRecords":	 "{{ 'Portal:Datatables:Language:ZeroRecords'|dict_s }}",
+							"info":			"{{ 'Portal:Datatables:Language:Info'|dict_s }}",
+							"infoEmpty":	   "{{ 'Portal:Datatables:Language:InfoEmpty'|dict_s }}",
+							"infoFiltered":	"({{ 'Portal:Datatables:Language:InfoFiltered'|dict_s }})",
+							"emptyTable":	  "{{ 'Portal:Datatables:Language:EmptyTable'|dict_s }}",
+							"paginate": {
+								"first":	  "{{ 'Portal:Datatables:Language:Paginate:First'|dict_s }}",
+								"previous":   "{{ 'Portal:Datatables:Language:Paginate:Previous'|dict_s }}",
+								"next":	   "{{ 'Portal:Datatables:Language:Paginate:Next'|dict_s }}",
+								"last":	   "{{ 'Portal:Datatables:Language:Paginate:Last'|dict_s }}"
+							},
+							"aria": {
+								"sortAscending":  ": {{ 'Portal:Datatables:Language:Sort:Ascending'|dict_s }}",
+								"sortDescending": ": {{ 'Portal:Datatables:Language:Sort:Descending'|dict_s }}"
+							}
+						},
+						"lengthMenu": [[10, 20, 50, -1], [10, 20, 50, "{{ 'Portal:Datatables:Language:DisplayLength:All'|dict_s }}"]],
+						"displayLength": {{ constant('Combodo\\iTop\\Portal\\Brick\\ManageBrick::DEFAULT_LIST_LENGTH') }},
+						{% if aExpectedClassApprovals.aItems|length > 12 %}
+							"dom": '<"row"<"col-sm-6"l><"col-sm-6"<f><"visible-xs"p>>>t<"row"<"col-sm-6"ri><"col-sm-6"p>>',
+						{%  else %}
+							"dom": '<"row"t>',
+							"paging": false,
+							"searching": false,
+						{%  endif %}
+						"order": [[1, "desc"]],
+						"data": rawData_{{ aExpectedClassApprovals.sId }},
+						"columns": columns_{{ aExpectedClassApprovals.sId }},
+					} );
+
+					$('.approval-item-select-all').on('change', function(){
+						$(this).closest('table').find('.approval-item-select').prop('checked', $(this).prop('checked'));
+						EnableApprovalButtons();
+					});
+					$('.approval-item-select').on("change", function(){
+						// Uncheck global checkbox
+						$(this).closest('table').find('.approval-item-select-all').prop('checked', false);
+						
+						EnableApprovalButtons();
+					});
+					$("#approval-comment").on("change keyup paste", function() {
+						EnableApprovalButtons();
+					});
+					$('#btn-approve').click(function(){
+						$('.approval-confirmation-text').html( ($('.approval-item-select:checked').length > 1) ? '{{ 'Approval:Portal:Dlg:Approve'|dict_s|raw }}' : '{{ 'Approval:Portal:Dlg:ApproveOne'|dict_s|raw }}');
+						$('.approval-count').text($('.approval-item-select:checked').length);
+						$('#modal-for-approval').modal();
+					});
+					$('#btn-reject').click(function(){
+						$('.approval-confirmation-text').html( ($('.approval-item-select:checked').length > 1) ? '{{ 'Approval:Portal:Dlg:Reject'|dict_s|raw }}' : '{{ 'Approval:Portal:Dlg:RejectOne'|dict_s|raw }}');
+						$('.approval-count').text($('.approval-item-select:checked').length);
+						$('#modal-for-rejection').modal();
+					});
+					$('#do-approve').click(function(){
+						$('#approval-operation').val('approve');
+						return true;
+					});
+					$('#do-reject').click(function(){
+						$('#approval-operation').val('reject');
+						return true;
+					});
+				});
+			{%  endif %}
+		{%  endfor %}
+
+	</script>
+{% endblock %}

@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
+  <constants>
+    <constant id="COVERAGE_TIME_REGEXP" xsi:type="string" _delta="define"><![CDATA[^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$|^24:00$]]></constant>
+  </constants>
+  <classes>
+    <class id="CoverageWindow" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <php_parent>
+		  <name>_CoverageWindow_</name>
+		  <file>coveragewindow.class.inc.php</file>
+	   </php_parent>
+      <properties>
+        <comment>/**
+ * Open hours definition based on a set of "open hours intervals"
+ */</comment>
+        <category>searchable,bizmodel,servicemgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>coverage_windows</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field></db_final_class_field>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <display_template></display_template>
+        <icon>images/coverage-window.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="name" xsi:type="AttributeString">
+          <sql>name</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="description" xsi:type="AttributeText">
+          <sql>description</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="interval_list" xsi:type="AttributeLinkedSet">
+          <linked_class>CoverageWindowInterval</linked_class>
+          <ext_key_to_me>coverage_window_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+          <tracking_level>all</tracking_level>
+          <edit_mode>in_place</edit_mode>
+        </field>
+      </fields>
+      <methods>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="description">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="CoverageWindowInterval" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <comment>/**
+ * Interval of open hours for a given day of the week
+ */</comment>
+        <category>searchable,bizmodel,servicemgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>coverage_windows_interval</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field></db_final_class_field>
+        <naming>
+          <format>%1$s - %2$s: %3$s</format>
+          <attributes>
+            <attribute id="coverage_window_name"/>
+            <attribute id="weekday"/>
+            <attribute id="start_time"/>
+          </attributes>
+        </naming>
+        <display_template></display_template>
+        <icon>images/coverage-window.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="coverage_window_id"/>
+            <attribute id="weekday"/>
+            <attribute id="start_time"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="coverage_window_id" xsi:type="AttributeExternalKey">
+          <filter>SELECT CoverageWindow</filter>
+          <sql>coverage_window_id</sql>
+          <target_class>CoverageWindow</target_class>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+          <is_null_allowed>false</is_null_allowed>
+          <tracking_level>none</tracking_level>
+        </field>
+        <field id="coverage_window_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>coverage_window_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+        </field>
+        <field id="weekday" xsi:type="AttributeEnum">
+          <sql>weekday</sql>
+          <values>
+            <value>monday</value>
+            <value>tuesday</value>
+            <value>wednesday</value>
+            <value>thursday</value>
+            <value>friday</value>
+            <value>saturday</value>
+            <value>sunday</value>
+          </values>
+          <default_value>monday</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="start_time" xsi:type="AttributeString">
+          <sql>start_time</sql>
+          <validation_pattern>^(([01]?[0-9]|2[0-3]):[0-5][0-9])$</validation_pattern>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="end_time" xsi:type="AttributeString">
+          <sql>end_time</sql>
+          <validation_pattern>^(([01]?[0-9]|2[0-3]):[0-5][0-9])|24:00$</validation_pattern>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+      </fields>
+      <methods>
+      </methods>
+      <presentation>
+        <details>
+          <items>
+            <item id="coverage_window_id">
+              <rank>10</rank>
+            </item>
+            <item id="weekday">
+              <rank>20</rank>
+            </item>
+            <item id="start_time">
+              <rank>30</rank>
+            </item>
+            <item id="end_time">
+              <rank>40</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="coverage_window_id">
+              <rank>10</rank>
+            </item>
+             <item id="weekday">
+              <rank>20</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="coverage_window_id">
+              <rank>10</rank>
+            </item>
+            <item id="weekday">
+              <rank>20</rank>
+            </item>
+            <item id="start_time">
+              <rank>30</rank>
+            </item>
+            <item id="end_time">
+              <rank>40</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="Holiday" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <category>searchable,bizmodel,servicemgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>holidays</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field></db_final_class_field>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <display_template></display_template>
+        <icon>images/holiday.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+            <attribute id="date"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="name" xsi:type="AttributeString">
+          <sql>name</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="date" xsi:type="AttributeDate">
+          <sql>date</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="calendar_id" xsi:type="AttributeExternalKey">
+          <filter>SELECT HolidayCalendar</filter>
+          <sql>calendar_id</sql>
+          <target_class>HolidayCalendar</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+          <jointype></jointype>
+        </field>
+        <field id="calendar_name" xsi:type="AttributeExternalField">
+          <extkey_attcode>calendar_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="date">
+              <rank>20</rank>
+            </item>
+            <item id="calendar_id">
+              <rank>30</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="date">
+              <rank>20</rank>
+            </item>
+            <item id="calendar_id">
+              <rank>30</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="date">
+              <rank>10</rank>
+            </item>
+            <item id="calendar_id">
+              <rank>20</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+    <class id="HolidayCalendar" _delta="define">
+      <parent>cmdbAbstractObject</parent>
+      <properties>
+        <category>searchable,bizmodel,servicemgmt</category>
+        <abstract>false</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>holiday_calendar</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field></db_final_class_field>
+        <naming>
+          <format>%1$s</format>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </naming>
+        <display_template></display_template>
+        <icon>images/calendar.png</icon>
+        <reconciliation>
+          <attributes>
+            <attribute id="name"/>
+          </attributes>
+        </reconciliation>
+      </properties>
+      <fields>
+        <field id="name" xsi:type="AttributeString">
+          <sql>name</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="holiday_list" xsi:type="AttributeLinkedSet">
+          <linked_class>Holiday</linked_class>
+          <ext_key_to_me>calendar_id</ext_key_to_me>
+          <count_min>0</count_min>
+          <count_max>0</count_max>
+        </field>
+      </fields>
+      <methods/>
+      <presentation>
+        <details>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+            <item id="holiday_list">
+              <rank>20</rank>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="name">
+              <rank>10</rank>
+            </item>
+          </items>
+        </search>
+      </presentation>
+    </class>
+  </classes>
+  <menus>
+    <menu id="CoverageWindows" xsi:type="OQLMenuNode" _delta="define">
+      <rank>10</rank>
+      <parent>ServiceManagement</parent>
+      <oql>SELECT CoverageWindow</oql>
+      <do_search>1</do_search>
+    </menu>
+    <menu id="HolidayCalendars" xsi:type="OQLMenuNode" _delta="define">
+      <rank>11</rank>
+      <parent>ServiceManagement</parent>
+      <oql>SELECT HolidayCalendar</oql>
+      <do_search>1</do_search>
+    </menu>
+    <menu id="Holidays" xsi:type="OQLMenuNode" _delta="define">
+      <rank>12</rank>
+      <parent>ServiceManagement</parent>
+      <oql>SELECT Holiday</oql>
+      <do_search>1</do_search>
+    </menu>
+  </menus>
+  <user_rights>
+    <groups>
+      <group id="CoverageWindowsEtc" _delta="define">
+        <classes>
+          <class id="CoverageWindow"/>
+          <class id="CoverageWindowInterval"/>
+          <class id="HolidayCalendar"/>
+          <class id="Holiday"/>
+        </classes>
+      </group>
+    </groups>
+    <profiles>
+      <profile id="10">
+        <groups>
+          <group id="CoverageWindowsEtc" _delta="define">
+            <actions>
+              <action xsi:type="write">allow</action>
+              <action xsi:type="bulk write">allow</action>
+              <action xsi:type="delete">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>

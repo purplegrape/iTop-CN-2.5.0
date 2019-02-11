@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension format="1.0">
+	<extension_code>combodo-send-updates-by-email</extension_code>
+	<company>Combodo SARL</company>
+	<author><![CDATA[Romain]]></author>
+	<label><![CDATA[Send updates  by email]]></label>
+	<description><![CDATA[Send an email to pre-configured contacts when a ticket log is updated]]></description>
+	<version>1.1.11</version>
+	<release_date>2017-06-14</release_date>
+	<version_description><![CDATA[Support for any type of ticket (used to require the installation of User Request Management). ]]></version_description>
+	<itop_version_min>2.0.3</itop_version_min>
+	<status>stable</status>
+	<mandatory>false</mandatory>
+	<more_info_url></more_info_url>
+</extension>

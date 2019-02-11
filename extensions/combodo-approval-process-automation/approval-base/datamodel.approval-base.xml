@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0">
+  <classes>
+    <class id="ApprovalScheme" _delta="define">
+      <parent>DBObject</parent>
+      <php_parent>
+        <name>_ApprovalScheme_</name>
+      </php_parent>
+      <properties>
+        <comment>/**&#13;
+          * An approval process associated to an object&#13;
+          * Derive this class to implement an approval process&#13;
+          * - A few abstract functions have to be defined to implement parallel and/or serialize approvals&#13;
+          * - Advanced behavior can be implemented by overloading some of the methods (e.g. GetDisplayStatus to change the way it is displayed) &#13;
+          *    &#13;
+          **/</comment>
+        <category>application</category>
+        <abstract>true</abstract>
+        <key_type>autoincrement</key_type>
+        <db_table>approval_scheme</db_table>
+        <db_key_field>id</db_key_field>
+        <db_final_class_field>finalclass</db_final_class_field>
+        <naming>
+          <format>%1$s %2$s</format>
+          <attributes>
+            <attribute id="obj_class"/>
+            <attribute id="obj_key"/>
+          </attributes>
+        </naming>
+        <display_template></display_template>
+        <icon></icon>
+        <reconciliation>
+          <attributes>
+            <attribute id=""/>
+          </attributes>
+        </reconciliation>
+        <indexes>
+          <index id="1">
+            <attributes>
+              <attribute id="obj_class"/>
+              <attribute id="obj_key"/>
+            </attributes>
+          </index>
+        </indexes>
+      </properties>
+      <fields>
+        <field id="obj_class" xsi:type="AttributeString">
+          <sql>obj_class</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="obj_key" xsi:type="AttributeObjectKey">
+          <sql>obj_key</sql>
+          <is_null_allowed>false</is_null_allowed>
+          <class_attcode>obj_class</class_attcode>
+        </field>
+        <field id="started" xsi:type="AttributeDateTime">
+          <sql>started</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="ended" xsi:type="AttributeDateTime">
+          <sql>ended</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="timeout" xsi:type="AttributeDeadline">
+          <sql>timeout</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="current_step" xsi:type="AttributeInteger">
+          <sql>current_step</sql>
+          <default_value>0</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="status" xsi:type="AttributeEnum">
+          <values>
+            <value>ongoing</value>
+            <value>accepted</value>
+            <value>rejected</value>
+          </values>
+          <sql>status</sql>
+          <default_value>ongoing</default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+        <field id="last_error" xsi:type="AttributeString">
+          <sql>last_error</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="abort_comment" xsi:type="AttributeText">
+          <sql>abort_comment</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="abort_user_id" xsi:type="AttributeExternalKey">
+          <sql>abort_user_id</sql>
+          <target_class>User</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_MANUAL</on_target_delete>
+        </field>
+        <field id="abort_date" xsi:type="AttributeDateTime">
+          <sql>abort_date</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="label" xsi:type="AttributeString">
+          <sql>label</sql>
+          <default_value></default_value>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+        <field id="steps" xsi:type="AttributeText">
+          <sql>steps</sql>
+          <default_value></default_value>
+          <is_null_allowed>false</is_null_allowed>
+        </field>
+      </fields>
+      <methods>
+        <method id="GetApprovalScheme">
+          <comment>/**&#13;
+            * Called when an object is entering a new state (or just created), and before it gets saved&#13;
+            * The approval scheme should be prepared depending on the target object:&#13;
+            * 	find the relevant approvers&#13;
+            * 	perform parallel approval (several approvers in one step)&#13;
+            * 	perform serialized approval (several steps)&#13;
+            * 	tune the timeouts&#13;
+            * Available helpers:&#13;
+            * 	AddStep(aApprovers, iTimeoutSec, bApproveOnTimeout)&#13;
+            * 		 	 	 	 	 	 	 &#13;
+            * @param object oObject  The object concerned&#13;
+            * @param string sReachingState The state that this object has just reached&#13;
+            * @return null if no approval process is needed, an instance of ApprovalScheme otherwise&#13;
+            */</comment>
+          <static>true</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code>	public static function GetApprovalScheme($oObject, $sReachingState)
+            {
+            return null;
+            }</code>
+        </method>
+        <method id="GetFormBody">
+          <comment>/**&#13;
+            * Called when the form is being created for a given approver&#13;
+            * 	 &#13;
+            * @param string sContactClass The approver object class&#13;
+            * @param string iContactId The approver object id&#13;
+            * @return string The form body in HTML&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function GetFormBody($sContactClass, $iContactId)
+	{
+		return 'this is the form body... to be overriden!';
+	}]]></code>
+        </method>
+        <method id="DoApprove">
+          <comment>/**&#13;
+            * Called when the approval is being completed with success&#13;
+            * 	 &#13;
+            * @param object oObject The object being under approval process&#13;
+            * @return void The object can be modified within this handler, it will be saved later on&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	abstract public function DoApprove(&$oObject);]]></code>
+        </method>
+        <method id="DoReject">
+          <comment>/**&#13;
+            * Called when the approval is being completed with failure&#13;
+            * 	 &#13;
+            * @param object oObject The object being under approval process&#13;
+            * @return void The object can be modified within this handler, it will be saved later on&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	abstract public function DoReject(&$oObject);]]></code>
+        </method>
+        <method id="DisplayObjectDetails">
+          <comment>/**&#13;
+            * Optionaly override this verb to change the way object details are displayed&#13;
+            * Appeared in Version 1.2 of the module 	 &#13;
+            *&#13;
+            * @return void&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function DisplayObjectDetails($oPage, $oApprover, $oObject, $oSubstitute = null)
+	{
+		if ($this->IsLoginMandatoryToSeeObjectDetails($oApprover, $oObject))
+		{
+			require_once(APPROOT.'/application/loginwebpage.class.inc.php');
+			LoginWebPage::DoLoginEx(); // Check user rights and prompt if needed
+		}
+		$oObject->DisplayBareProperties($oPage/*, $bEditMode = false*/);
+	}]]></code>
+        </method>
+        <method id="GetIssuerInfo">
+          <comment>/**&#13;
+            * Optionaly override this verb to change the way the changes are tracked in the object history and in the case log (if the comment are copied there)&#13;
+            * Appeared in Version 1.2 of the module 	 &#13;
+            *&#13;
+            * @return void&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function GetIssuerInfo($bApproved, $oApprover, $oSubstitute = null)
+	{
+		if ($oSubstitute)
+		{
+			if ($bApproved)
+			{
+				$sRes = Dict::Format('Approval:Approved-On-behalf-of', $oSubstitute->Get('friendlyname'), $oApprover->Get('friendlyname'));
+			}
+			else
+			{
+				$sRes = Dict::Format('Approval:Rejected-On-behalf-of', $oSubstitute->Get('friendlyname'), $oApprover->Get('friendlyname'));
+			}
+		}
+		else
+		{
+			if ($bApproved)
+			{
+				$sRes = Dict::Format('Approval:Approved-By', $oApprover->Get('friendlyname'));
+			}
+			else
+			{
+				$sRes = Dict::Format('Approval:Rejected-By', $oApprover->Get('friendlyname'));
+			}
+		}
+		return $sRes;
+	}]]></code>
+        </method>
+        <method id="GetWorkingTimeComputer">
+          <comment>/**&#13;
+            * Optionaly override this verb to change the way working hours will be computed&#13;
+            * Appeared in Version 1.1 of the module 	 &#13;
+            * 	 &#13;
+            * @return string Name of a class implementing the interface iWorkingTimeComputer&#13;
+            */</comment>
+          <static>false</static>
+          <access>protected</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	protected function GetWorkingTimeComputer()
+	{
+		// This class is provided as the default way to compute the active time, aka 24x7, 24 hours a day!
+		return 'DefaultWorkingTimeComputer';
+	}]]></code>
+        </method>
+        <method id="RecordComment">
+          <comment>/**&#13;
+            * Overridable helper to store the replier comment	&#13;
+            * Actually, it does record something even if the comment is left empty, which is the expected behavior&#13;
+            */</comment>
+          <static>false</static>
+          <access>protected</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	protected function RecordComment($sComment, $sIssuerInfo)
+	{
+		$sAttCode = MetaModel::GetModuleSetting('approval-base', 'comment_attcode');
+		if ($sAttCode != '')
+		{
+			if (MetaModel::IsValidAttCode($this->Get('obj_class'), $sAttCode))
+			{
+				if ($oObject = MetaModel::GetObject($this->Get('obj_class'), $this->Get('obj_key'), false))
+				{
+					$value = $oObject->Get($sAttCode);
+					$oAttDef = MetaModel::GetAttributeDef($this->Get('obj_class'), $sAttCode);
+					if ($oAttDef instanceof AttributeCaseLog)
+					{
+						$sHtml = utils::TextToHtml($sComment);
+						$value->AddLogEntry($sHtml, $sIssuerInfo);
+					}
+					else
+					{
+						// Cumulate into the given (hopefully) text attribute
+						$sDate = date(Dict::S('UI:CaseLog:DateFormat'));
+						$value .= "\n$sDate - ".$sIssuerInfo." :";
+						$value .= "\n".$sComment;
+					}
+					$oObject->Set($sAttCode, $value);
+					$oObject->DBUpdate();
+				}
+			}
+		}
+	}]]></code>
+        </method>
+        <method id="MakeReplyUrl">
+          <comment>/**&#13;
+            *	Helper to make the URL to approve/reject the ticket&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function MakeReplyUrl($sContactClass, $iContactId, $bFromGUI = true)
+	{
+		$sPassCode = $this->GetContactPassCode($sContactClass, $iContactId);
+		if (is_null($sPassCode))
+		{
+			$sReplyUrl = null;
+		}
+		else
+		{
+			$sToken = $this->GetKey().'-'.$this->Get('current_step').'-'.$sContactClass.'-'.$iContactId.'-'.$sPassCode;
+			$sReplyUrl = utils::GetAbsoluteUrlModulesRoot().'approval-base/approve.php?token='.$sToken;
+			if ($bFromGUI)
+			{
+				$sReplyUrl .= '&from=object_details';
+			}
+		}
+		return $sReplyUrl;
+	}]]></code>
+        </method>
+        <method id="IsActiveApprover">
+          <comment>/**&#13;
+            * Helper to determine if a given user is expected to give her answer&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function IsActiveApprover($sContactClass, $iContactId)
+	{
+		$sPassCode = $this->GetContactPassCode($sContactClass, $iContactId);
+		return (!is_null($sPassCode));
+	}	  	]]></code>
+        </method>
+        <method id="MakeAbortUrl">
+          <comment>/**&#13;
+            * Helper to make the URL to abort the process&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function MakeAbortUrl($bFromGUI = true)
+	{
+		$sAbortUrl = utils::GetAbsoluteUrlModulesRoot().'approval-base/approve.php?abort=1&approval_id='.$this->GetKey();
+		if ($bFromGUI)
+		{
+			$sAbortUrl .= '&from=object_details';
+		}
+		return $sAbortUrl;
+	}	 	]]></code>
+        </method>
+        <method id="SendApprovalRequest">
+          <comment>/**&#13;
+            * Build and send the message for a given approver (can be a forwarded approval request)&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function SendApprovalRequest($oToPerson, $oObj, $sPassCode, $oSubstituteTo = null, $bReminder = false)
+	{
+		$sReplyUrl = $this->MakeReplyUrl(get_class($oToPerson), $oToPerson->GetKey(), false);
+		$sReplyLink = '<a href="'.$sReplyUrl.'">'.Dict::S('Approval:Action-ApproveOrReject').'</a>';
+
+		$aContext = array(
+			'this->object()' => $oObj,
+			'approval_scheme->object()' => $this,
+			'approval_step' => $this->Get('current_step') + 1,
+			'approver->object()' => $oToPerson,
+			'approver_type' => is_null($oSubstituteTo) ? 'main' : 'substitute',
+			'approval_url' => $sReplyUrl,
+			'approval_link' => $sReplyLink,
+			'message_type' => $bReminder ? 'reminder' : 'initial',
+		);
+		if (!is_null($oSubstituteTo))
+		{
+			$aContext['on_behalf_of'] = $oSubstituteTo;
+		}
+		$sClassList = implode("', '", MetaModel::EnumParentClasses(get_class($oObj), ENUM_PARENT_CLASSES_ALL));
+		$oSet = new DBObjectSet(DBObjectSearch::FromOQL("SELECT TriggerOnApprovalRequest AS t WHERE t.target_class IN ('$sClassList')"));
+		while ($oTrigger = $oSet->Fetch())
+		{
+			$oTrigger->DoActivate($aContext);
+		}
+	}]]></code>
+        </method>
+        <method id="GetApproverEmailAddress">
+          <comment>/**&#13;
+            * Overridable to determine the approver email address in a different way	&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function GetApproverEmailAddress($oApprover)
+	{
+		// Find out which attribute is the email attribute
+		//
+		$sEmailAttCode = 'email';
+		foreach(MetaModel::ListAttributeDefs(get_class($oApprover)) as $sAttCode => $oAttDef)
+		{
+			if ($oAttDef instanceof AttributeEmailAddress)
+			{
+				$sEmailAttCode = $sAttCode;
+			}
+		}
+		$sAddress = $oApprover->Get($sEmailAttCode);
+		return $sAddress;
+	}]]></code>
+        </method>
+        <method id="GetEmailSender">
+          <comment>/**&#13;
+            * Overridable to specify the email sender in a more dynamic way&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function GetEmailSender($oApprover, $oObject)
+	{
+		return MetaModel::GetModuleSetting('approval-base', 'email_sender');
+	}]]></code>
+        </method>
+        <method id="GetEmailReplyTo">
+          <comment>/**&#13;
+            * Overridable to specify the email reply-to in a more dynamic way&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function GetEmailReplyTo($oApprover, $oObject)
+	{
+		return MetaModel::GetModuleSetting('approval-base', 'email_reply_to');
+	}]]></code>
+        </method>
+        <method id="IsAllowedToSeeObjectDetails">
+          <comment>/**&#13;
+            * Overridable to disable the link to view more information on the object&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code><![CDATA[	public function IsAllowedToSeeObjectDetails($oApprover, $oObject)
+	{
+		if (get_class($oApprover) != 'Person')
+		{
+			return false;
+		}
+
+		$oSearch = DBObjectSearch::FromOQL_AllData("SELECT User WHERE contactid = :approver_id");
+		$oSet = new DBObjectSet($oSearch, array(), array('approver_id' => $oApprover->GetKey()));
+		if ($oSet->Count() > 0)
+		{
+			// The approver has a login: show the link!
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}]]></code>
+        </method>
+        <method id="IsLoginMandatoryToSeeObjectDetails">
+          <comment>/**&#13;
+            * Overridable to force the login when viewing object details&#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code>	public function IsLoginMandatoryToSeeObjectDetails($oApprover, $oObject)
+            {
+            return false;
+            }</code>
+        </method>
+        <method id="IsAllowedToAbort">
+          <comment>/**&#13;
+            * Overridable to implement the abort feature&#13;
+            * @param oUser (implicitely the current user if null)	 &#13;
+            * Return true if the given user is allowed to abort	 &#13;
+            */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>OQLMenuNode</type>
+          <code>	public function IsAllowedToAbort($oUser = null)
+            {
+            return false;
+            }</code>
+        </method>
+      </methods>
+      <presentation/>
+    </class>
+  </classes>
+</itop_design>

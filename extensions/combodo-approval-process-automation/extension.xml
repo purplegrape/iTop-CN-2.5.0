@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension format="1.0">
+	<extension_code>combodo-approval-process-automation</extension_code>
+	<company>Combodo SARL</company>
+	<author><![CDATA[Guillaume]]></author>
+	<label><![CDATA[Approval process automation]]></label>
+	<description><![CDATA[Control your approval process with predefined rules based on service catalog]]></description>
+	<version>1.4.0</version>
+	<release_date>2017-11-15</release_date>
+	<version_description><![CDATA[Approvals can now be managed in the enhanced portal.]]></version_description>
+	<itop_version_min>2.3.0</itop_version_min>
+	<status>stable</status>
+	<mandatory>false</mandatory>
+	<more_info_url></more_info_url>
+</extension>

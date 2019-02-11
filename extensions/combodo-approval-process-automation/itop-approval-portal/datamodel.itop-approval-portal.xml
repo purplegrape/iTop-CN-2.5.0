@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.3">
+  <classes>
+    <class id="ApprovalScheme" _delta="must_exist">
+      <methods>
+        <method id="MakeReplyUrl" _delta="redefine">
+          <comment>/**&#13;
+        *	Helper to make the URL to approve/reject the ticket&#13;
+        */</comment>
+          <static>false</static>
+          <access>public</access>
+          <type>Custom</type>
+          <code><![CDATA[	public function MakeReplyUrl($sContactClass, $iContactId, $bFromGUI = true)
+	{
+		$sPassCode = $this->GetContactPassCode($sContactClass, $iContactId);
+		if (is_null($sPassCode))
+		{
+			$sReplyUrl = null;
+		}
+		else
+		{
+			if ($bFromGUI)
+			{
+				$sApprovalUI = 'specific';
+			}
+			else
+			{
+				// Redirect EVERY user to the portal, as soon as they have a valid login
+				$oSearch = new DBObjectSearch('User');
+				$oSearch->AddCondition('contactid', $iContactId);
+				$oSet = new DBObjectSet($oSearch);
+				$iCount = $oSet->Count();
+				if ($iCount > 0)
+				{
+					$sApprovalUI = 'portal';
+				}
+				else
+				{
+					$sApprovalUI = 'specific';
+				}
+			}
+			switch ($sApprovalUI)
+			{
+				case 'specific':
+					$sToken = $this->GetKey().'-'.$this->Get('current_step').'-'.$sContactClass.'-'.$iContactId.'-'.$sPassCode;
+					$sReplyUrl = utils::GetAbsoluteUrlModulesRoot().'approval-base/approve.php?token='.$sToken;
+					if ($bFromGUI)
+					{
+						$sReplyUrl .= '&from=object_details';
+					}
+					break;
+				case 'portal':
+					$sPortalId = 'itop-portal';
+					$sReplyUrl = utils::GetAbsoluteUrlModulesRoot() . $sPortalId . '/index.php/approval/approvals';
+					break;
+			}
+		}
+		return $sReplyUrl;
+	}]]></code>
+        </method>
+      </methods>
+    </class>
+  </classes>
+  <module_designs>
+    <module_design id="itop-portal" xsi:type="portal">
+      <bricks>
+        <brick id="approvals" xsi:type="Combodo\iTop\Portal\Brick\ApprovalBrick" _delta="define">
+          <!-- TODO: restreindre les droits de visibilité à cette brique -->
+          <active>true</active>
+          <rank>
+            <default>60</default>
+          </rank>
+          <width>12</width>
+          <title>
+            <default>Approval:Portal:Menu</default>
+          </title>
+          <description>Approval:Portal:Menu+</description>
+          <decoration_class>
+            <default>fa fa-check-circle fa-2x</default>
+          </decoration_class>
+          <classes>
+            <!-- Class to be considered (inc. derived classes) -->
+            <class id="UserRequest">
+              <fields>
+                <field id="title"/>
+                <field id="start_date"/>
+                <field id="status"/>
+                <field id="service_id"/>
+                <field id="servicesubcategory_id"/>
+                <field id="priority"/>
+                <field id="caller_id"/>
+              </fields>
+            </class>
+          </classes>
+          <!-- TODO: get rid of this? -->
+          <data_loading>full</data_loading>
+        </brick>
+      </bricks>
+    </module_design>
+  </module_designs>
+</itop_design>

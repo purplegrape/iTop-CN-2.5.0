@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <classes>
+    <class id="lnkCustomerContractToService" _delta="must_exist">
+      <fields>
+        <field id="coveragewindow_id" xsi:type="AttributeExternalKey" _delta="define">
+          <sql>coveragewindow_id</sql>
+          <target_class>CoverageWindow</target_class>
+          <is_null_allowed>true</is_null_allowed>
+          <on_target_delete>DEL_AUTO</on_target_delete>
+          <allow_target_creation>false</allow_target_creation>
+        </field>
+        <field id="coveragewindow_name" xsi:type="AttributeExternalField" _delta="define">
+          <extkey_attcode>coveragewindow_id</extkey_attcode>
+          <target_attcode>name</target_attcode>
+          <is_null_allowed>true</is_null_allowed>
+        </field>
+      </fields>
+      <methods/>
+      <presentation _delta="redefine">
+        <details>
+          <items>
+            <item id="customercontract_id">
+              <rank>10</rank>
+            </item>
+            <item id="service_id">
+              <rank>20</rank>
+            </item>
+            <item id="sla_id">
+              <rank>30</rank>
+            <item id="coveragewindow_id">
+              <rank>40</rank>
+            </item>
+            </item>
+          </items>
+        </details>
+        <search>
+          <items>
+            <item id="customercontract_id">
+              <rank>10</rank>
+            </item>
+            <item id="service_id">
+              <rank>20</rank>
+            </item>
+            <item id="coveragewindow_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </search>
+        <list>
+          <items>
+            <item id="customercontract_id">
+              <rank>10</rank>
+            </item>
+            <item id="service_id">
+              <rank>20</rank>
+            </item>
+            <item id="sla_id">
+              <rank>30</rank>
+            </item>
+            <item id="coveragewindow_id">
+              <rank>40</rank>
+            </item>
+          </items>
+        </list>
+      </presentation>
+    </class>
+  </classes>
+</itop_design>

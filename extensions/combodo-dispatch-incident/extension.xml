@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension format="1.0">
+	<extension_code>combodo-dispatch-incident</extension_code>
+	<company>Combodo SARL</company>
+	<author><![CDATA[Romain]]></author>
+	<label><![CDATA[Dispatch Incident to team]]></label>
+	<description><![CDATA[Dispatch an incident to a team without assigning an agent]]></description>
+	<version>1.1.2</version>
+	<release_date>2017-11-14</release_date>
+	<version_description><![CDATA[Revision of the German dictionnary.]]></version_description>
+	<itop_version_min>2.1.0</itop_version_min>
+	<status>stable</status>
+	<mandatory>false</mandatory>
+	<more_info_url></more_info_url>
+</extension>

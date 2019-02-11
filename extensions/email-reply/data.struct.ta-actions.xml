@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Set>
+<ActionEmail id="1">
+<name>Notification to caller on User Request public log update</name>
+<description>This action informs a caller that the public log of a ticket has been updated</description>
+<status>test</status>
+<test_recipient>test@test.com</test_recipient>
+<from>test@test.com</from>
+<reply_to></reply_to>
+<to>SELECT Person WHERE id=:this-&gt;caller_id</to>
+<cc></cc>
+<bcc></bcc>
+<subject>The ticket $this-&gt;ref$ has been updated</subject>
+<body>&lt;html&gt;
+&lt;body&gt;
+$this-&gt;head_html(public_log)$
+&lt;/body&gt;
+&lt;/html&gt;</body>
+<importance>normal</importance>
+</ActionEmail>
+</Set>

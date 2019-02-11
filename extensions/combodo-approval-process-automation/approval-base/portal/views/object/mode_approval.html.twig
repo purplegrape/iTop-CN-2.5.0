@@ -1,0 +1,91 @@
+{# approval-base/portal/views/object/mode_approval.html.twig #}
+{# Object brick create layout #}
+
+{% set sFormId = (form.id is defined and form.id is not null) ? form.id : 'object_form' %}
+{% set sFormIdSanitized = sFormId|replace({'-': ''}) %}
+{% set tIsModal = (tIsModal is defined and tIsModal == true) ? true : false %}
+
+<div id="{{ sFormId }}">
+	{# #form_alerts block removed as we don't use it there. #}
+	<div class="form_fields">
+		{% block pFormFields %}
+			{{ form.renderer.GetBaseLayout()|raw }}
+		{% endblock %}
+	</div>
+	<div class="form_buttons">
+		{% block pFormButtons %}
+			{# Form tag is only there and not for the whole modal, otherwise we would post the whole formmanager data when submitting #}
+			<form id="form_approval_{{ sFormId }}" method="POST">
+				<div class="form-group text-left">
+					<label class="control-label">{{ 'Approval:Portal:CommentTitle'|dict_s }}</label>
+					<textarea id="approval-comment-one" name="comment" class="form-control" placeholder="{{ 'Approval:Portal:CommentPlaceholder'|dict_s }}"></textarea>
+					<input type="hidden" id="approval-select-item-one" name="selected[{{ form.formmanager_data.formobject_class }}][]" value="{{ form.formmanager_data.formobject_id }}">
+					<input type="hidden" id="approval-operation-one" name="operation">
+				</div>
+				<div class="form_btn_regular">
+					<button type="button" type="submit" id="btn-approve-one" class="btn btn-success form_btn_submit">
+						<span class="glyphicon glyphicon-ok"></span>
+						{{ 'Approval:Portal:Btn:Approve'|dict_s }}
+					</button>
+					<button type="button" type="submit" id="btn-reject-one" class="btn btn-danger form_btn_submit" disabled>
+						<span class="glyphicon glyphicon-remove"></span>
+						{{ 'Approval:Portal:Btn:Reject'|dict_s }}
+					</button>
+				</div>
+			</form>
+		{% endblock %}
+	</div>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function(){
+		// Form field set declaration
+		var oFieldSet_{{ sFormIdSanitized }} = $('#{{ sFormId }} > .form_fields').field_set({{ form.fieldset|json_encode()|raw }});
+		// Form handler declaration
+		$('#{{ sFormId }}').portal_form_handler({
+			formmanager_class: "{{ form.formmanager_class|escape('js') }}",
+			formmanager_data: {{ form.formmanager_data|json_encode()|raw }},
+			field_set: oFieldSet_{{ sFormIdSanitized }},
+			is_modal: {% if tIsModal == true %}true{% else %}false{% endif %}
+		});
+		
+		{% if tIsModal == true %}
+			// Scroll top (because sometimes when several modals have been opened)
+			$('#{{ sFormId }}').closest('.modal').scrollTop(0);
+			$('#{{ sFormId }}').closest('.modal').find('.modal-footer').hide();
+		{% endif %}
+			
+		
+		function EnableApprovalButtonsForThisApproval()
+		{
+			var bHasComment = ($('#approval-comment-one').val().length > 0);
+			if (bHasComment)
+			{
+				$('#btn-reject-one').removeAttr('disabled');
+			}
+			else
+			{
+				$('#btn-reject-one').attr('disabled', 'disabled');
+			}
+		}
+		
+		$("#approval-comment-one").off("change keyup paste").on("change keyup paste", function() {
+			EnableApprovalButtonsForThisApproval();
+		});
+		
+		$('#btn-approve-one, #btn-reject-one').off('click').click(function(){
+			var sOperation = ($(this).attr('id') === 'btn-approve-one') ? 'approve' : 'reject';
+			var sModalIdSuffix = ($(this).attr('id') === 'btn-approve-one') ? 'approval' : 'rejection';
+			
+			$('#approval-operation-one').val(sOperation);
+			$('.approval-confirmation-text').html((sOperation == 'approve') ? '{{ 'Approval:Portal:Dlg:ApproveOne'|dict_s|raw }}' : '{{ 'Approval:Portal:Dlg:RejectOne'|dict_s|raw }}');
+			
+			var oModalElem = $('#modal-for-' + sModalIdSuffix).clone();
+			oModalElem.attr('id', '').appendTo('body');
+			oModalElem.find('#do-approve, #do-reject').off('click').on('click', function(oEvent){
+				$('#form_approval_{{ sFormId }}').submit();
+			});
+			oModalElem.modal('show');
+		});
+	});
+</script>

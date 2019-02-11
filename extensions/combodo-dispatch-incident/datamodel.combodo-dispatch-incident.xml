@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itop_design xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.1">
+  <classes>
+    <class id="Incident" _delta="must_exist">
+      <fields>
+        <field id="status" xsi:type="AttributeEnum" _delta="must_exist">
+          <values>
+            <value id="dispatched" _delta="define">dispatched</value>
+            <value id="redispatched" _delta="define">redispatched</value>
+          </values>
+        </field>
+        <field id="tto" xsi:type="AttributeStopWatch" _delta="must_exist">
+          <states>
+            <state id="dispatched" _delta="define"/>
+          </states>
+        </field>
+        <field id="ttr" xsi:type="AttributeStopWatch" _delta="must_exist">
+          <states>
+            <state id="dispatched" _delta="define"/>
+            <state id="redispatched" _delta="define"/>
+          </states>
+        </field>
+      </fields>
+      <lifecycle>
+        <stimuli>
+          <stimulus id="ev_dispatch" xsi:type="StimulusUserAction" _delta="define"/>
+        </stimuli>
+        <states>
+          <state id="new" _delta="must_exist">
+            <transitions>
+              <transition id="ev_dispatch" _delta="define">
+                <target>dispatched</target>
+                <actions/>
+              </transition>
+            </transitions>
+          </state>
+          <state id="assigned" _delta="must_exist">
+            <transitions>
+              <transition id="ev_dispatch" _delta="define">
+                <target>redispatched</target>
+                <actions>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="string">agent_id</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="dispatched" _delta="define">
+            <inherit_flags_from>new</inherit_flags_from>
+            <flags>
+              <attribute id="team_id">
+                <mandatory/>
+                <must_prompt/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_assign">
+                <target>assigned</target>
+                <actions>
+                  <action>
+                    <verb>SetCurrentDate</verb>
+                    <params>
+                      <param xsi:type="string">assignment_date</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+              <transition id="ev_timeout">
+                <target>escalated_tto</target>
+                <actions/>
+              </transition>
+              <transition id="ev_autoresolve">
+                <target>resolved</target>
+                <actions>
+                  <action>
+                    <verb>SetCurrentDate</verb>
+                    <params>
+                      <param xsi:type="string">resolution_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>SetElapsedTime</verb>
+                    <params>
+                      <param xsi:type="string">time_spent</param>
+                      <param xsi:type="string">start_date</param>
+                      <param xsi:type="string">DefaultWorkingTimeComputer</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>ResolveChildTickets</verb>
+                    <params/>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="redispatched" _delta="define">
+            <inherit_flags_from>assigned</inherit_flags_from>
+            <flags>
+              <attribute id="team_id">
+                <mandatory/>
+                <must_prompt/>
+              </attribute>
+              <attribute id="agent_id">
+                <hidden/>
+              </attribute>
+            </flags>
+            <transitions>
+              <transition id="ev_assign">
+                <target>assigned</target>
+                <actions/>
+              </transition>
+              <transition id="ev_timeout">
+                <target>escalated_ttr</target>
+                <actions/>
+              </transition>
+              <transition id="ev_autoresolve">
+                <target>resolved</target>
+                <actions>
+                  <action>
+                    <verb>SetCurrentDate</verb>
+                    <params>
+                      <param xsi:type="string">resolution_date</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>SetElapsedTime</verb>
+                    <params>
+                      <param xsi:type="string">time_spent</param>
+                      <param xsi:type="string">start_date</param>
+                      <param xsi:type="string">DefaultWorkingTimeComputer</param>
+                    </params>
+                  </action>
+                  <action>
+                    <verb>ResolveChildTickets</verb>
+                    <params/>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+          <state id="escalated_ttr">
+            <transitions>
+              <transition id="ev_dispatch" _delta="define">
+                <target>redispatched</target>
+                <actions>
+                  <action>
+                    <verb>Reset</verb>
+                    <params>
+                      <param xsi:type="string">agent_id</param>
+                    </params>
+                  </action>
+                </actions>
+              </transition>
+            </transitions>
+          </state>
+        </states>
+      </lifecycle>
+      <methods>
+        <method id="ResetAgent" _delta="define">
+          <comment><![CDATA[/**
+	 * To be deprecated: use Reset(agent_id) instead
+	 */]]></comment>
+          <static>false</static>
+          <access>public</access>
+          <type>LifecycleAction</type>
+          <code><![CDATA[	public function ResetAgent($sStimulusCode)
+	{
+		$this->Set('agent_id', 0);
+		return true;
+	}]]></code>
+        </method>
+      </methods>
+    </class>
+  </classes>
+  <menus>
+    <menu id="Incident:IncidentsDispatchedToMyTeams" xsi:type="OQLMenuNode" _delta="define">
+      <rank>0.5</rank>
+      <parent>Incident:Shortcuts</parent>
+      <oql><![CDATA[SELECT Incident JOIN Team ON Incident.team_id = Team.id JOIN lnkPersonToTeam AS L ON L.team_id = Team.id WHERE L.person_id = :current_contact_id AND Incident.status NOT IN ("resolved", "closed")]]></oql>
+      <do_search/>
+      <auto_reload>fast</auto_reload>
+    </menu>
+  </menus>
+  <user_rights>
+    <profiles>
+      <profile id="4" _delta="must_exist">
+        <groups>
+          <group id="Incident" _delta="must_exist">
+            <actions>
+              <action id="stimulus:ev_dispatch" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+      <profile id="5" _delta="must_exist">
+        <groups>
+          <group id="Incident" _delta="must_exist">
+            <actions>
+              <action id="stimulus:ev_dispatch" _delta="define">allow</action>
+            </actions>
+          </group>
+        </groups>
+      </profile>
+    </profiles>
+  </user_rights>
+</itop_design>

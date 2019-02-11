@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Set>
+
+<TriggerOnLogUpdate id="50">
+<description>User Request public log update</description>
+<target_class>UserRequest</target_class>
+<target_log>public_log</target_log>
+</TriggerOnLogUpdate>
+
+</Set>
